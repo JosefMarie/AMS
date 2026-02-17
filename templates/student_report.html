@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="animate-fadeIn">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <!-- beautify ignore:start -->
+        <div>
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Academic Performance Report</h1>
+            <p class="text-gray-500 font-medium mt-1">
+                Student: <span class="text-indigo-600 font-bold">{{sname}}</span>
+                • ID: <span class="font-bold">{{sid}}</span>
+            </p>
+        </div>
+        <!-- beautify ignore:end -->
+        <div class="flex gap-3">
+            <a href="{% url 'student_transcript_pdf' s.id %}" target="_blank"
+                class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg> Download PDF Transcript
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <div class="glass-card p-8 flex flex-col items-center justify-center text-center">
+            <div class="relative w-32 h-32 mb-6">
+                <!-- beautify ignore:start -->
+                <svg class="w-full h-full transform -rotate-90">
+                    <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-100" />
+                    <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent" class="text-indigo-600" stroke-dasharray="364.4" stroke-dashoffset="{{aoff}}" />
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center text-2xl font-black text-gray-900">{{apct}}%</div>
+                <!-- beautify ignore:end -->
+            </div>
+            <h3 class="text-lg font-bold text-gray-900">Overall Attendance</h3>
+            <p class="text-xs text-gray-500 font-medium mt-1">{{patt}} Sessions attended out of {{tatt}}</p>
+        </div>
+        <div
+            class="lg:col-span-2 glass-card p-8 bg-gradient-to-br from-indigo-600 to-purple-700 text-white flex flex-col justify-between">
+            <div>
+                <h3 class="text-2xl font-black mb-2 italic">General Performance Overview</h3>
+                <p class="opacity-80 text-sm font-medium">Aggregated data across all modules and assessments.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-8 mt-8">
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-60">Total Modules</p>
+                    <p class="text-4xl font-black">{{module_reports|length}}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-60">Status</p>
+                    <p class="text-4xl font-black italic">Active</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-8">
+        <h2 class="text-2xl font-bold text-gray-900">Module Performance Breakdown</h2>
+        {% for k,d in module_reports.items %}<div class="glass-card overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-100 bg-white/50 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">{{k.2}}: {{k.1}}</h3>
+                <!-- beautify ignore:start -->
+                <span class="px-3 py-1 text-xs font-black uppercase tracking-widest rounded-lg {{d.status_class}}">{{d.status_label}} ({{d.avg|floatformat:1}}%)</span>
+                <!-- beautify ignore:end -->
+            </div>
+            <div class="p-0">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50/50">
+                            <th class="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                Assessment Name</th>
+                            <th class="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type
+                            </th>
+                            <th class="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date
+                            </th>
+                            <th
+                                class="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                                Score</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for m in d.marks %}<tr class="hover:bg-gray-50/30 transition-all">
+                            <!-- beautify ignore:start -->
+                    <td class="px-8 py-4 text-sm font-bold text-gray-900">{{m.assessment.title}}</td>
+                    <td class="px-8 py-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{m.type_class}}">{{m.assessment.get_assessment_type_display}}</span></td>
+                    <td class="px-8 py-4 text-sm text-gray-500 font-medium">{{m.date_recorded|date:"M d, Y"}}</td>
+                    <td class="px-8 py-4 text-sm font-black text-gray-900 text-right">{{m.score}} / {{m.assessment.total_marks}}</td>
+                    <!-- beautify ignore:end -->
+                        </tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>{% empty %}<div class="glass-card p-12 text-center text-gray-400 font-bold">No assessment data available
+            yet.</div>{% endfor %}
+    </div>
+</div>
+{% endblock %}

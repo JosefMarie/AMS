@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #4f46e5;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .school-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4f46e5;
+            text-transform: uppercase;
+        }
+
+        .doc-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 5px;
+            color: #374151;
+        }
+
+        .info-grid {
+            display: block;
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #6b7280;
+            width: 120px;
+            display: inline-block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th {
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #6b7280;
+        }
+
+        td {
+            border-bottom: 1px solid #f3f4f6;
+            padding: 12px 15px;
+            font-size: 13px;
+            color: #1f2937;
+        }
+
+        .competent-badge {
+            color: #059669;
+            font-weight: bold;
+        }
+
+        .nyc-badge {
+            color: #d97706;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 12px;
+            color: #9ca3af;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+
+        .sig-section {
+            margin-top: 40px;
+        }
+
+        .sig-line {
+            border-top: 1px solid #374151;
+            width: 200px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="school-name">Academic Management System</div>
+        <div class="doc-title">Official Student Transcript</div>
+    </div>
+    <!-- beautify ignore:start -->
+    <div class="info-grid">
+        <div class="info-item"><span class="info-label">Student Name:</span> {{sname}}</div>
+        <div class="info-item"><span class="info-label">Student ID:</span> {{sid}}</div>
+        <div class="info-item"><span class="info-label">Academic Year:</span> 2025 - 2026</div>
+        <div class="info-item"><span class="info-label">Issued Date:</span> {{idate}}</div>
+    </div>
+    <!-- beautify ignore:end -->
+    <table>
+        <thead>
+            <tr>
+                <th>Module Name</th>
+                <th style="text-align: center;">FA (%)</th>
+                <th style="text-align: center;">IA (%)</th>
+                <th style="text-align: center;">SA (%)</th>
+                <th style="text-align: center;">Average (%)</th>
+                <th style="text-align: right;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for n,d in mdata.items %}<tr>
+                <!-- beautify ignore:start -->
+            <td style="font-weight: bold;">{{n}}</td>
+            <td style="text-align: center;">{{d.fa}}%</td>
+            <td style="text-align: center;">{{d.ia}}%</td>
+            <td style="text-align: center;">{{d.sa}}%</td>
+            <td style="text-align: center; font-weight: bold;">{{d.avg}}%</td>
+            <td style="text-align: right;"><span class="{% if d.comp %}competent-badge{% else %}nyc-badge{% endif %}">{% if d.comp %}Competent{% else %}NYC{% endif %}</span></td>
+            <!-- beautify ignore:end -->
+            </tr>{% empty %}<tr>
+                <td colspan="6" style="text-align: center; color: #9ca3af; padding: 40px;">No module data found.</td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+    <div class="sig-section">
+        <div style="width: 45%; text-align: center; float: left;">
+            <div class="sig-line"></div>
+            <p style="font-size: 12px; margin-top: 5px;">Registrar Signature</p>
+        </div>
+        <div style="width: 45%; text-align: center; float: right;">
+            <div class="sig-line"></div>
+            <p style="font-size: 12px; margin-top: 5px;">School Principal</p>
+        </div>
+    </div>
+    <!-- beautify ignore:start -->
+    <div class="footer"><p>This is a computer-generated transcript issued by AMS on {{idate}}.</p><p>Verified by: {{user.username}}</p></div>
+    <!-- beautify ignore:end -->
+</body>
+
+</html>

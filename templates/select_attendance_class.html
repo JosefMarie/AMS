@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold mb-6 text-gray-900">Take Attendance - Select Class</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for classroom in classrooms %}
+        <a href="{% url 'perform_attendance' classroom.id %}"
+            class="block bg-gray-50 p-6 rounded-lg border border-gray-200 hover:bg-gray-100 hover:shadow-md transition">
+            <h3 class="font-bold text-xl text-indigo-700 mb-2">{{ classroom.name }}</h3>
+            <p class="text-gray-600">{{ classroom.students.count }} Students</p>
+        </a>
+        {% empty %}
+        <p class="col-span-3 text-center text-gray-500">You have no classes to take attendance for.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

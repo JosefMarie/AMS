@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">{{ assessment.title }}</h1>
+        <p class="text-gray-600">
+            {{ assessment.module.module_code }} - {{ assessment.module.module_name }} |
+            <span class="font-semibold">{{ assessment.get_assessment_type_display }}</span> |
+            Max Marks: {{ assessment.total_marks }}
+        </p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Student ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for item in marks_with_forms %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ item.student_id }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ item.student_name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
+                            {{ item.form.id }} <!-- Hidden ID field -->
+                            {{ item.form.score }}
+                            {% if item.form.score.errors %}
+                            <p class="text-red-500 text-xs italic">{{ item.form.score.errors.0 }}</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <button type="submit"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded focus:outline-none focus:shadow-outline">
+                Save Marks
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Validation: Prevent entering value > total_marks
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('input', function () {
+            let max = {{ assessment.total_marks }
+        };
+        if (parseFloat(this.value) > max) {
+            this.setCustomValidity('Score cannot exceed ' + max);
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    });
+</script>
+{% endblock %}

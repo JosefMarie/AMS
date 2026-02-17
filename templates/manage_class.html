@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="animate-fadeIn">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <div>
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">Class Management</h1>
+            <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">
+                Classroom: <span class="text-indigo-600 font-extrabold">{{ classroom.name }}</span>
+            </p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'add_student' classroom.id %}"
+                class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg> Add Student
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <div class="glass-card p-8 bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
+            <p class="text-[10px] font-black uppercase tracking-widest opacity-60">Enrolled Students</p>
+            <p class="text-5xl font-black mt-2">{{ students|length }}</p>
+        </div>
+
+        <div class="lg:col-span-2 glass-card overflow-hidden">
+            <div class="px-8 py-4 border-b border-gray-100 bg-white/50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900 italic uppercase">Assigned Modules</h3><a
+                    href="{% url 'add_module' classroom.id %}"
+                    class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1"><svg
+                        class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg> Add Module</a>
+            </div>
+            <div class="p-6 flex flex-wrap gap-3">
+                <!-- beautify ignore:start -->
+                {% for module in classroom.modules.all %}<div class="px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">{{ forloop.counter }}</div>
+                    <span class="text-sm font-bold text-gray-700">{{ module.module_name }}</span>
+                </div>{% empty %}<p class="text-sm text-gray-400 font-medium italic">No modules assigned yet.</p>{% endfor %}
+                <!-- beautify ignore:end -->
+            </div>
+        </div>
+    </div>
+
+    <section class="glass-card overflow-hidden mb-12">
+        <div class="px-8 py-6 border-b border-gray-100 bg-white/50">
+            <h3 class="text-xl font-bold text-gray-900 font-extrabold italic uppercase tracking-tighter">Student Roster
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-gray-50/50">
+                        <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Student ID</th>
+                        <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Full Name</th>
+                        <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Sex</th>
+                        <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for s in students %}<tr class="hover:bg-white/80 transition-all group">
+                        <!-- beautify ignore:start -->
+                    <td class="px-8 py-5 text-sm font-bold text-gray-900 leading-none">{{ s.sid }}</td>
+                    <td class="px-8 py-5"><p class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{{ s.full_name }}</p><p class="text-[10px] text-gray-400 font-medium uppercase mt-1">{{ s.uname }}</p></td>
+                    <td class="px-8 py-5 whitespace-nowrap"><span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider {{ s.sex_class }}">{{ s.sex }}</span></td>
+                    <td class="px-8 py-5 text-right whitespace-nowrap"><div class="flex justify-end gap-2">
+                        <a href="{% url 'student_report' s.uid %}" class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[10px] uppercase tracking-wider">View Report</a>
+                        <button class="text-gray-400 hover:text-indigo-600 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                    </div></td>
+                    <!-- beautify ignore:end -->
+                    </tr>{% empty %}<tr>
+                        <td colspan="4" class="px-8 py-16 text-center text-gray-400 font-bold">No students registered
+                            yet.</td>
+                    </tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="glass-card overflow-hidden">
+        <div class="px-8 py-6 border-b border-gray-100 bg-white/50">
+            <h3 class="text-xl font-bold text-gray-900 font-extrabold italic uppercase tracking-tighter">Assessments &
+                Marks</h3>
+        </div>
+        <div class="p-8">
+            {% if assessments %}
+            <!-- beautify ignore:start -->
+            {% for a in assessments %}<div class="border border-gray-200 rounded-2xl mb-6 overflow-hidden bg-white/50">
+                <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-lg font-bold text-gray-900">{{ a.title }}</h4>
+                            <p class="text-xs text-gray-500 font-bold mt-1">{{ a.module_name }} • {{ a.type }} • Total: {{ a.total_marks }} marks</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold">{{ a.marks_count }} student{{ a.marks_count|pluralize }}</span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead><tr class="bg-gray-50/50 border-b border-gray-100"><th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Student</th><th class="px-6 py-3 text-center text-xs font-bold text-gray-400 uppercase">Score</th><th class="px-6 py-3 text-center text-xs font-bold text-gray-400 uppercase">Percentage</th><th class="px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase">Actions</th></tr></thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for m in a.marks %}<tr class="hover:bg-white/80 transition-all">
+                                <td class="px-6 py-4"><p class="text-sm font-bold text-gray-900">{{ m.student_name }}</p><p class="text-xs text-gray-400 font-medium">{{ m.student_id }}</p></td>
+                                <td class="px-6 py-4 text-center"><span class="text-sm font-black text-gray-900">{{ m.score }}</span><span class="text-xs text-gray-400"> / {{ m.total }}</span></td>
+                                <td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md text-xs font-black {% if m.percentage >= 70 %}bg-green-50 text-green-600{% elif m.percentage >= 50 %}bg-yellow-50 text-yellow-600{% else %}bg-red-50 text-red-600{% endif %}">{{ m.percentage }}%</span></td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <button onclick="editMark({{ m.id }}, '{{ m.student_name }}', {{ m.score }}, {{ m.total }})" class="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all" title="Edit Mark"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                        <form method="post" action="{% url 'delete_mark' m.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this mark for {{ m.student_name }}?');">{% csrf_token %}<button type="submit" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all" title="Delete Mark"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>
+                                    </div>
+                                </td>
+                            </tr>{% empty %}<tr><td colspan="4" class="px-6 py-8 text-center text-gray-400 text-sm font-medium italic">No marks recorded yet.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>{% endfor %}
+            <!-- beautify ignore:end -->
+            {% else %}
+            <div class="text-center py-12">
+                <p class="text-gray-400 font-bold italic">No assessments created yet for this classroom.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<!-- Edit Mark Modal -->
+<div id="editMarkModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+            <h3 class="text-xl font-bold">Edit Mark</h3>
+        </div>
+        <form id="editMarkForm" method="post" action="">
+            {% csrf_token %}
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Student</label>
+                    <p id="editStudentName" class="text-base font-bold text-gray-900"></p>
+                </div>
+                <div>
+                    <label for="editScore" class="block text-sm font-bold text-gray-700 mb-2">Score</label>
+                    <input type="number" id="editScore" name="score" step="0.1" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold">
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Marks: <span id="editTotalMarks"
+                            class="font-bold text-gray-900"></span></p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+                <button type="button" onclick="closeEditModal()"
+                    class="px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all">Save
+                    Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function editMark(markId, studentName, currentScore, totalMarks) {
+        document.getElementById('editStudentName').textContent = studentName;
+        document.getElementById('editScore').value = currentScore;
+        document.getElementById('editTotalMarks').textContent = totalMarks;
+        document.getElementById('editMarkForm').action = '/marks/edit/' + markId + '/';
+        document.getElementById('editMarkModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('editMarkModal').classList.add('hidden');
+    }
+
+    // Close modal on outside click
+    document.getElementById('editMarkModal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeEditModal();
+        }
+    });
+</script>
+{% endblock %}

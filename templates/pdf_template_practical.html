@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ session.topic }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #000;
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 5px;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            background-color: #e0e0e0;
+            padding: 5px;
+            border: 1px solid #000;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>SESSION PLAN - PRACTICAL</h1>
+        <p>Academic Management System</p>
+    </div>
+
+    <table>
+        <tr>
+            <th width="15%">Sector:</th>
+            <td width="35%">{{ session.sector }}</td>
+            <th width="15%">Trade:</th>
+            <td width="35%">{{ session.trade }}</td>
+        </tr>
+        <tr>
+            <th>Level:</th>
+            <td>{{ session.level }}</td>
+            <th>Date:</th>
+            <td>{{ session.created_at|date:"d/m/Y" }}</td>
+        </tr>
+        <tr>
+            <th colspan="2">Trainer’s name: {{ session.trainer_name|default:user.get_full_name }}</th>
+            <th colspan="2">Academic School year: {{ session.academic_year }} ({{ session.term }})</th>
+        </tr>
+        <tr>
+            <th width="20%">Module (Code& Name):</th>
+            <td width="30%">{{ session.module }}</td>
+            <th width="20%">Weeks: {{ session.weeks }}</th>
+            <th width="30%">No.Trainees: {{ session.num_students }} / Class: {{ session.class_name }}</th>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <th width="20%">Learning Outcome:</th>
+            <td width="80%">{{ session.learning_outcome }}</td>
+        </tr>
+        <tr>
+            <th>Performance Criteria:</th>
+            <td>{{ session.performance_criteria }}</td>
+        </tr>
+        <tr>
+            <th>Pre-requisite Knowledge:</th>
+            <td>{{ session.pre_requisite_knowledge }}</td>
+        </tr>
+        <tr>
+            <th>Indicative content:</th>
+            <td>{{ session.indicative_content }}</td>
+        </tr>
+        <tr>
+            <th>Topic of the session:</th>
+            <td>{{ session.topic }}</td>
+        </tr>
+        <tr>
+            <th>Range:</th>
+            <td>{{ session.range_details }}</td>
+        </tr>
+        <tr>
+            <th>Duration:</th>
+            <td>{{ session.duration }}</td>
+        </tr>
+        <tr>
+            <th>ICT tools integration:</th>
+            <td>{{ session.ict_tools }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">OBJECTIVES: At the end of this session, learners should be able to:</div>
+    <div style="border: 1px solid #000; padding: 10px; margin-bottom: 15px;">
+        {{ session.objectives|linebreaksbr }}
+    </div>
+
+    <div class="grid-container" style="display: table; width: 100%; margin-bottom: 15px;">
+        <div style="display: table-row;">
+            <div
+                style="display: table-cell; width: 50%; border: 1px solid #000; padding: 5px; background-color: #f0f0f0; font-weight: bold;">
+                HSE Considerations / Safety:</div>
+            <div
+                style="display: table-cell; width: 50%; border: 1px solid #000; padding: 5px; background-color: #f0f0f0; font-weight: bold;">
+                Cross-Cutting Issues Link:</div>
+        </div>
+        <div style="display: table-row;">
+            <div style="display: table-cell; border: 1px solid #000; padding: 10px;">{{
+                session.hse_considerations|linebreaksbr }}</div>
+            <div style="display: table-cell; border: 1px solid #000; padding: 10px;">{{
+                session.cross_cutting_issues|linebreaksbr }}</div>
+        </div>
+    </div>
+
+    <div class="section-title">Support for Learners with Special Educational Needs (SEN)</div>
+    <div style="border: 1px solid #000; padding: 10px; margin-bottom: 15px;">
+        {{ session.special_needs_support }}
+    </div>
+
+    <div class="section-title">Resources / Tools</div>
+    <div style="border: 1px solid #000; padding: 10px; margin-bottom: 15px;">
+        {{ session.resources }}
+    </div>
+
+    <div class="section-title">PRACTICAL STEPS (DEMO - PRACTICE - APPLY)</div>
+    <table>
+        <thead>
+            <tr>
+                <th width="20%">Step / Time</th>
+                <th width="40%">Trainer Activity</th>
+                <th width="40%">Student Activity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in session.activities.all %}
+            <tr>
+                <td>
+                    <b>{{ activity.step_name }}</b><br>
+                    <small>{{ activity.time_allocation }}</small>
+                </td>
+                <td>{{ activity.trainer_activity|linebreaksbr }}</td>
+                <td>{{ activity.learner_activity|linebreaksbr }}<br>
+                    <i style="font-size: 0.8em; color: #555;">Resources: {{ activity.resources_needed }}</i>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">REFLECTION</div>
+    <div style="border: 1px solid #000; min-height: 100px; padding: 10px;">
+        {{ session.reflection|linebreaksbr }}
+    </div>
+
+</body>
+
+</html>

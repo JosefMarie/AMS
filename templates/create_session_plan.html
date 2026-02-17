@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-6 text-gray-900">
+        Create Session Plan - {{ template_type|title }}
+    </h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- General Information Section -->
+        <h3 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">General Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">Sector</label>
+                {{ form.sector }}
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">Trade</label>
+                {{ form.trade }}
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">Module</label>
+                {{ form.module }}
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">Topic</label>
+                {{ form.topic }}
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Learning Outcome</label>
+            {{ form.learning_outcome }}
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Objectives</label>
+            {{ form.objectives }}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">Facilitation Technique</label>
+                {{ form.facilitation_technique }}
+                <p class="text-xs text-gray-500 mt-1">e.g., Jig-saw, Group Work, Demonstration</p>
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">Duration</label>
+                {{ form.duration }}
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Resources / Aid</label>
+            {{ form.resources }}
+        </div>
+
+        {% if template_type == 'PRACTICAL' %}
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Range / Variables</label>
+            {{ form.range_details }}
+        </div>
+        {% endif %}
+
+        <!-- Activity Steps Section -->
+        <h3 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2 mt-8">Development Steps</h3>
+
+        {{ formset.management_form }}
+
+        <div class="space-y-6">
+            {% for form in formset %}
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div class="mb-2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase">Step Name</label>
+                    {{ form.step_name }}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Trainer Activity</label>
+                        {{ form.trainer_activity }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Learner Activity</label>
+                        {{ form.learner_activity }}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Time</label>
+                        {{ form.time_allocation }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Resources</label>
+                        {{ form.resources_needed }}
+                    </div>
+                </div>
+
+                <!-- Hidden fields for ID if present -->
+                {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-8 flex justify-end">
+            <button type="submit"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded focus:outline-none focus:shadow-outline">
+                Save Plan
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

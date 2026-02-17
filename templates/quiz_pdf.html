@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz - {{ assessment.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #4F46E5;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #4F46E5;
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #666;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            background: #4F46E5;
+            color: white;
+            padding: 10px 15px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .question {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #F9FAFB;
+            border-left: 4px solid #4F46E5;
+            border-radius: 4px;
+        }
+
+        .question-text {
+            font-weight: bold;
+            color: #111;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .option {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .correct {
+            background: #D1FAE5;
+            border-color: #10B981;
+            font-weight: bold;
+            color: #065F46;
+        }
+
+        .matching-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .matching-item {
+            padding: 12px;
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+        }
+
+        .term {
+            font-weight: bold;
+            color: #4F46E5;
+        }
+
+        .tf-question {
+            display: flex;
+            justify-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+
+        .tf-answer {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .tf-true {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .tf-false {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .no-print {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .print-btn {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .print-btn:hover {
+            background: #4338CA;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>{{ assessment.title }}</h1>
+        <p><strong>Module:</strong> {{ module.module_code }} - {{ module.module_name }}</p>
+        <p><strong>Type:</strong> {{ assessment.get_assessment_type_display }} | <strong>Total Marks:</strong> {{
+            assessment.total_marks }}</p>
+    </div>
+
+    <div class="no-print">
+        <button class="print-btn" onclick="window.print()">🖨️ Print/Save as PDF</button>
+    </div>
+
+    <!-- beautify ignore:start -->
+    {% if quiz_data.mcq %}<div class="section"><div class="section-title">Multiple Choice Questions</div>{% for q in quiz_data.mcq %}<div class="question"><div class="question-text">{{forloop.counter}}. {{q.question}}</div>{% for opt in q.options %}<div class="option {% if opt == q.answer %}correct{% endif %}">{{forloop.counter}}. {{opt}}{% if opt == q.answer %} ✓{% endif %}</div>{% endfor %}</div>{% endfor %}</div>{% endif %}{% if quiz_data.true_false %}<div class="section"><div class="section-title">True / False Questions</div>{% for q in quiz_data.true_false %}<div class="tf-question"><span>{{forloop.counter}}. {{q.question}}</span><span class="tf-answer {% if q.answer == 'True' %}tf-true{% else %}tf-false{% endif %}">{{q.answer}}</span></div>{% endfor %}</div>{% endif %}{% if quiz_data.matching %}<div class="section"><div class="section-title">Matching Questions</div><div class="matching-grid"><div class="matching-item" style="font-weight:bold;background:#F3F4F6;">Term</div><div class="matching-item" style="font-weight:bold;background:#F3F4F6;">Definition</div>{% for q in quiz_data.matching %}<div class="matching-item term">{{q.term}}</div><div class="matching-item">{{q.definition}}</div>{% endfor %}</div></div>{% endif %}
+    <!-- beautify ignore:end -->
+
+    <div class="no-print" style="margin-top: 40px; text-align: center; color: #666; font-size: 12px;">
+        <p>Generated by AMS Portal AI Quiz Generator</p>
+    </div>
+</body>
+
+</html>

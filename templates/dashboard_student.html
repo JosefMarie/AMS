@@ -1,0 +1,48 @@
+{% extends 'base.html' %}{% block content %}<div class="animate-fadeIn">
+    <!-- beautify ignore:start -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-indigo-100">{{ ufirst }}</div>
+            <div>
+                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">Hello, {{ user.username }}</h1>
+                <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Student ID: {{ sid }}</p>
+            </div>
+        </div>
+        <div class="flex gap-3"><a href="{% url 'student_report' user.id %}" class="px-5 py-2.5 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm text-gray-700 font-bold hover:bg-white transition-all text-sm">View My Report 📊</a></div>
+    </div>
+    <!-- beautify ignore:end -->
+    <div class="grid grid-cols-1 gap-8">
+        <section class="glass-card overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-100 bg-white/50 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Academic Progress</h3><span
+                    class="text-xs font-bold text-indigo-600 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 uppercase tracking-tighter">Live
+                    Updates</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50/50">
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Module /
+                                Assessment</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Date</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
+                                Score</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">
+                                Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        <!-- beautify ignore:start -->
+                {% for m in marks %}<tr class="hover:bg-white/80 transition-all group">
+                    <td class="px-8 py-5"><p class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{{ m.assessment.title }}</p><p class="text-[10px] text-gray-400 font-medium uppercase mt-1">{{ m.m_name }}</p></td>
+                    <td class="px-8 py-5 text-sm text-gray-500 font-medium">{{ m.date_recorded|date:"M d, Y" }}</td>
+                    <td class="px-8 py-5 text-center"><div class="inline-flex items-baseline gap-1"><span class="text-base font-black text-gray-900">{{ m.score }}</span><span class="text-xs text-gray-400 font-bold">/ {{ m.m_max }}</span></div></td>
+                    <td class="px-8 py-5 text-right"><span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg {{ m.status_class }}">{{ m.status_label }}</span></td>
+                </tr>{% empty %}<tr><td colspan="4" class="px-8 py-16 text-center text-gray-400 font-bold">No academic records found yet.</td></tr>{% endfor %}
+                <!-- beautify ignore:end -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>{% endblock %}

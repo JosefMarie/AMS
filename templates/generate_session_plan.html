@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="flex flex-col md:flex-row items-center gap-6 mb-12 animate-fadeIn text-center md:text-left">
+        <div
+            class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 mx-auto md:mx-0">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        </div>
+        <div>
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">AI Session Plan Generator</h1>
+            <p class="text-gray-500 font-medium">Create "Gold Standard" Rwandan TVET plans in professional seconds.</p>
+        </div>
+    </div>
+
+    <form method="post" id="genForm" class="space-y-10 animate-fadeIn" style="animation-delay: 0.1s;">
+        {% csrf_token %}
+
+        <!-- Course Context Section -->
+        <section class="glass-card overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-100 bg-white/50">
+                <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Course Context
+                </h2>
+            </div>
+
+            <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8 bg-white/30">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Trainer
+                        Name</label>
+                    <input type="text" name="trainer_name" placeholder="Full Name"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Academic
+                        Year</label>
+                    <input type="text" name="academic_year" required placeholder="e.g., 2025/2026" value="2025/2026"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label
+                        class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Term</label>
+                    <input type="text" name="term" required placeholder="e.g., Term 1" value="Term 1"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label
+                        class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Weeks</label>
+                    <input type="text" name="weeks" required placeholder="e.g., Week 4" value="1"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label
+                        class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Sector</label>
+                    <input type="text" name="sector" required placeholder="e.g., Information Technology"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label
+                        class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Trade</label>
+                    <input type="text" name="trade" required placeholder="e.g., Software Development"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label
+                        class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Level</label>
+                    <input type="text" name="level" required placeholder="e.g., Level 4"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label
+                        class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Class</label>
+                    <input type="text" name="class_name" required placeholder="e.g., SOD 2024"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">No.
+                        Trainees</label>
+                    <input type="number" name="num_students" required placeholder="e.g., 25"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Module
+                        Name</label>
+                    <input type="text" name="module_name" required placeholder="e.g., Database Management"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Duration
+                        (min)</label>
+                    <input type="text" name="duration" required placeholder="e.g., 120"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                </div>
+            </div>
+
+            <div class="px-8 pb-8 space-y-6 bg-white/30">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Learning
+                        Outcome</label>
+                    <textarea name="learning_outcome" rows="2" required
+                        placeholder="What should students be able to do at the end?"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-2">
+                        <label
+                            class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Performance
+                            Criteria (Optional)</label>
+                        <textarea name="performance_criteria" rows="2"
+                            placeholder="Specific criteria from RTB curriculum..."
+                            class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium"></textarea>
+                    </div>
+                    <div class="space-y-2">
+                        <label
+                            class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Pre-requisite
+                            Knowledge (Optional)</label>
+                        <textarea name="pre_requisite_knowledge" rows="2"
+                            placeholder="Required prior knowledge/competency..."
+                            class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium"></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Generation Details Section -->
+        <section class="glass-card p-8 space-y-8 bg-white/40">
+            <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Generation Parameters
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Template
+                        Methodology</label>
+                    <select name="template_type"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-700">
+                        <option value="THEORY">Theory (CBC / Jigsaw Model)</option>
+                        <option value="PRACTICAL">Practical Session (CBT / Demo-Practice-Apply)</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label
+                        class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Facilitation
+                        Technique</label>
+                    <select name="facilitation_technique"
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-gray-700">
+                        <optgroup label="Cooperative Learning">
+                            <option value="Brainstorming">Brainstorming</option>
+                            <option value="Think-Pair-Square-Share">Think-Pair-Square-Share</option>
+                            <option value="Group Discussion">Group Discussion</option>
+                            <option value="Jig Saw">Jig Saw</option>
+                        </optgroup>
+                        <option value="Experiential Learning">Experiential Learning</option>
+                        <option value="Facilitator Guided">Facilitator Guided</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="space-y-6 pt-4 border-t border-gray-100">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Specific
+                        Topic & Variable Details</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" name="range_text" required placeholder="Topic: e.g. Data Normalization"
+                            class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-extrabold text-gray-900 placeholder:font-medium">
+                        <input type="text" name="range_details" placeholder="Range: e.g. 1NF, 2NF, 3NF"
+                            class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-gray-900">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Indicative
+                        Content</label>
+                    <textarea name="indicative_content" rows="3" required
+                        placeholder="Specific content to be covered within the topic..."
+                        class="w-full px-4 py-3 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium"></textarea>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Syllabus
+                        Extract / Content Source</label>
+                    <textarea name="syllabus_text" rows="6" required
+                        placeholder="Paste the relevant section of your syllabus here..."
+                        class="w-full px-4 py-4 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium"></textarea>
+                    <p class="text-[10px] text-gray-400 font-bold tracking-tight px-1 uppercase">Standard: AI uses
+                        extraction to refine pedagogical steps</p>
+                </div>
+            </div>
+
+            <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <a href="{% url 'dashboard' %}"
+                    class="text-sm font-bold text-gray-400 hover:text-gray-600 transition-all">Cancel Request</a>
+                <button type="submit" id="genBtn" onclick="startGen()"
+                    class="btn-premium px-12 py-5 text-lg flex items-center justify-center gap-3">
+                    <span>Generate Session Plan</span>
+                    <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </button>
+            </div>
+        </section>
+    </form>
+</div>
+
+<!-- Premium Loading Overlay -->
+<div id="loading"
+    class="fixed inset-0 bg-white/80 backdrop-blur-xl z-[200] flex flex-col items-center justify-center hidden">
+    <div class="relative w-24 h-24 mb-6">
+        <div class="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+        <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+    </div>
+    <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-2">AI is Crafting Your Plan</h2>
+    <p class="text-gray-500 font-bold animate-pulse">Aligning with RTB/NESA Standards...</p>
+</div>
+
+<script>
+    function startGen() {
+        document.getElementById('genForm').classList.add('opacity-50', 'pointer-events-none');
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('genBtn').innerHTML = '<span>Processing...</span>';
+    }
+</script>
+{% endblock %}

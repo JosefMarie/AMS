@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="animate-fadeIn max-w-5xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">AI Quiz Generator</h1>
+        <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">AI-powered assessment generation from
+            syllabus content</p>
+    </div>
+
+    <div class="glass-card p-8 mb-8">
+        <form method="post">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="module" class="block text-sm font-bold text-gray-700 mb-2">Module / Course *</label>
+                    <select id="module" name="module_id" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                        <option value="">Select a module...</option>
+                        <!-- beautify ignore:start -->
+                        {% for m in modules %}<option value="{{m.id}}">{{m.code}} - {{m.name}}</option>{% endfor %}
+                        <!-- beautify ignore:end -->
+                    </select>
+                </div>
+
+                <div>
+                    <label for="quiz_type" class="block text-sm font-bold text-gray-700 mb-2">Quiz Type *</label>
+                    <select id="quiz_type" name="quiz_type" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                        <option value="">Select type...</option>
+                        <option value="FA">Formative Assessment (FA)</option>
+                        <option value="SA">Summative Assessment (SA)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="duration" class="block text-sm font-bold text-gray-700 mb-2">Quiz Duration (minutes)
+                    *</label>
+                <input type="number" id="duration" name="duration" min="5" max="180" required placeholder="e.g., 30"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-700 mb-3">Number of Questions per Type *</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="num_mcq" class="block text-xs font-medium text-gray-600 mb-1">Multiple
+                            Choice</label>
+                        <input type="number" id="num_mcq" name="num_mcq" min="0" max="50" value="10" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                    </div>
+                    <div>
+                        <label for="num_tf" class="block text-xs font-medium text-gray-600 mb-1">True / False</label>
+                        <input type="number" id="num_tf" name="num_tf" min="0" max="30" value="5" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                    </div>
+                    <div>
+                        <label for="num_matching" class="block text-xs font-medium text-gray-600 mb-1">Matching
+                            Pairs</label>
+                        <input type="number" id="num_matching" name="num_matching" min="0" max="20" value="5" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="syllabus_text" class="block text-sm font-bold text-gray-700 mb-2">Syllabus Content *</label>
+                <textarea id="syllabus_text" name="syllabus_text" rows="10" required
+                    placeholder="Paste detailed syllabus content here. The AI will analyze this text to generate contextually relevant questions..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">{{syllabus_text}}</textarea>
+                <p class="text-xs text-gray-500 mt-2 font-medium">💡 Tip: More detailed content = better quality
+                    questions. Include key concepts, definitions, and examples.</p>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="submit"
+                    class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Generate Quiz with AI
+                </button>
+                <!-- beautify ignore:start -->
+                {% if assessment_id %}<a href="{% url 'view_quiz_pdf' assessment_id %}" target="_blank" class="px-6 py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Download PDF</a>{% endif %}
+                <!-- beautify ignore:end -->
+            </div>
+        </form>
+    </div>
+
+    <!-- beautify ignore:start -->
+    {% if quiz_data %}<div class="space-y-6">{% if quiz_data.mcq %}<div class="glass-card overflow-hidden"><div class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white"><h3 class="text-xl font-bold">Multiple Choice Questions ({{quiz_data.mcq|length}})</h3></div><div class="p-6"><ul class="space-y-6">{% for q in quiz_data.mcq %}<li><p class="font-bold text-gray-900 mb-2">{{forloop.counter}}. {{q.question}}</p><ul class="ml-4 space-y-1">{% for opt in q.options %}<li class="flex items-center gap-2 text-sm"><span class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold">{{forloop.counter}}</span><span>{{opt}}</span>{% if opt == q.answer %}<span class="ml-2 px-2 py-0.5 rounded-md bg-green-50 text-green-600 text-xs font-bold">✓ Correct</span>{% endif %}</li>{% endfor %}</ul></li>{% endfor %}</ul></div></div>{% endif %}{% if quiz_data.true_false %}<div class="glass-card overflow-hidden"><div class="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white"><h3 class="text-xl font-bold">True / False Questions ({{quiz_data.true_false|length}})</h3></div><div class="p-6"><ul class="space-y-3">{% for q in quiz_data.true_false %}<li class="flex justify-between items-center border-b pb-3"><span class="font-medium text-gray-900">{{forloop.counter}}. {{q.question}}</span><span class="px-3 py-1 rounded-full font-bold text-sm {% if q.answer == 'True' %}bg-green-50 text-green-600{% else %}bg-red-50 text-red-600{% endif %}">{{q.answer}}</span></li>{% endfor %}</ul></div></div>{% endif %}{% if quiz_data.matching %}<div class="glass-card overflow-hidden"><div class="px-8 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 text-white"><h3 class="text-xl font-bold">Matching Questions ({{quiz_data.matching|length}} Pairs)</h3></div><div class="p-6"><div class="grid grid-cols-2 gap-4"><div class="font-bold text-gray-700 border-b pb-2">Term</div><div class="font-bold text-gray-700 border-b pb-2">Definition</div>{% for q in quiz_data.matching %}<div class="font-medium text-gray-900">{{forloop.counter}}. {{q.term}}</div><div class="text-gray-600">{{q.definition}}</div>{% endfor %}</div></div></div>{% endif %}</div>{% endif %}
+    <!-- beautify ignore:end -->
+</div>
+{% endblock %}
