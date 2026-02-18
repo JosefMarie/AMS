@@ -7,13 +7,14 @@
             <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Academy Management System</p>
         </div>
         <div class="flex gap-3">
-            <!-- <a href="{% url 'generate_session_plan' %}"
-                class="px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-all flex items-center gap-2">
-                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{% url 'generate_session_plan' %}"
+                class="px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-all flex items-center gap-2 group">
+                <svg class="w-5 h-5 text-indigo-600 group-hover:scale-110 transition-transform" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg> AI Generator
-            </a> -->
+            </a>
         </div>
     </div>
 
@@ -71,7 +72,7 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div class="lg:col-span-1 space-y-6">
+        <div class="lg:col-span-1 space-y-6 animate-slide-up" style="animation-delay: 0.1s;">
             <section class="glass-card p-8 bg-indigo-50/30 border-indigo-100">
                 <h3 class="text-xl font-bold text-gray-900 mb-6 font-extrabold italic">Academic Tools</h3>
                 <div class="space-y-4">
@@ -101,13 +102,13 @@
             </section>
         </div>
 
-        <div class="lg:col-span-3">
+        <div class="lg:col-span-3 animate-slide-up" style="animation-delay: 0.2s;">
             <section class="glass-card overflow-hidden">
                 <div class="px-8 py-6 border-b border-gray-100 bg-white/50">
                     <h3 class="text-xl font-bold text-gray-900 font-extrabold italic uppercase tracking-tighter">Recent
                         Session Plans</h3>
                 </div>
-                <div class="divide-y divide-gray-50">
+                <div class="divide-y divide-gray-50 animate-stagger-children">
                     <!-- beautify ignore:start -->
                     {% for s in my_sessions %}<div class="px-8 py-5 hover:bg-white/80 transition-all flex items-center justify-between group">
                         <div class="flex items-center gap-4">

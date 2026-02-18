@@ -31,6 +31,17 @@
                             Classes</a>
                         <a href="{% url 'create_assessment' %}"
                             class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 hover:bg-white hover:shadow-sm transition-all">Gradebook</a>
+
+                        <!-- AI Generator Button (Highlighted) -->
+                        <a href="{% url 'generate_session_plan' %}"
+                            class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg hover:shadow-indigo-200 hover:scale-105 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            AI Generator
+                        </a>
+
                         {% comment %}
                         <a href="{% url 'generate_quiz' %}"
                             class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 hover:bg-white hover:shadow-sm transition-all">AI

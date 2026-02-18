@@ -25,4 +25,8 @@ urlpatterns = [
     path('marks/delete/<int:mark_id>/', views.delete_mark_view, name='delete_mark'),
     path('session/delete/<int:session_id>/', views.delete_session_view, name='delete_session'),
     path('quiz/view/<int:assessment_id>/', views.view_quiz_pdf, name='view_quiz_pdf'),
+    path('class/<int:class_id>/print/', views.print_student_list_view, name='print_student_list'),
+    path('assessment/delete/<int:assessment_id>/', views.delete_assessment_view, name='delete_assessment'),
+    path('class/<int:class_id>/attendance/', views.manage_attendance_view, name='manage_attendance'),
+    path('class/<int:class_id>/attendance/delete/', views.delete_attendance_view, name='delete_attendance'),
 ]

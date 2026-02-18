@@ -331,7 +331,7 @@ def perform_attendance_view(request, class_id):
                     except CustomUser.DoesNotExist:
                         continue
             messages.success(request, f"Attendance saved for {date_str}.")
-            return redirect('dashboard')
+            return redirect('manage_attendance', class_id=class_id)
 
     # Load existing attendance
     attendance_records = Attendance.objects.filter(classroom=classroom, date=date_str)
@@ -793,3 +793,78 @@ def create_class_view(request):
             messages.error(request, "Class name is required.")
             
     return render(request, 'create_class.html')
+@login_required
+def print_student_list_view(request, class_id):
+    from .models import Classroom
+    import datetime
+    
+    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    students = classroom.students.all().select_related('user').order_by('user__last_name')
+    
+    html_string = render_to_string('pdf_student_list.html', {
+        'classroom': classroom,
+        'students': students,
+        'date': datetime.date.today().strftime("%B %d, %Y"),
+        'user': request.user
+    })
+
+    if HTML:
+        html = HTML(string=html_string)
+        pdf = html.write_pdf()
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{classroom.name}_Student_List.pdf"'
+        return response
+    return HttpResponse("PDF generator error", status=500)
+
+@login_required
+def delete_assessment_view(request, assessment_id):
+    from .models import Assessment
+    assessment = get_object_or_404(Assessment, id=assessment_id)
+    
+    # Verify teacher owns this assessment (via module -> classroom -> teacher)
+    if assessment.module.teacher != request.user:
+        messages.error(request, "You do not have permission to delete this assessment.")
+        return redirect('dashboard')
+    
+    class_id = assessment.module.classroom.id
+    title = assessment.title
+    assessment.delete()
+    messages.success(request, f"Assessment '{title}' deleted successfully.")
+    return redirect('manage_class', class_id=class_id)
+@login_required
+def manage_attendance_view(request, class_id):
+    from .models import Classroom, Attendance
+    from django.db.models import Count, Q, Max
+    
+    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    
+    # Get all distinct dates with attendance for this class
+    # Annotate with counts and latest time recorded
+    history = Attendance.objects.filter(classroom=classroom).values('date').annotate(
+        present_count=Count('id', filter=Q(status='PRESENT')),
+        absent_count=Count('id', filter=Q(status='ABSENT')),
+        late_count=Count('id', filter=Q(status='LATE')),
+        total_count=Count('id'),
+        latest_time=Max('time_recorded')
+    ).order_by('-date')
+    
+    return render(request, 'manage_attendance.html', {
+        'classroom': classroom,
+        'history': history
+    })
+
+@login_required
+def delete_attendance_view(request, class_id):
+    from .models import Classroom, Attendance
+    if request.method == 'POST':
+        date_str = request.POST.get('date')
+        classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+        
+        deleted_count, _ = Attendance.objects.filter(classroom=classroom, date=date_str).delete()
+        
+        if deleted_count > 0:
+            messages.success(request, f"Attendance records for {date_str} deleted successfully.")
+        else:
+            messages.warning(request, f"No records found to delete for {date_str}.")
+            
+    return redirect('manage_attendance', class_id=class_id)

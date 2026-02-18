@@ -11,7 +11,8 @@
         <div class="flex gap-3"><a href="{% url 'student_report' user.id %}" class="px-5 py-2.5 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm text-gray-700 font-bold hover:bg-white transition-all text-sm">View My Report 📊</a></div>
     </div>
     <!-- beautify ignore:end -->
-    <div class="grid grid-cols-1 gap-8">
+    <!-- beautify ignore:end -->
+    <div class="grid grid-cols-1 gap-8 animate-slide-up" style="animation-delay: 0.1s;">
         <section class="glass-card overflow-hidden">
             <div class="px-8 py-6 border-b border-gray-100 bg-white/50 flex justify-between items-center">
                 <h3 class="text-xl font-bold text-gray-900">Academic Progress</h3><span
@@ -31,7 +32,7 @@
                                 Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50">
+                    <tbody class="divide-y divide-gray-50 animate-stagger-children">
                         <!-- beautify ignore:start -->
                 {% for m in marks %}<tr class="hover:bg-white/80 transition-all group">
                     <td class="px-8 py-5"><p class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{{ m.assessment.title }}</p><p class="text-[10px] text-gray-400 font-medium uppercase mt-1">{{ m.m_name }}</p></td>

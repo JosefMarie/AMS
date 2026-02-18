@@ -167,6 +167,7 @@ class Attendance(models.Model):
     module = models.ForeignKey(Module, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendances')
     
     date = models.DateField(default=datetime.date.today)
+    time_recorded = models.TimeField(auto_now=True, null=True, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PRESENT)
     teacher = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, limit_choices_to={'role': CustomUser.Role.TEACHER}, related_name='teacher_attendance')
 

@@ -1,8 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="min-h-[70vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="glass-card w-full max-w-md p-10 animate-fadeIn overflow-hidden relative">
+<div class="min-h-[70vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <!-- Bubble Animation Background -->
+    <ul class="circles">
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+    </ul>
+
+    <div class="glass-card w-full max-w-md p-10 animate-fadeIn overflow-hidden relative z-10">
         <!-- Decoration -->
         <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500 rounded-full blur-3xl opacity-20 animate-float">
         </div>

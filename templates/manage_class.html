@@ -9,6 +9,14 @@
             </p>
         </div>
         <div class="flex gap-3">
+            <a href="{% url 'manage_attendance' classroom.id %}"
+                class="px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-all flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Attendance
+            </a>
             <a href="{% url 'add_student' classroom.id %}"
                 class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,9 +55,17 @@
     </div>
 
     <section class="glass-card overflow-hidden mb-12">
-        <div class="px-8 py-6 border-b border-gray-100 bg-white/50">
+        <div class="px-8 py-6 border-b border-gray-100 bg-white/50 flex justify-between items-center">
             <h3 class="text-xl font-bold text-gray-900 font-extrabold italic uppercase tracking-tighter">Student Roster
             </h3>
+            <a href="{% url 'print_student_list' classroom.id %}" target="_blank"
+                class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-xs uppercase tracking-wider flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Print List
+            </a>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left">
@@ -97,10 +113,29 @@
                             <h4 class="text-lg font-bold text-gray-900">{{ a.title }}</h4>
                             <p class="text-xs text-gray-500 font-bold mt-1">{{ a.module_name }} • {{ a.type }} • Total: {{ a.total_marks }} marks</p>
                         </div>
-                        <span class="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold">{{ a.marks_count }} student{{ a.marks_count|pluralize }}</span>
+                    <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold">{{ a.marks_count }} student{{ a.marks_count|pluralize }}</span>
+                            
+                            <!-- Toggle Collapse Button -->
+                            <button onclick="toggleAssessment('{{ a.id }}')" id="toggle-btn-{{ a.id }}" class="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all transform rotate-0" title="Expand/Collapse">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+
+                            <!-- Update Marks Button -->
+                            <a href="{% url 'enter_marks' a.id %}" class="p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all" title="Update Marks / Add New Students">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </a>
+                            <!-- Delete Assessment Button -->
+                            <form method="post" action="{% url 'delete_assessment' a.id %}" onsubmit="return confirm('WARNING: Are you sure you want to delete this ENTIRE assessment? All student marks associated with it will be permanently deleted.');">
+                                {% csrf_token %}
+                                <button type="submit" class="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-all" title="Delete Assessment">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
+                <div id="assessment-body-{{ a.id }}" class="overflow-x-auto hidden transition-all duration-300 ease-in-out">
                     <table class="w-full">
                         <thead><tr class="bg-gray-50/50 border-b border-gray-100"><th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Student</th><th class="px-6 py-3 text-center text-xs font-bold text-gray-400 uppercase">Score</th><th class="px-6 py-3 text-center text-xs font-bold text-gray-400 uppercase">Percentage</th><th class="px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase">Actions</th></tr></thead>
                         <tbody class="divide-y divide-gray-100">
@@ -146,6 +181,15 @@
                     <label for="editScore" class="block text-sm font-bold text-gray-700 mb-2">Score</label>
                     <input type="number" id="editScore" name="score" step="0.1" required
                         class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold">
+                    <p id="scoreWarning" class="text-red-500 text-xs font-bold mt-2 hidden">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Score cannot exceed total marks!
+                        </span>
+                    </p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Total Marks: <span id="editTotalMarks"
@@ -155,8 +199,8 @@
             <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3">
                 <button type="button" onclick="closeEditModal()"
                     class="px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all">Cancel</button>
-                <button type="submit"
-                    class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all">Save
+                <button type="submit" id="saveMarkBtn"
+                    class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">Save
                     Changes</button>
             </div>
         </form>
@@ -164,11 +208,18 @@
 </div>
 
 <script>
+    let currentTotal = 0;
+
     function editMark(markId, studentName, currentScore, totalMarks) {
         document.getElementById('editStudentName').textContent = studentName;
         document.getElementById('editScore').value = currentScore;
         document.getElementById('editTotalMarks').textContent = totalMarks;
         document.getElementById('editMarkForm').action = '/marks/edit/' + markId + '/';
+
+        // Validation Reset
+        currentTotal = totalMarks;
+        validateScore(currentScore);
+
         document.getElementById('editMarkModal').classList.remove('hidden');
     }
 
@@ -176,11 +227,48 @@
         document.getElementById('editMarkModal').classList.add('hidden');
     }
 
+    // Real-time Validation
+    const scoreInput = document.getElementById('editScore');
+    const warningText = document.getElementById('scoreWarning');
+    const saveBtn = document.getElementById('saveMarkBtn');
+
+    function validateScore(score) {
+        if (parseFloat(score) > currentTotal) {
+            warningText.classList.remove('hidden');
+            scoreInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            scoreInput.classList.remove('border-gray-300', 'focus:ring-indigo-500', 'focus:border-indigo-500');
+            saveBtn.disabled = true;
+        } else {
+            warningText.classList.add('hidden');
+            scoreInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            scoreInput.classList.add('border-gray-300', 'focus:ring-indigo-500', 'focus:border-indigo-500');
+            saveBtn.disabled = false;
+        }
+    }
+
+    scoreInput.addEventListener('input', function (e) {
+        validateScore(e.target.value);
+    });
+
     // Close modal on outside click
     document.getElementById('editMarkModal').addEventListener('click', function (e) {
         if (e.target === this) {
             closeEditModal();
         }
     });
+
+    // Toggle Assessment Body
+    function toggleAssessment(id) {
+        const body = document.getElementById('assessment-body-' + id);
+        const btn = document.getElementById('toggle-btn-' + id);
+
+        if (body.classList.contains('hidden')) {
+            body.classList.remove('hidden');
+            btn.classList.add('rotate-180');
+        } else {
+            body.classList.add('hidden');
+            btn.classList.remove('rotate-180');
+        }
+    }
 </script>
 {% endblock %}
