@@ -35,7 +35,8 @@ def dashboard(request):
         context['recent_sessions'] = recent_sessions
         return render(request, 'dashboard_admin.html', context)
     elif user.role == CustomUser.Role.TEACHER:
-        from .models import Classroom
+        from .models import Classroom, Attendance, StudentMark
+        from django.db.models import Avg
         sessions = SessionPlan.objects.filter(teacher=user).order_by('-created_at')[:5]
         for s in sessions:
             s.stype = s.template_type
@@ -52,6 +53,21 @@ def dashboard(request):
             total_students += c.scount
         context['my_classrooms'] = classrooms
         context['total_students'] = total_students
+
+        # Metrics Calculations
+        # 1. Avg Attendance
+        all_attendance = Attendance.objects.filter(classroom__teacher=user)
+        total_att = all_attendance.count()
+        present_att = all_attendance.filter(status__in=['PRESENT', 'LATE']).count()
+        context['avg_attendance'] = round((present_att / total_att * 100), 1) if total_att > 0 else 0
+
+        # 2. Avg Score
+        avg_score = StudentMark.objects.filter(assessment__module__teacher=user).aggregate(Avg('score'), Avg('total_marks'))
+        if avg_score['score__avg'] and avg_score['total_marks__avg']:
+            context['avg_score'] = round((avg_score['score__avg'] / avg_score['total_marks__avg'] * 100), 1)
+        else:
+            context['avg_score'] = 0
+
         return render(request, 'dashboard_teacher.html', context)
     elif user.role == CustomUser.Role.STUDENT:
         from .models import StudentMark
@@ -844,10 +860,9 @@ def manage_attendance_view(request, class_id):
         present_count=Count('id', filter=Q(status='PRESENT')),
         absent_count=Count('id', filter=Q(status='ABSENT')),
         late_count=Count('id', filter=Q(status='LATE')),
-        total_count=Count('id'),
-        latest_time=Max('time_recorded')
+        last_updated=Max('time_recorded')
     ).order_by('-date')
-    
+
     return render(request, 'manage_attendance.html', {
         'classroom': classroom,
         'history': history
@@ -856,15 +871,69 @@ def manage_attendance_view(request, class_id):
 @login_required
 def delete_attendance_view(request, class_id):
     from .models import Classroom, Attendance
-    if request.method == 'POST':
-        date_str = request.POST.get('date')
-        classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
-        
-        deleted_count, _ = Attendance.objects.filter(classroom=classroom, date=date_str).delete()
-        
-        if deleted_count > 0:
-            messages.success(request, f"Attendance records for {date_str} deleted successfully.")
-        else:
-            messages.warning(request, f"No records found to delete for {date_str}.")
-            
+    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    date_str = request.GET.get('date')
+    
+    if date_str:
+        Attendance.objects.filter(classroom=classroom, date=date_str).delete()
+        messages.success(request, f"Attendance records for {date_str} deleted.")
+    
     return redirect('manage_attendance', class_id=class_id)
+
+@login_required
+def edit_student_view(request, student_id):
+    from .models import CustomUser, StudentProfile
+    student = get_object_or_404(CustomUser, id=student_id, role=CustomUser.Role.STUDENT)
+    profile = get_object_or_404(StudentProfile, user=student)
+    
+    # Security: Ensure teacher owns this classroom
+    if profile.classroom.teacher != request.user:
+        messages.error(request, "You do not have permission to edit this student.")
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        username = request.POST.get('username')
+        sex = request.POST.get('sex')
+        
+        # Check if username is taken by someone else
+        if CustomUser.objects.filter(username=username).exclude(id=student.id).exists():
+            messages.error(request, f"Username '{username}' is already taken.")
+        else:
+            student.first_name = first_name
+            student.last_name = last_name
+            student.username = username
+            student.save()
+            
+            profile.sex = sex
+            profile.save()
+            
+            messages.success(request, f"Student '{student.get_full_name() or username}' updated successfully.")
+            return redirect('manage_class', class_id=profile.classroom.id)
+            
+    return render(request, 'edit_student.html', {
+        'student': student,
+        'profile': profile,
+        'classroom': profile.classroom
+    })
+
+@login_required
+def delete_student_view(request, student_id):
+    from .models import CustomUser, StudentProfile
+    student = get_object_or_404(CustomUser, id=student_id, role=CustomUser.Role.STUDENT)
+    profile = get_object_or_404(StudentProfile, user=student)
+    
+    # Security: Ensure teacher owns this classroom
+    if profile.classroom.teacher != request.user:
+        messages.error(request, "You do not have permission to delete this student.")
+        return redirect('dashboard')
+    
+    class_id = profile.classroom.id
+    student_name = student.get_full_name() or student.username
+    
+    # Delete student (this will cascade to Attendance and StudentMark)
+    student.delete()
+    
+    messages.success(request, f"Student '{student_name}' has been deleted from the classroom.")
+    return redirect('manage_class', class_id=class_id)

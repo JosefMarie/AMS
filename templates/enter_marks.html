@@ -62,14 +62,13 @@
     // Validation: Prevent entering value > total_marks
     document.querySelectorAll('input[type="number"]').forEach(input => {
         input.addEventListener('input', function () {
-            let max = {{ assessment.total_marks }
-        };
-        if (parseFloat(this.value) > max) {
-            this.setCustomValidity('Score cannot exceed ' + max);
-        } else {
-            this.setCustomValidity('');
-        }
-    });
+            let max = parseFloat('{{ assessment.total_marks }}');
+            if (parseFloat(this.value) > max) {
+                this.setCustomValidity('Score cannot exceed ' + max);
+            } else {
+                this.setCustomValidity('');
+            }
+        });
     });
 </script>
 {% endblock %}
