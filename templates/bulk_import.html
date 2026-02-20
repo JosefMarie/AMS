@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="animate-fadeIn max-w-4xl mx-auto">
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-4">Bulk Grade Import</h1>
+        <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Instantly update student profiles via CSV</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <!-- Upload Section -->
+        <div class="glass-card p-8">
+            <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Upload Spreadsheet
+            </h3>
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                <div class="relative group">
+                    <input type="file" name="csv_file" id="csv_file" class="hidden" accept=".csv" required
+                        onchange="updateFileName()">
+                    <label for="csv_file"
+                        class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-200 rounded-3xl cursor-pointer bg-gray-50/50 hover:bg-white hover:border-indigo-300 transition-all group-hover:shadow-lg group-hover:shadow-indigo-50">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-10 h-10 text-gray-300 group-hover:text-indigo-400 mb-3" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            <p class="text-sm text-gray-500 font-bold" id="fileName">Select CSV File</p>
+                            <p class="text-xs text-gray-400 mt-1 font-medium">Click to browse your computer</p>
+                        </div>
+                    </label>
+                </div>
+                <button type="submit"
+                    class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-3 group">
+                    Start Processing
+                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <!-- Instructions Section -->
+        <div class="glass-card p-8 bg-indigo-600 text-white border-0 shadow-2xl">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Template Guide
+            </h3>
+            <p class="text-indigo-100 text-sm font-medium mb-6 leading-relaxed">Your CSV file must include the following
+                headers exactly as shown:</p>
+
+            <div class="bg-black/10 rounded-2xl p-4 font-mono text-[10px] space-y-2 mb-8 border border-white/10">
+                <p class="text-indigo-200">Student ID, Module Code, Assessment, Score, Total</p>
+                <p class="opacity-50">LX-2026-1234, M01, Final Exam, 85, 100</p>
+                <p class="opacity-50">LX-2026-5678, M01, Midterm, 70, 100</p>
+            </div>
+
+            <ul class="space-y-4 text-xs font-bold uppercase tracking-widest">
+                <li class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-[10px]">1</span>
+                    Export your marks to CSV
+                </li>
+                <li class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-[10px]">2</span>
+                    Match headers with the guide
+                </li>
+                <li class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-[10px]">3</span>
+                    Upload & confirm updates
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateFileName() {
+        const input = document.getElementById('csv_file');
+        const fileName = document.getElementById('fileName');
+        fileName.textContent = input.files[0] ? input.files[0].name : 'Select CSV File';
+    }
+</script>
+{% endblock %}

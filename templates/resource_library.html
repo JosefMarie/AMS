@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-12 px-6 animate-fadeIn">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <div>
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">Resource Library</h1>
+            <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Your central hub for learning materials
+            </p>
+        </div>
+        {% if is_teacher %}
+        <a href="{% url 'manage_resources' %}" class="btn-premium flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Upload Material
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for resource in resources %}
+        <div class="glass-card p-6 bg-white/50 hover:shadow-xl transition-all group border border-white/40">
+            <div class="flex justify-between items-start mb-6">
+                <div
+                    class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                    {% if resource.file %}
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    {% else %}
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    {% endif %}
+                </div>
+                <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{{
+                    resource.module.module_code }}</span>
+            </div>
+
+            <h4 class="text-lg font-bold text-gray-900 mb-2 truncate">{{ resource.title }}</h4>
+            <p class="text-xs text-gray-400 font-bold uppercase mb-6">{{ resource.module.module_name }}</p>
+
+            <div class="flex items-center gap-3">
+                {% if resource.file %}
+                <a href="{{ resource.file.url }}" target="_blank"
+                    class="flex-1 py-3 bg-gray-50 text-gray-700 rounded-xl text-center text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-gray-100">
+                    Download PDF
+                </a>
+                {% endif %}
+                {% if resource.video_url %}
+                <a href="{{ resource.video_url }}" target="_blank"
+                    class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl text-center text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all border border-red-100">
+                    Watch Video
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-24 text-center glass-card border-dashed border-2">
+            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            <h3 class="text-gray-400 font-bold uppercase tracking-widest text-lg">Your Library is empty</h3>
+            <p class="text-gray-400 text-sm mt-2">Wait for your trainers to upload learning materials for your modules.
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

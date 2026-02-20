@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-12 px-6 animate-fadeIn">
+    <!-- Header/Cover -->
+    <div class="relative mb-24">
+        <div
+            class="h-64 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-800 shadow-2xl relative overflow-hidden">
+            <div class="absolute inset-0 opacity-20"
+                style="background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.2) 1px, transparent 0); background-size: 24px 24px;">
+            </div>
+            <div class="absolute top-12 left-12">
+                <h1 class="text-5xl font-black text-white leading-none tracking-tighter">Student Portfolio</h1>
+                <p class="text-white/60 font-bold uppercase tracking-widest text-xs mt-3">Professional Academic Identity
+                </p>
+            </div>
+        </div>
+
+        <!-- Float Profile -->
+        <div class="absolute -bottom-16 left-12 flex items-end gap-8">
+            <div class="w-40 h-40 rounded-3xl border-8 border-white bg-white shadow-2xl overflow-hidden">
+                {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" class="w-full h-full object-cover">
+                {% else %}
+                <div
+                    class="w-full h-full bg-indigo-50 flex items-center justify-center text-5xl font-black text-indigo-200">
+                    {{ student.username|first|upper }}
+                </div>
+                {% endif %}
+            </div>
+            <!-- beautify ignore:start -->
+            <div class="mb-4">
+                <h2 class="text-3xl font-black text-gray-900 leading-none">{{ student.username }}</h2>
+                <p class="text-indigo-600 font-bold text-sm tracking-wide mt-2">{% if profile.student_id %}{{ profile.student_id }}{% else %}VERIFIED STUDENT{% endif %}</p>
+            </div>
+            <!-- beautify ignore:end -->
+        </div>
+
+        {% if request.user == student %}
+        <div class="absolute bottom-0 right-0 mb-4 mr-4">
+            <a href="{% url 'edit_profile' %}"
+                class="px-6 py-3 bg-white/20 backdrop-blur-md border border-white/40 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-white hover:text-indigo-600 transition-all shadow-xl">
+                Edit Portfolio
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <!-- Sidebar Info -->
+        <div class="lg:col-span-1 space-y-8">
+            <div class="glass-card p-8 bg-white/50 border border-white/40">
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">About Me</h3>
+                <p class="text-gray-600 leading-relaxed text-sm italic">
+                    {% if profile.bio %}
+                    "{{ profile.bio }}"
+                    {% else %}
+                    No bio provided yet. This student is on a journey of excellence!
+                    {% endif %}
+                </p>
+            </div>
+
+            <div
+                class="glass-card p-8 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 shadow-indigo-100/50">
+                <h3 class="text-xs font-black text-indigo-600 uppercase tracking-widest mb-6">Top Mastered Skills</h3>
+                <div class="space-y-4">
+                    {% for skill in top_skills %}
+                    <div
+                        class="flex items-center justify-between p-4 bg-white rounded-2xl border border-indigo-50 shadow-sm">
+                        <!-- beautify ignore:start -->
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black">{{ skill.assessment__module__module_code|first }}</div>
+                            <span class="text-xs font-black text-gray-900">{{ skill.assessment__module__module_name }}</span>
+                        </div>
+                        <span class="text-xs font-black text-indigo-600">{{ skill.best_score|floatformat:0 }}%</span>
+                    </div>
+                        <!-- beautify ignore:end -->
+                        {% empty %}
+                        <p class="text-xs text-gray-400 italic">Developing academic expertise...</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content (Reports/Journey Link) -->
+            <div class="lg:col-span-2 space-y-8">
+                <div class="glass-card p-8 bg-indigo-900 border-none text-white relative overflow-hidden group">
+                    <div
+                        class="absolute -right-12 -bottom-12 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000">
+                    </div>
+                    <div class="relative z-10 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-2xl font-black italic mb-2 tracking-tight">Academic Journey</h3>
+                            <p class="text-white/60 text-sm font-medium">Explore the full visual timeline of modules and
+                                performance.</p>
+                        </div>
+                        {% if request.user == student %}
+                        <a href="{% url 'learning_journey' %}"
+                            class="px-8 py-4 bg-white text-indigo-900 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.05] transition-transform shadow-2xl">
+                            View Graph
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="glass-card p-0 overflow-hidden">
+                    <div class="px-8 py-6 border-b border-gray-100 bg-white/50 flex justify-between items-center">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest">Digital Badges & Verified
+                            Credentials</h3>
+                    </div>
+                    <div class="p-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div class="text-center group">
+                            <div
+                                class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-50 transition-colors">
+                                <svg class="w-8 h-8 text-gray-200 group-hover:text-indigo-200" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                            </div>
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Mastery ID</p>
+                        </div>
+                        <!-- Placeholders for future badges -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}

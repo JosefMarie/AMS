@@ -38,15 +38,15 @@ class StudentProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='student_profile')
     student_id = models.CharField(max_length=20, unique=True, blank=True)
     classroom = models.ForeignKey(Classroom, on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
-    level = models.CharField(max_length=50, blank=True) # made blank=True as classroom might define this
+    level = models.CharField(max_length=50, blank=True)
     sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')])
+    bio = models.TextField(blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
 
     def generate_student_id(self):
         # Logic: L{Level}-YEAR-RANDOM (e.g., L4-2026-4821)
-        # Try to deduce level from classroom name or default to 'Gen'
         lvl_code = "Gen"
         if self.classroom and "Level" in self.classroom.name:
-             # Extract "Level X" -> "LX"
              parts = self.classroom.name.split()
              for part in parts:
                  if part.isdigit():
@@ -60,13 +60,22 @@ class StudentProfile(models.Model):
     def save(self, *args, **kwargs):
         if not self.student_id:
             self.student_id = self.generate_student_id()
-            # Ensure uniqueness
             while StudentProfile.objects.filter(student_id=self.student_id).exists():
                  self.student_id = self.generate_student_id()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.user.username} ({self.student_id})"
+
+class Resource(models.Model):
+    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='resources')
+    title = models.CharField(max_length=200)
+    file = models.FileField(upload_to='resources/', blank=True, null=True)
+    video_url = models.URLField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.module.module_code})"
 
 class SessionPlan(models.Model):
     class TemplateType(models.TextChoices):
@@ -174,5 +183,61 @@ class Attendance(models.Model):
     class Meta:
         unique_together = ('student', 'date')
 
+class Notification(models.Model):
+    class NotificationType(models.TextChoices):
+        INFO = 'info', _('Info')
+        SUCCESS = 'success', _('Success')
+        WARNING = 'warning', _('Warning')
+        ERROR = 'error', _('Error')
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='notifications')
+    message = models.TextField()
+    notification_type = models.CharField(max_length=10, choices=NotificationType.choices, default=NotificationType.INFO)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"{self.student.username} - {self.date} - {self.status}"
+        return f"Notification for {self.user.username}: {self.message[:20]}"
+
+class SystemSetting(models.Model):
+    site_name = models.CharField(max_length=100, default="AMS PORTAL")
+    site_logo = models.ImageField(upload_to='branding/', null=True, blank=True)
+    enable_ai_quizzer = models.BooleanField(default=True)
+    allow_public_registration = models.BooleanField(default=True)
+    primary_color = models.CharField(max_length=20, default="#4f46e5")
+    
+    class Meta:
+        verbose_name = "System Setting"
+        verbose_name_plural = "System Settings"
+
+    def __str__(self):
+        return "Global System Settings"
+
+    @classmethod
+    def get_settings(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+class AuditLog(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=255)
+    details = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user} - {self.action} at {self.timestamp}"
+class Announcement(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='announcements')
+    teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': CustomUser.Role.TEACHER})
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.classroom.name}"
+
+    class Meta:
+        ordering = ['-created_at']

@@ -37,7 +37,7 @@ ActivityFormSet = inlineformset_factory(
     }
 )
 
-from .models import StudentMark, CustomUser, Assessment
+from .models import StudentMark, CustomUser, Assessment, StudentProfile
 
 class TeacherMarksForm(forms.ModelForm):
     # Field to create a new assessment title on the fly or select existing could be complex.
@@ -85,3 +85,77 @@ StudentMarkFormSet = forms.modelformset_factory(
     form=StudentMarkForm,
     extra=0,
 )
+
+class TrainerCreationForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Enter temporary password'}))
+    
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'first_name', 'last_name', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Username'}),
+            'first_name': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'First Name'}),
+            'last_name': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Last Name'}),
+            'email': forms.EmailInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Email Address'}),
+        }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password"])
+        user.role = CustomUser.Role.TEACHER
+        if commit:
+            user.save()
+        return user
+
+from .models import SystemSetting
+
+class SystemSettingForm(forms.ModelForm):
+    class Meta:
+        model = SystemSetting
+        fields = ['site_name', 'site_logo', 'enable_ai_quizzer', 'allow_public_registration', 'primary_color']
+        widgets = {
+            'site_name': forms.TextInput(attrs={'class': 'glass-input w-full', 'placeholder': 'Portal Name'}),
+            'primary_color': forms.TextInput(attrs={'type': 'color', 'class': 'h-10 w-20 rounded-lg cursor-pointer'}),
+            'enable_ai_quizzer': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500'}),
+            'allow_public_registration': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500'}),
+        }
+
+from .models import Announcement, Classroom
+
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = ['classroom', 'title', 'content']
+        widgets = {
+            'classroom': forms.Select(attrs={'class': 'glass-input w-full'}),
+            'title': forms.TextInput(attrs={'class': 'glass-input w-full', 'placeholder': 'Announcement Title'}),
+            'content': forms.Textarea(attrs={'class': 'glass-input w-full', 'rows': 4, 'placeholder': 'Write your message here...'}),
+        }
+
+class StudentProfileForm(forms.ModelForm):
+    class Meta:
+        model = StudentProfile
+        fields = ['bio', 'profile_picture']
+        widgets = {
+            'bio': forms.Textarea(attrs={'class': 'glass-input w-full', 'rows': 3, 'placeholder': 'Tell us about yourself...'}),
+            'profile_picture': forms.FileInput(attrs={'class': 'glass-input w-full'}),
+        }
+
+from .models import Resource
+
+class ResourceForm(forms.ModelForm):
+    class Meta:
+        model = Resource
+        fields = ['module', 'title', 'file', 'video_url']
+        widgets = {
+            'module': forms.Select(attrs={'class': 'glass-input w-full'}),
+            'title': forms.TextInput(attrs={'class': 'glass-input w-full', 'placeholder': 'Resource Title'}),
+            'file': forms.FileInput(attrs={'class': 'glass-input w-full'}),
+            'video_url': forms.URLInput(attrs={'class': 'glass-input w-full', 'placeholder': 'https://youtube.com/...'}),
+        }
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            from .models import Module
+            self.fields['module'].queryset = Module.objects.filter(teacher=user)

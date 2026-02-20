@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="animate-fadeIn max-w-4xl mx-auto py-12">
+    <div class="text-center mb-16">
+        <h1 class="text-5xl font-extrabold text-gray-900 tracking-tight leading-none mb-4">Privacy Policy</h1>
+        <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Last Updated: February 19, 2026</p>
+    </div>
+
+    <div class="glass-card p-12 space-y-12 leading-relaxed text-gray-700">
+        <section>
+            <h2 class="text-2xl font-black text-indigo-600 mb-4 italic italic uppercase tracking-tighter">1.
+                Introduction</h2>
+            <p>Welcome to the Academic Management System (AMS). We are committed to protecting your personal data and
+                your privacy. This policy explains how we collect, use, and safeguard the information generated within
+                our TVET training portal.</p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-black text-indigo-600 mb-4 italic italic uppercase tracking-tighter">2. Data We
+                Collect</h2>
+            <p>To provide high-quality educational tracking, we collect the following:</p>
+            <ul class="list-disc list-inside mt-4 space-y-2 ml-4">
+                <li><span class="font-bold text-gray-900">Personal Profiles:</span> Names, email addresses, and
+                    identification numbers.</li>
+                <li><span class="font-bold text-gray-900">Academic Records:</span> Attendance logs, assessment marks,
+                    and competency progress.</li>
+                <li><span class="font-bold text-gray-900">System Logs:</span> Login history and activity logs for
+                    security auditing.</li>
+                <li><span class="font-bold text-gray-900">Demographic Info:</span> Gender/Sex for institutional
+                    reporting purposes.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-black text-indigo-600 mb-4 italic italic uppercase tracking-tighter">3. Purpose of
+                Processing</h2>
+            <p>Your data is processed strictly for educational and administrative purposes:</p>
+            <ul class="list-disc list-inside mt-4 space-y-2 ml-4">
+                <li>Generating student transcripts and performance reports.</li>
+                <li>Ensuring compliance with attendance requirements.</li>
+                <li>Optimizing facilitation through AI-generated session plans.</li>
+                <li>Maintaining a secure environment for all users.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-black text-indigo-600 mb-4 italic italic uppercase tracking-tighter">4. Data Access
+                & Security</h2>
+            <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 flex gap-4">
+                <svg class="w-12 h-12 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <p class="text-sm font-medium text-indigo-900">AMS uses industry-standard encryption and access
+                    controls. Data is restricted based on user roles (Trainers see their classes; Students see only
+                    their personal records).</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-black text-indigo-600 mb-4 italic italic uppercase tracking-tighter">5. Contact Us
+            </h2>
+            <p>If you have any questions regarding your data or this policy, please contact our System Administrator.
+            </p>
+        </section>
+    </div>
+</div>
+{% endblock %}

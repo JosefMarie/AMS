@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-12 px-6 animate-fadeIn">
+    <div class="mb-12">
+        <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">My Learning Journey</h1>
+        <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Your visual roadmap to mastery</p>
+    </div>
+
+    <!-- Visual Journey Timeline -->
+    <div class="relative py-12">
+        <!-- Connecting Line -->
+        <div class="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-100 -translate-x-1/2 hidden md:block"></div>
+
+        <div class="space-y-24 relative z-10">
+            {% for item in journey %}
+            <div
+                class="flex flex-col md:flex-row items-center gap-8 md:gap-0 {% if forloop.counter|divisibleby:2 %}md:flex-row-reverse{% endif %}">
+                <!-- Content Card -->
+                <div class="w-full md:w-5/12">
+                    <div
+                        class="glass-card p-8 bg-white/60 hover:shadow-2xl transition-all border border-white/40 group relative overflow-hidden">
+                        {% if item.status == 'Mastered' %}
+                        <div class="absolute top-0 right-0 p-4">
+                            <span
+                                class="bg-emerald-500 text-white rounded-full p-1 border-4 border-white shadow-lg flex">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xs shadow-lg transition-transform group-hover:scale-110
+                                {% if item.status == 'Mastered' %} bg-emerald-600 text-white
+                                {% elif item.status == 'In Progress' %} bg-indigo-600 text-white
+                                {% else %} bg-gray-200 text-gray-400
+                                {% endif %}">
+                                {{ item.module.module_code }}
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-black text-gray-900 leading-tight">{{ item.module.module_name }}
+                                </h4>
+                                <span class="text-[10px] font-bold uppercase tracking-widest 
+                                    {% if item.status == 'Mastered' %} text-emerald-500
+                                    {% elif item.status == 'In Progress' %} text-indigo-500
+                                    {% else %} text-gray-400
+                                    {% endif %}">
+                                    {{ item.status }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if item.status != 'Locked' %}
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-end">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Current
+                                    Mastery</span>
+                                <span class="text-sm font-black text-gray-900">{{ item.score|floatformat:1 }}%</span>
+                            </div>
+                            <div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full transition-all duration-1000 {% if item.status == 'Mastered' %}bg-emerald-500{% else %}bg-indigo-500{% endif %}"
+                                    style="width: {{ item.score|floatformat:0|default:0 }}%;">
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="py-4 border-2 border-dashed border-gray-100 rounded-2xl text-center">
+                            <p class="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">Curriculum
+                                Module Locked</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Timeline Node -->
+                <div class="relative flex items-center justify-center w-full md:w-2/12">
+                    <div class="w-6 h-6 rounded-full border-4 border-white shadow-lg transition-transform hover:scale-150 z-20
+                        {% if item.status == 'Mastered' %} bg-emerald-500
+                        {% elif item.status == 'In Progress' %} bg-indigo-500
+                        {% else %} bg-gray-200
+                        {% endif %}">
+                    </div>
+                    <!-- Glow effect for active modules -->
+                    {% if item.status == 'In Progress' %}
+                    <div class="absolute w-12 h-12 bg-indigo-500/20 rounded-full animate-ping z-10"></div>
+                    {% endif %}
+                </div>
+
+                <!-- Placeholder for spacing -->
+                <div class="hidden md:block md:w-5/12"></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

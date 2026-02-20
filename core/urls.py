@@ -31,4 +31,23 @@ urlpatterns = [
     path('class/<int:class_id>/attendance/delete/', views.delete_attendance_view, name='delete_attendance'),
     path('student/edit/<int:student_id>/', views.edit_student_view, name='edit_student_entry'),
     path('student/delete/<int:student_id>/', views.delete_student_view, name='delete_student_entry'),
+    path('trainer/create/', views.create_teacher_view, name='create_trainer'),
+    path('privacy/', views.privacy_policy_view, name='privacy_policy'),
+    path('terms/', views.terms_of_service_view, name='terms_of_service'),
+    path('change-password/', views.change_password_view, name='change_password'),
+    path('trainer/edit/<int:user_id>/', views.edit_trainer_view, name='edit_trainer'),
+    path('trainer/delete/<int:user_id>/', views.delete_trainer_view, name='delete_trainer'),
+    path('admin-settings/', views.admin_settings, name='admin_settings'),
+    path('security-logs/', views.security_logs, name='security_logs'),
+    path('broadcasts/', views.broadcast_view, name='broadcasts'),
+    path('gradebook/bulk-import/', views.bulk_grade_import, name='bulk_grade_import'),
+    path('gradebook/<int:class_id>/', views.interactive_gradebook, name='interactive_gradebook'),
+    
+    # Student Success
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('portfolio/', views.portfolio_view, name='my_portfolio'),
+    path('portfolio/<str:username>/', views.portfolio_view, name='portfolio_view'),
+    path('resources/', views.resource_library, name='resource_library'),
+    path('resources/manage/', views.manage_resources, name='manage_resources'),
+    path('journey/', views.learning_journey, name='learning_journey'),
 ]
