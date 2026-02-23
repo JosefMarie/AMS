@@ -1,0 +1,8 @@
+kind: "AppHostingYaml"
+version: "v1beta"
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+scripts:
+  build: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+  run: "gunicorn ams_project.wsgi"
