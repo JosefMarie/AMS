@@ -79,11 +79,11 @@ WSGI_APPLICATION = 'ams_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'neondb',
-        'USER': 'neondb_owner',
-        'PASSWORD': 'npg_nbhTHg7Zv6YF',
-        'HOST': 'ep-winter-butterfly-aic6xaao-pooler.c-4.us-east-1.aws.neon.tech',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'neondb'),
+        'USER': os.environ.get('DB_USER', 'neondb_owner'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'npg_nbhTHg7Zv6YF'),
+        'HOST': os.environ.get('DB_HOST', 'ep-winter-butterfly-aic6xaao-pooler.c-4.us-east-1.aws.neon.tech'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
