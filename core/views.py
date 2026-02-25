@@ -1000,7 +1000,7 @@ def manage_attendance_view(request, class_id):
 def delete_attendance_view(request, class_id):
     from .models import Classroom, Attendance
     classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
-    date_str = request.GET.get('date')
+    date_str = request.POST.get('date') or request.GET.get('date')
     
     if date_str:
         Attendance.objects.filter(classroom=classroom, date=date_str).delete()
