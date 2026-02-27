@@ -59,7 +59,7 @@ def generate_quiz_from_text(text):
 def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', **kwargs):
     """
     Simulates AI Session Plan Generation based on syllabus and range.
-    Now follows the detailed 'Delivering' template logic.
+    Objectives and Development content are now derived directly from analyzing the syllabus text.
     """
     topic = range_text or kwargs.get('topic', 'General Topic')
     technique = kwargs.get('facilitation_technique', 'Brainstorming')
@@ -69,8 +69,18 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
     duration_match = re.search(r'\d+', duration_str)
     total_minutes = int(duration_match.group()) if duration_match else 60
 
+    # Syllabus Analysis Logic (Simulating AI extraction)
+    # Split syllabus into lines and filter for content-rich lines (length > 15)
+    syllabus_lines = [l.strip() for l in syllabus_text.split('\n') if len(l.strip()) > 15]
+    
+    # Extract Objectives from syllabus (first 3 useful lines)
+    extracted_objectives = syllabus_lines[:3] if syllabus_lines else ["Understand the core concepts of " + topic]
+    
+    # Extract Development Content (lines after the first 3 or specific keywords)
+    dev_content_pool = syllabus_lines[3:8] if len(syllabus_lines) > 3 else syllabus_lines
+    dev_summary = " ".join(dev_content_pool[:2]) if dev_content_pool else topic
+
     # pedagogical timing distribution
-    # Intro (~10%), Development (~60%), Conclusion (Summary/Assess/Eval ~30%)
     intro_time = max(10, int(total_minutes * 0.10))
     concl_total = max(20, int(total_minutes * 0.30))
     dev_time = total_minutes - intro_time - concl_total
@@ -88,7 +98,7 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
         f"3. Involves learners in setting or reviewing ground rules for engagement.\n"
         f"4. Asks curiosity-piquing questions about what they remember from the last session related to {topic}.\n"
         f"5. Introduces the new topic: '{topic}' with a compelling hook.\n"
-        f"6. Involves learners in reading and explaining the session objectives to ensure ownership."
+        f"6. Involves learners in reading and explaining the session objectives: {', '.join(extracted_objectives[:2])}."
     )
     intro_learner = (
         "1. Respond to the greetings.\n"
@@ -106,12 +116,11 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
     })
 
     if template_type.upper() == 'PRACTICAL':
-        # 2. Practical Development - Demo - Practice - Apply
-        # Step 1: Preparation & Safety
+        # 2. Practical Development
         prep_trainer = (
             f"1. Briefs learners on Health, Safety, and Environment (HSE) protocols for {topic}.\n"
             f"2. Inspects tools, equipment, and Personal Protective Equipment (PPE) for readiness.\n"
-            f"3. Explains the practical task and the required performance criteria."
+            f"3. Explains the practical task: {dev_summary}."
         )
         prep_learner = (
             "1. Put on required PPE and verify tool safety.\n"
@@ -125,9 +134,8 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
             "time": f"{int(dev_time * 0.15)} min"
         })
 
-        # Step 2: Demonstration
         demo_trainer = (
-            f"1. Demonstrates the step-by-step procedure of {topic} clearly and slowly.\n"
+            f"1. Demonstrates the step-by-step procedure of {topic} focusing on: {dev_summary}.\n"
             f"2. Explains the 'Why' behind each step to ensure technical understanding.\n"
             f"3. Encourages learners to ask questions during the demonstration."
         )
@@ -143,9 +151,8 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
             "time": f"{int(dev_time * 0.25)} min"
         })
 
-        # Step 3: Guided Practice
         guided_trainer = (
-            f"1. Supervises learners as they begin the practical task of {topic}.\n"
+            f"1. Supervises learners as they begin the practical task: {dev_summary}.\n"
             f"2. Provides immediate corrective feedback and guidance.\n"
             f"3. Ensures all safety protocols are strictly followed during practice."
         )
@@ -161,10 +168,9 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
             "time": f"{int(dev_time * 0.35)} min"
         })
 
-        # Step 4: Independent Practice
         indep_trainer = (
-            f"1. Monitors learners from a distance as they work independently.\n"
-            f"2. Evaluates individual performance against the criteria.\n"
+            f"1. Monitors learners as they work independently on {topic}.\n"
+            f"2. Evaluates individual performance against the criteria: {dev_summary}.\n"
             f"3. Manages time and prepares for session conclusion."
         )
         indep_learner = (
@@ -179,14 +185,12 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
             "time": f"{int(dev_time * 0.25)} min"
         })
     else:
-        # 2. Theory Development - Structured Steps 1, 2, 3
-        # Step 1: Forming Groups
+        # 2. Theory Development
         s1_trainer = (
-            f"Is forming groups. Trainer's activity: Involves the learners by giving instruction on how the groups will be "
-            f"done and formed like involving the learner by counting 1 up to 4 (depending on class size). "
-            f"Asks learners to name their group and join their respective group so the students with the same number will be in one group."
+            f"Is forming groups and distributing content from the syllabus regarding: {dev_summary}. "
+            f"Gives instruction on how the groups will be formed (e.g., counting 1-4)."
         )
-        s1_learner = "Forming the group. Name their group, participating in forming groups by counting and joining peers with the same number."
+        s1_learner = "Forming the group. Participating in forming groups by counting and joining peers with the same number."
         activities.append({
             "step_name": "Development Step 1: Forming Groups",
             "trainer": s1_trainer,
@@ -194,18 +198,15 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
             "time": f"{int(dev_time * 0.15)} min"
         })
 
-        # Step 2: Expert/Task Discussion
         s2_trainer = (
-            "- Distributing the task sheets to groups.\n"
-            "- Explaining the instruction regarding the tasks.\n"
-            "- Monitors the group discussion and reminds them to use their time accordingly.\n"
-            "- Declares the end of discussion."
+            f"- Distributing task sheets focused on: {dev_summary}.\n"
+            "- Explaining the instructions based on syllabus module content.\n"
+            "- Monitors the group discussion and reminds them to use their time accordingly."
         )
         s2_learner = (
             "- Receiving the task.\n"
-            "- Learner can ask for clarification if there is any and start discussion.\n"
-            "- Explore deeply the task sheet and indicative content.\n"
-            "- End the discussion."
+            "- Learner can ask for clarification and start discussion.\n"
+            f"- Explore deeply the task sheet and extracted content: {dev_summary}."
         )
         activities.append({
             "step_name": f"Development Step 2: {technique} / Expert Group Discussion",
@@ -214,16 +215,13 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
             "time": f"{int(dev_time * 0.50)} min"
         })
 
-        # Step 3: Discussion and Sharing groups
         s3_trainer = (
-            "- Ask learners to share what they got from their groups.\n"
-            "- Monitor group discussion and announce the time for each member/group.\n"
-            "- Declare the end of group discussion and tell learners to go back to their respective seats."
+            f"- Ask learners to share what they got from the syllabus content: {dev_summary}.\n"
+            "- Monitor group discussion and announce the time for each member/group."
         )
         s3_learner = (
-            "- Each learner starts to explain to others what he or she learned in his or her group.\n"
-            "- Continue their discussion and ask for clarification if any.\n"
-            "- End of discussion and go back to their respective seats."
+            "- Each learner starts to explain to others what he or she learned from the extracted syllabus content.\n"
+            "- Continue their discussion and ask for clarification if any."
         )
         activities.append({
             "step_name": "Development Step 3: Discussion and Sharing groups",
@@ -232,116 +230,76 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
             "time": f"{int(dev_time * 0.35)} min"
         })
 
-    # 3. Conclusion (Summary, Assessment, Evaluation)
-    # Conclusion (Summary, Assessment, Evaluation)
+    # 3. Conclusion
     activities.append({
         "step_name": "Summary", 
-        "trainer": "The trainer involves learners in session summary by asking some questions related to the objectives of the session.", 
-        "learner": "Learners participate in session summary by answering the trainer’s questions related to the objectives of the session.", 
+        "trainer": "The trainer involves learners in session summary by asking questions related to the syllabus content extracted.", 
+        "learner": "Learners participate in session summary by answering the trainer’s questions.", 
         "time": f"{summary_time} min"
     })
 
     activities.append({
         "step_name": "Assessment/Assignment", 
-        "trainer": "Trainer provides the instructions about the assessment, clarifes doubts, and declares the end of assessment, asking learners to submit.", 
-        "learner": "Learner asks for clarification if any and starts the assessment. Submit finally the quiz sheets.", 
+        "trainer": f"Trainer provides assessment based on: {dev_summary}.", 
+        "learner": "Learner clarifies doubts and starts the assessment.", 
         "time": f"{assess_time} min"
     })
 
     activities.append({
         "step_name": "Evaluation", 
-        "trainer": "The trainer involves learners in evaluating the session by asking them how the session was conducted. Announces next topic and closes session.", 
-        "learner": "Learner participates in evaluating the session by responding to questions and taking attention to the next session.", 
+        "trainer": "Trainer involves learners in evaluating the session. Closes session.", 
+        "learner": "Learner responds to questions and prepares for the next session.", 
         "time": f"{eval_time} min"
     })
 
-    # Juicy Resources Generation
+    # Resources, HSE, Cross-cutting
     base_resources = ["Attendance list", "Projector", "Computer", "Blackboard", "Chalk", "Flip chart", "Marker pen"]
-    topic_map = {
-        "Python": ["IDEs", "Notebooks", "Python Documentation"],
-        "Web": ["Browsers", "VS Code", "HTML/CSS Reference"],
-        "Data": ["SQL Workbench", "Database Schema", "Sample Data"],
-        "Mechanic": ["Wrench", "Bolts", "Safety Goggles"],
-        "Welding": ["Welding Machine", "Electrodes", "Mask", "Gloves"]
-    }
-    juicy = []
-    for k, v in topic_map.items():
-        if k.lower() in topic.lower():
-            juicy.extend(v)
-    
-    final_resources = ", ".join(base_resources + juicy + ["Task sheets", "Quiz sheet", "Handouts"])
+    final_resources = ", ".join(base_resources + ["Task sheets", "Quiz sheet", "Handouts"])
 
     # Rwandan TVET Logic (HSE, Cross-cutting, ICT)
     hse_map = {
         "Welding": "Ensure use of welding masks, leather gloves, and protective aprons. Check ventilation.",
         "Electricity": "Ensure all circuits are isolated before touching. Use insulated tools.",
-        "Computer": "Ensure proper sitting posture (ergonomics) to avoid back pain and eye strain.",
-        "Mechanic": "Wear safety boots and overalls. Ensure the vehicle is properly supported by jack stands.",
-        "Building": "Wear helmets and safety harnesses when working at heights."
+        "Computer": "Ensure proper sitting posture (ergonomics).",
+        "Mechanic": "Wear safety boots and overalls.",
+        "Building": "Wear helmets and safety harnesses."
     }
-    hse_default = "Ensure a clean work environment, proper lighting, and check for any tripping hazards."
-    hse_text = hse_default
-    for k, v in hse_map.items():
-        if k.lower() in topic.lower():
-            hse_text = v
-            break
+    hse_text = hse_map.get(next((k for k in hse_map if k.lower() in topic.lower()), None), "Ensure a clean work environment, proper lighting, and check for hazards.")
 
     cross_cutting = (
-        "1. Gender Equality: Ensure both male and female trainees participate equally in group presentations.\n"
-        "2. Environment & Sustainability: Minimize paper waste by using digital handouts where possible.\n"
-        "3. Peace & Values: Promote collaborative work and respect for diverse opinions during group discussions."
+        "1. Gender Equality: Ensure both male and female trainees participate equally.\n"
+        "2. Environment & Sustainability: Minimize paper waste.\n"
+        "3. Peace & Values: Promote collaborative work."
     )
-
-    ict_tools = "Digital projector, simulation software related to the topic, and internet access for research."
-    special_needs = "Provide large-print handouts for students with visual impairment and ensure the room is accessible for trainers with physical disabilities."
+    ict_tools = "Digital projector, simulation software, and internet access."
+    special_needs = "Provide large-print handouts and ensure accessibility."
 
     # SMART Objectives Generation Logic
-    # 1. Stem: "By the end of this lesson, students will be able to..."
-    # 2. Bloom's Verbs
-    blooms_verbs = {
-        "Remember": ["identify", "list", "define", "label", "match"],
-        "Understand": ["explain", "describe", "discuss", "summarize", "interpret"],
-        "Apply": ["apply", "demonstrate", "calculate", "simulate", "implement"],
-        "Analyze": ["analyze", "compare", "classify", "differentiate", "organize"],
-        "Evaluate": ["evaluate", "judge", "critique", "verify", "justify"],
-        "Create": ["design", "construct", "produce", "compose", "develop"]
-    }
-    
-    # Rwandan NVQF Level aware logic
-    nvqf_level = str(kwargs.get('level', '4'))
-    selected_levels = ["Remember", "Understand", "Apply"] # Default Level 3
-    
-    if "5" in nvqf_level: # Higher order thinking for Level 5
-        selected_levels = ["Analyze", "Evaluate", "Create"]
-    elif "4" in nvqf_level: # Intermediate
-        selected_levels = ["Understand", "Apply", "Analyze"]
-    
-    # Template overrides for focus
-    if "theory" in template_type.lower() and "5" in nvqf_level:
-        selected_levels = ["Analyze", "Evaluate", "Understand"]
-    elif "practical" in template_type.lower() and "5" in nvqf_level:
-        selected_levels = ["Create", "Apply", "Analyze"]
-        
-    verbs = []
-    import random
-    for level in selected_levels:
-        verbs.append(random.choice(blooms_verbs[level]))
-
-    # Construct the SMART objectives using the stem
     objective_items = []
     stem = "By the end of this lesson, students will be able to"
     
-    # Try to use range_details for specific context if available
-    context = kwargs.get('range_details') or topic
-    
-    objective_items.append(f"1. {stem} {verbs[0]} the key principles of {topic}.")
-    objective_items.append(f"2. {stem} {verbs[1]} {context} in professional scenarios.")
-    objective_items.append(f"3. {stem} {verbs[2]} the outcomes related to {topic} effectively with a professional attitude.")
+    nvqf_level = str(kwargs.get('level', '4'))
+    if "5" in nvqf_level:
+        verbs = ["analyze", "evaluate", "implement"]
+    elif "3" in nvqf_level:
+        verbs = ["list", "identify", "describe"]
+    else:
+        verbs = ["explain", "demonstrate", "discuss"]
+
+    for i, line in enumerate(extracted_objectives[:3]):
+        # Remove common bullet points or numbering
+        clean_line = re.sub(r'^\d+[\.\)]\s*', '', line).strip()
+        if not clean_line.lower().startswith("by the end"):
+            objective_items.append(f"{i+1}. {stem} {verbs[i % len(verbs)]} {clean_line}.")
+        else:
+            objective_items.append(f"{i+1}. {clean_line}")
+
+    if not objective_items:
+        objective_items = [f"1. {stem} {verbs[0]} the key principles of {topic}."]
 
     objectives_text = "\n".join(objective_items)
 
-    # Aggregate plan data
-    plan_data = {
+    return {
         "sector": kwargs.get('sector', 'General'),
         "trade": kwargs.get('trade', 'General'),
         "level": kwargs.get('level', 'N/A'),
@@ -354,7 +312,7 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
         "module": kwargs.get('module_name', 'General Module'),
         "learning_outcome": kwargs.get('learning_outcome', 'Competency demonstration.'),
         "performance_criteria": kwargs.get('performance_criteria', 'According to standard operating procedures.'),
-        "pre_requisite_knowledge": kwargs.get('pre_requisite_knowledge', 'Basic understanding of the previous competency level.'),
+        "pre_requisite_knowledge": kwargs.get('pre_requisite_knowledge', 'Basic understanding level.'),
         "cross_cutting_issues": cross_cutting,
         "hse_considerations": hse_text,
         "ict_tools": ict_tools,
@@ -363,11 +321,9 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
         "objectives": objectives_text,
         "facilitation_technique": technique,
         "resources": final_resources,
-        "indicative_content": kwargs.get('indicative_content', 'Detailed content from syllabus.'),
-        "range_details": context,
+        "indicative_content": dev_summary,
+        "range_details": topic,
         "duration": f"{total_minutes} min",
-        "reflection": "Session conducted successfully. Learners were engaged in the groups and showed understanding through assessment.",
+        "reflection": "Session conducted successfully based on syllabus content.",
         "activities": activities
     }
-    
-    return plan_data
