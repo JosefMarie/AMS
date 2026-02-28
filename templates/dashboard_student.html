@@ -17,8 +17,20 @@
         </div>
     </div>
     <!-- beautify ignore:end -->
+    <!-- beautify ignore:end -->
     <!-- Success Shortcuts -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <a href="{% url 'ai_study_recommendation' %}"
+            class="glass-card p-6 bg-gradient-to-br from-indigo-500 to-purple-500 text-white hover:scale-[1.02] transition-all shadow-xl shadow-purple-100/50 relative overflow-hidden group">
+            <div
+                class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all">
+            </div>
+            <svg class="w-8 h-8 mb-3 opacity-90 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <p class="text-[10px] font-black uppercase tracking-widest opacity-80 relative z-10">Study Plan</p>
+            <h4 class="text-xl font-black italic relative z-10">AI Advisor</h4>
+        </a>
         <a href="{% url 'learning_journey' %}"
             class="glass-card p-6 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white hover:scale-[1.02] transition-all shadow-xl shadow-indigo-100/50">
             <svg class="w-8 h-8 mb-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -359,6 +359,84 @@ def generate_session_plan_view(request):
     return render(request, 'generate_session_plan.html')
 
 @login_required
+def generate_advanced_session_plan_view(request):
+    from .utils import generate_advanced_session_plan_ai
+    from .models import SessionPlan, Activity
+    
+    if request.method == 'POST':
+        syllabus_text = request.POST.get('syllabus_text', '')
+        range_text = request.POST.get('range_text', '')
+        template_type = request.POST.get('template_type', 'THEORY')
+        
+        extra_data = {
+            'sector': request.POST.get('sector', ''),
+            'trade': request.POST.get('trade', ''),
+            'level': request.POST.get('level', ''),
+            'class_name': request.POST.get('class_name', ''),
+            'num_students': request.POST.get('num_students', 0),
+            'academic_year': request.POST.get('academic_year', '2025/2026'),
+            'term': request.POST.get('term', 'Term 1'),
+            'weeks': request.POST.get('weeks', '1'),
+            'module_name': request.POST.get('module_name', ''),
+            'learning_outcome': request.POST.get('learning_outcome', ''),
+            'indicative_content': request.POST.get('indicative_content', ''),
+            'range_details': request.POST.get('range_details', ''),
+            'topic': range_text,
+            'duration': request.POST.get('duration', '60'),
+            'facilitation_technique': request.POST.get('facilitation_technique', 'Brainstorming'),
+            'trainer_name': request.POST.get('trainer_name', ''),
+            'performance_criteria': request.POST.get('performance_criteria', ''),
+            'pre_requisite_knowledge': request.POST.get('pre_requisite_knowledge', '')
+        }
+        
+        if syllabus_text and range_text:
+            plan_data = generate_advanced_session_plan_ai(syllabus_text, range_text, template_type, **extra_data)
+            
+            session = SessionPlan.objects.create(
+                teacher=request.user,
+                template_type=template_type,
+                sector=plan_data['sector'],
+                trade=plan_data['trade'],
+                level=plan_data['level'],
+                class_name=plan_data['class_name'],
+                num_students=plan_data['num_students'] if plan_data['num_students'] else 0,
+                trainer_name=plan_data['trainer_name'],
+                academic_year=plan_data['academic_year'],
+                term=plan_data['term'],
+                weeks=plan_data['weeks'],
+                module=plan_data['module'],
+                learning_outcome=plan_data['learning_outcome'],
+                indicative_content=plan_data.get('indicative_content', ''),
+                topic=plan_data['topic'],
+                objectives=plan_data['objectives'],
+                performance_criteria=plan_data.get('performance_criteria', ''),
+                pre_requisite_knowledge=plan_data.get('pre_requisite_knowledge', ''),
+                cross_cutting_issues=plan_data.get('cross_cutting_issues', ''),
+                hse_considerations=plan_data.get('hse_considerations', ''),
+                ict_tools=plan_data.get('ict_tools', ''),
+                special_needs_support=plan_data.get('special_needs_support', ''),
+                facilitation_technique=plan_data['facilitation_technique'],
+                resources=plan_data['resources'],
+                range_details=plan_data.get('range_details', ''),
+                duration=plan_data.get('duration', ''),
+                reflection=plan_data.get('reflection', '')
+            )
+            
+            for act in plan_data['activities']:
+                Activity.objects.create(
+                    session=session,
+                    step_name=act['step_name'],
+                    trainer_activity=act['trainer'],
+                    learner_activity=act['learner'],
+                    time_allocation=act['time']
+                )
+            
+            messages.success(request, f"Advanced session plan for '{plan_data['topic']}' generated successfully!")
+            return redirect('dashboard')
+            
+    return render(request, 'generate_advanced_session_plan.html')
+
+@login_required
 def create_assessment_view(request):
     from .forms import AssessmentForm
     if request.method == 'POST':
@@ -399,10 +477,19 @@ def enter_marks_view(request, assessment_id):
         formset = StudentMarkFormSet(request.POST, queryset=queryset)
         if formset.is_valid():
             marks = formset.save(commit=False)
+            from .models import Notification
             for mark in marks:
                 if mark.score > assessment.total_marks:
                     pass # validation handled in template/model?
                 mark.save()
+                
+                # Create Notification for student
+                Notification.objects.create(
+                    user=mark.student,
+                    message=f"New marks entered for {assessment.title}: {mark.score}/{assessment.total_marks}",
+                    notification_type=Notification.NotificationType.INFO
+                )
+                
             return redirect('dashboard')
     else:
         formset = StudentMarkFormSet(queryset=queryset)
@@ -444,6 +531,7 @@ def perform_attendance_view(request, class_id):
              return redirect(f"{request.path}?date={date_str}")
         elif 'save_attendance' in request.POST:
             date_str = request.POST.get('date')
+            from .models import Notification
             for key, value in request.POST.items():
                 if key.startswith('status_'):
                     student_id = key.split('_')[1] # This is User ID
@@ -458,6 +546,12 @@ def perform_attendance_view(request, class_id):
                                 'teacher': request.user,
                                 'classroom': classroom
                             }
+                        )
+                        # Create Notification for student
+                        Notification.objects.create(
+                            user=student,
+                            message=f"Attendance marked as {value} for {date_str}",
+                            notification_type=Notification.NotificationType.INFO
                         )
                     except CustomUser.DoesNotExist:
                         continue
@@ -1116,11 +1210,17 @@ def change_password_view(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)  # Important!
-            from .models import AuditLog
+            from .models import AuditLog, Notification
             AuditLog.objects.create(
                 user=request.user,
                 action="Changed Password",
                 details=f"User {user.username} changed their password."
+            )
+            # Create Notification
+            Notification.objects.create(
+                user=request.user,
+                message="Your password was successfully changed.",
+                notification_type=Notification.NotificationType.SUCCESS
             )
             messages.success(request, 'Your password was successfully updated!')
             return redirect('dashboard')
@@ -1414,3 +1514,44 @@ def learning_journey(request):
         })
         
     return render(request, 'learning_journey.html', {'journey': journey})
+
+@login_required
+def clear_notifications_view(request):
+    from django.http import JsonResponse
+    if request.method == 'POST':
+        request.user.notifications.filter(is_read=False).update(is_read=True)
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'})
+
+@login_required
+def ai_study_recommendation_view(request):
+    if request.user.role != CustomUser.Role.STUDENT:
+        return redirect('dashboard')
+        
+    from .models import Module, StudentMark
+    from .utils import analyze_student_weakness
+    
+    classroom = request.user.student_profile.classroom if hasattr(request.user, 'student_profile') else None
+    modules = Module.objects.filter(classroom=classroom)
+    marks = StudentMark.objects.filter(student=request.user)
+    
+    marks_data = {}
+    for module in modules:
+        module_marks = marks.filter(assessment__module_id=module.id)
+        if module_marks.exists():
+            percentages = [(m.score / m.total_marks * 100) if m.total_marks > 0 else 0 for m in module_marks]
+            best_percent = max(percentages)
+            marks_data[module.module_name] = {'score_percent': best_percent}
+        else:
+            marks_data[module.module_name] = {'score_percent': 0}
+            
+    if not marks_data:
+        messages.warning(request, "Not enough data for AI analysis.")
+        return redirect('dashboard')
+        
+    analysis = analyze_student_weakness(marks_data)
+    
+    return render(request, 'student_ai_assistant.html', {
+        'marks_data': marks_data,
+        'analysis': analysis
+    })

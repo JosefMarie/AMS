@@ -327,3 +327,138 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
         "reflection": "Session conducted successfully based on syllabus content.",
         "activities": activities
     }
+
+def analyze_student_weakness(marks_data):
+    """
+    Uses Google Gemini AI (or mock fallback) to analyze a student's marks
+    and suggest which module to study next based on their weak points.
+    """
+    import google.generativeai as genai
+    from .ai_quiz_generator import GEMINI_API_KEY
+    
+    if not GEMINI_API_KEY:
+        # Fallback Mock logic
+        lowest_module = min(marks_data, key=lambda x: marks_data[x]['score_percent'])
+        return {
+            "weakest_module": lowest_module,
+            "analysis": f"Based on your scores, you should focus on {lowest_module}.",
+            "advice": "Review the core concepts and practice previous assignments related to this module."
+        }
+        
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-pro')
+        
+        prompt = f"""
+        Analyze the following student assessment marks and identify their weakest area.
+        Provide a short, encouraging analysis, and suggest specific study strategies.
+        
+        Marks data:
+        {json.dumps(marks_data, indent=2)}
+        
+        Return ONLY a JSON object with this structure, no markdown formatting:
+        {{
+            "weakest_module": "Module Name",
+            "analysis": "Short encouraging analysis of their performance...",
+            "advice": "Actionable advice on how to improve..."
+        }}
+        """
+        response = model.generate_content(prompt)
+        # Parse the JSON response
+        result_text = response.text.replace('```json', '').replace('```', '').strip()
+        return json.loads(result_text)
+    except Exception as e:
+        print(f"AI weakness analysis error: {e}")
+        # Fallback Mock logic
+        lowest_module = min(marks_data, key=lambda x: marks_data[x]['score_percent'])
+        return {
+            "weakest_module": lowest_module,
+            "analysis": f"Based on your scores, it looks like {lowest_module} is your weakest point.",
+            "advice": "Try reviewing your previous class notes and ask your trainer for extra help."
+        }
+
+def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='THEORY', **kwargs):
+    """
+    Uses Google Gemini AI to fully generate a comprehensive session plan,
+    including timing, activities, objectives, and context.
+    Provides a fallback to the standard static generator if API fails.
+    """
+    import google.generativeai as genai
+    from .ai_quiz_generator import GEMINI_API_KEY
+    
+    if not GEMINI_API_KEY:
+        print("No Gemini API key, falling back to static generation")
+        return generate_session_plan_ai(syllabus_text, range_text, template_type, **kwargs)
+        
+    topic = range_text or kwargs.get('topic', 'General Topic')
+    duration_str = str(kwargs.get('duration', '60'))
+    technique = kwargs.get('facilitation_technique', 'Brainstorming')
+    
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-pro')
+        
+        prompt = f"""
+        Act as an expert TVET (Technical and Vocational Education and Training) Trainer.
+        You need to generate a {template_type} session plan for a class on {topic}.
+        The total duration of the class is {duration_str} minutes.
+        The facilitation technique requested is {technique}.
+        
+        Syllabus Context:
+        {syllabus_text}
+        
+        Return ONLY a JSON object with this exact structure. Do not use Markdown formatting for the JSON block itself.
+        {{
+            "sector": "{kwargs.get('sector', 'General')}",
+            "trade": "{kwargs.get('trade', 'General')}",
+            "level": "{kwargs.get('level', 'N/A')}",
+            "class_name": "{kwargs.get('class_name', 'N/A')}",
+            "num_students": {kwargs.get('num_students', 0)},
+            "trainer_name": "{kwargs.get('trainer_name', '')}",
+            "academic_year": "{kwargs.get('academic_year', '2025/2026')}",
+            "term": "{kwargs.get('term', 'Term 1')}",
+            "weeks": "{kwargs.get('weeks', '1')}",
+            "module": "{kwargs.get('module_name', 'General Module')}",
+            "learning_outcome": "Generate a concise learning outcome based on syllabus",
+            "performance_criteria": "Generate 1-2 performance criteria",
+            "pre_requisite_knowledge": "Generate what they should already know",
+            "cross_cutting_issues": "1. Gender Equality...\\n2. Environment...",
+            "hse_considerations": "Specific Health and Safety requirements for this topic",
+            "ict_tools": "Tools needed...",
+            "special_needs_support": "How to support students...",
+            "topic": "{topic}",
+            "objectives": "1. By the end of this lesson, students will be able to...\\n2. ...",
+            "facilitation_technique": "{technique}",
+            "resources": "Projector, Task sheets, etc.",
+            "indicative_content": "Summary of the content...",
+            "range_details": "{topic}",
+            "duration": "{duration_str} min",
+            "reflection": "Post-session reflection placeholder",
+            "activities": [
+                {{
+                    "step_name": "Introduction",
+                    "trainer": "What the trainer does (numbered list)",
+                    "learner": "What the learner does (numbered list)",
+                    "time": "10 min"
+                }},
+                {{
+                    "step_name": "Development Step 1...",
+                    "trainer": "...",
+                    "learner": "...",
+                    "time": "20 min"
+                }}
+            ]
+        }}
+        
+        Make sure the activities' times add up to exactly {duration_str} minutes. Provide 4-6 activity steps.
+        If it's a PRACTICAL session, focus the steps on Preparation, Demonstration (I do), Guided Practice (We do), Independent Practice (You do), and Evaluation.
+        If it's a THEORY session, focus on Introduction, Group Discussion, Sharing, Summary, Assessment, and Evaluation.
+        """
+        
+        response = model.generate_content(prompt)
+        result_text = response.text.replace('```json', '').replace('```', '').strip()
+        return json.loads(result_text)
+        
+    except Exception as e:
+        print(f"Gemini Advanced Session Plan error: {e}")
+        return generate_session_plan_ai(syllabus_text, range_text, template_type, **kwargs)

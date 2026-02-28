@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 animate-fadeIn">
+    <!-- Header -->
+    <div class="text-center space-y-4">
+        <div
+            class="w-16 h-16 bg-gradient-to-tr from-indigo-500 justify-center items-center flex rounded-2xl mx-auto to-purple-500 shadow-xl shadow-indigo-200">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        </div>
+        <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">AI Study Advisor</h1>
+        <p class="text-gray-500 dark:text-gray-400 font-medium max-w-2xl mx-auto">Based on your recent scores, our AI
+            assistant has analyzed your performance and prepared a personalized study plan for you.</p>
+    </div>
+
+    <!-- AI Analysis Card -->
+    <div class="glass-card p-8 relative overflow-hidden group">
+        <div
+            class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-500">
+        </div>
+        <div class="relative z-10 space-y-6">
+
+            <!-- Focus Area -->
+            <div class="flex items-start gap-4">
+                <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Recommended Focus</h3>
+                    <p class="text-2xl font-black text-gray-900 dark:text-white">{{ analysis.weakest_module }}</p>
+                </div>
+            </div>
+
+            <!-- Analysis Text -->
+            <div
+                class="p-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-700/50 rounded-2xl border border-indigo-100 dark:border-slate-600">
+                <h4
+                    class="text-sm font-bold text-indigo-900 dark:text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Performance Analysis
+                </h4>
+                <p class="text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{{ analysis.analysis }}</p>
+            </div>
+
+            <!-- Actionable Advice -->
+            <div
+                class="p-6 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
+                <h4
+                    class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Study Strategy
+                </h4>
+                <p class="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">{{ analysis.advice }}</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="pt-4 flex justify-end gap-3">
+                <a href="{% url 'dashboard' %}"
+                    class="px-6 py-2.5 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all text-sm">Back
+                    to Dashboard</a>
+                <a href="{% url 'resource_library' %}" class="btn-premium flex items-center gap-2 text-sm">
+                    Find Resources
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

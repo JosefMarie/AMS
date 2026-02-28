@@ -14,6 +14,7 @@ urlpatterns = [
     path('marks/enter/<int:assessment_id>/', views.enter_marks_view, name='enter_marks'),
     path('attendance/take/', views.take_attendance_view, name='take_attendance'),
     path('session/generate/', views.generate_session_plan_view, name='generate_session_plan'),
+    path('session/generate-advanced/', views.generate_advanced_session_plan_view, name='generate_advanced_session_plan'),
     path('perform-attendance/<int:class_id>/', views.perform_attendance_view, name='perform_attendance'),
     path('class/create/', views.create_class_view, name='create_class'),
     path('class/<int:class_id>/', views.manage_class_view, name='manage_class'),
@@ -50,4 +51,10 @@ urlpatterns = [
     path('resources/', views.resource_library, name='resource_library'),
     path('resources/manage/', views.manage_resources, name='manage_resources'),
     path('journey/', views.learning_journey, name='learning_journey'),
+    
+    # Notifications API
+    path('notifications/clear/', views.clear_notifications_view, name='clear_notifications'),
+    
+    # AI Education Assistant
+    path('student/ai-assistant/', views.ai_study_recommendation_view, name='ai_study_recommendation'),
 ]
