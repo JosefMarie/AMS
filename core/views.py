@@ -35,7 +35,7 @@ def dashboard(request):
         
         # Teacher Management Search and List
         search_query = request.GET.get('q', '')
-        trainers = CustomUser.objects.filter(role=CustomUser.Role.TEACHER)
+        trainers = CustomUser.objects.filter(role=CustomUser.Role.TEACHER).order_by('first_name', 'last_name')
         if search_query:
             trainers = trainers.filter(
                 Q(username__icontains=search_query) |
@@ -134,7 +134,7 @@ def dashboard(request):
         context['avg_attendance'] = round((present_att / total_att * 100), 1) if total_att > 0 else 0
 
         # Gender Breakdown for Overview
-        teacher_students = StudentProfile.objects.filter(classroom__teacher=user)
+        teacher_students = StudentProfile.objects.filter(classroom__teacher=user).order_by('user__first_name', 'user__last_name')
         context['total_boys'] = teacher_students.filter(sex='Male').count()
         context['total_girls'] = teacher_students.filter(sex='Female').count()
 
@@ -461,7 +461,7 @@ def enter_marks_view(request, assessment_id):
         
     # Get students in the module's classroom
     classroom = assessment.module.classroom
-    students = classroom.students.all() # StudentProfile objects
+    students = classroom.students.all().order_by('user__first_name', 'user__last_name') # StudentProfile objects
     
     # Pre-populate marks if they don't exist
     for profile in students:
@@ -563,7 +563,7 @@ def perform_attendance_view(request, class_id):
     attendance_dict = {record.student_id: record.status for record in attendance_records}
 
     # Pre-calculate student info
-    profiles = classroom.students.all().select_related('user')
+    profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
     students_data = []
     for p in profiles:
         students_data.append({
@@ -585,7 +585,7 @@ def manage_class_view(request, class_id):
     classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
     modules = classroom.modules.all()
     # Pre-calculate student data to avoid template logic breakage
-    profiles = classroom.students.all().select_related('user')
+    profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
     students_list = []
     for p in profiles:
         students_list.append({
@@ -1037,7 +1037,7 @@ def print_student_list_view(request, class_id):
     import datetime
     
     classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
-    students = classroom.students.all().select_related('user').order_by('user__last_name')
+    students = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
     
     html_string = render_to_string('pdf_student_list.html', {
         'classroom': classroom,
@@ -1104,7 +1104,7 @@ def delete_attendance_view(request, class_id):
 
 @login_required
 def edit_student_view(request, student_id):
-    from .models import CustomUser, StudentProfile
+    from .models import CustomUser, StudentProfile, AuditLog
     student = get_object_or_404(CustomUser, id=student_id, role=CustomUser.Role.STUDENT)
     profile = get_object_or_404(StudentProfile, user=student)
     
@@ -1311,7 +1311,7 @@ def interactive_gradebook(request, class_id):
     
     from .models import Classroom, StudentProfile, Module, StudentMark
     classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
-    students = StudentProfile.objects.filter(classroom=classroom)
+    students = StudentProfile.objects.filter(classroom=classroom).order_by('user__first_name', 'user__last_name')
     modules = Module.objects.filter(classroom=classroom)
     
     # Pre-fetch marks for performance
