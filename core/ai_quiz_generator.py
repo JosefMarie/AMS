@@ -5,9 +5,13 @@ import google.generativeai as genai
 import json
 import random
 import os
+from dotenv import load_dotenv
 
-# Configure Gemini API
-GEMINI_API_KEY = "AIzaSyD2RDTdZHD4Fxn-3pNDT9LeWVSS0-UQm_c"
+# Load environment variables from .env file
+load_dotenv()
+
+# Configure Gemini API (loaded securely from environment, never hardcoded)
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 def generate_quiz_with_ai(syllabus_content, num_mcq=10, num_tf=5, num_matching=5):
     """
