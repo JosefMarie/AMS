@@ -132,6 +132,11 @@ class AnnouncementForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'class': 'glass-input w-full', 'rows': 4, 'placeholder': 'Write your message here...'}),
         }
 
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['classroom'].queryset = Classroom.objects.filter(teacher=user)
+
 class StudentProfileForm(forms.ModelForm):
     class Meta:
         model = StudentProfile

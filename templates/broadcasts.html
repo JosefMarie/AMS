@@ -72,12 +72,10 @@
                 </div>
                 <p class="text-gray-600 text-sm leading-relaxed mb-4">{{ announcement.content|linebreaksbr }}</p>
                 <div class="flex items-center gap-2 pt-4 border-t border-gray-50">
-                    <div
-                        class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
-                        {{ announcement.teacher.username|first|upper }}
+                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                        {{ announcement.teacher.first_name|first|upper }}{{ announcement.teacher.last_name|first|upper }}
                     </div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Posted by {{
-                        announcement.teacher.username }}</span>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Posted by {{ announcement.teacher.get_full_name|default:announcement.teacher.username }}</span>
                 </div>
             </div>
             {% endfor %}

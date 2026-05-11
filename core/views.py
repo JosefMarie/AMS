@@ -569,7 +569,7 @@ def perform_attendance_view(request, class_id):
         students_data.append({
             'id': p.user.id,
             'sid': p.student_id or "N/A",
-            'name': p.user.username,
+            'name': p.user.get_full_name() or p.user.username,
             'status': attendance_dict.get(p.user.id, 'PRESENT')
         })
     

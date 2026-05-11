@@ -2,16 +2,23 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto">
-    <div class="flex flex-col md:flex-row items-center gap-6 mb-12 animate-fadeIn text-center md:text-left">
-        <div
-            class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 mx-auto md:mx-0">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    <div class="mb-12 flex items-center gap-6 animate-fadeIn">
+        <a href="{% url 'dashboard' %}" class="p-4 bg-white rounded-3xl text-gray-400 hover:text-indigo-600 transition-all shadow-sm border border-gray-100 flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-        </div>
-        <div>
-            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">AI Session Plan Generator</h1>
-            <p class="text-gray-500 font-medium">Create "Gold Standard" Rwandan TVET plans in professional seconds.</p>
+        </a>
+        <div class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+            <div
+                class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 mx-auto md:mx-0">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">AI Session Plan Generator</h1>
+                <p class="text-gray-500 font-medium">Create "Gold Standard" Rwandan TVET plans in professional seconds.</p>
+            </div>
         </div>
     </div>
 

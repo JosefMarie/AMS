@@ -17,8 +17,7 @@
                     Interactive Gradebook
                 </h1>
             </div>
-            <p class="text-gray-500 font-bold text-sm tracking-wide uppercase ml-11">Class Overview: {{ classroom.name
-                }}</p>
+            <p class="text-gray-500 font-bold text-sm tracking-wide uppercase ml-11">Class Overview: {{ classroom.name }}</p>
         </div>
 
         <div class="flex items-center gap-4">
@@ -65,14 +64,13 @@
                             <div class="flex items-center gap-3">
                                 <div
                                     class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-indigo-100">
-                                    {{ student.user.username|first|upper }}
+                                    {{ student.user.get_full_name|default:student.user.username|first|upper }}
                                 </div>
                                 <div>
                                     <a href="{% url 'portfolio_view' student.user.username %}"
                                         class="text-sm font-black text-gray-900 hover:text-indigo-600 transition-colors">
-                                        {{ student.user.username }}</a>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{{
-                                        student.student_id }}</p>
+                                        {{ student.user.get_full_name|default:student.user.username }}</a>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{{ student.student_id }}</p>
                                 </div>
                             </div>
                         </td>
