@@ -654,15 +654,6 @@ def create_class_view(request):
         return redirect('dashboard')
     return redirect('dashboard') # Fallback
 
-@login_required
-def add_module_view(request, class_id):
-    from .models import Classroom, Module
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
-    if request.method == 'POST':
-        code = request.POST.get('module_code')
-        name = request.POST.get('module_name')
-        Module.objects.create(classroom=classroom, module_code=code, module_name=name, teacher=request.user)
-    return redirect('manage_class', class_id=class_id)
 
 @login_required
 def add_student_view(request, class_id):
@@ -1339,9 +1330,46 @@ def bulk_grade_import(request):
         return redirect('dashboard')
     
     import csv, io
-    from .models import StudentProfile, Module, Assessment, StudentMark, AuditLog
+    from .models import StudentProfile, Module, Assessment, StudentMark, AuditLog, Classroom
     from django.contrib import messages
-    
+    from django.http import HttpResponse
+
+    # Template Download Logic
+    if request.method == 'GET' and 'download_template' in request.GET:
+        try:
+            classroom_id = request.GET.get('classroom')
+            module_id = request.GET.get('module')
+            assessment_title = request.GET.get('assessment_title', 'Final Exam')
+            assessment_type = request.GET.get('assessment_type', 'FA')
+            total_marks = request.GET.get('total_marks', '100')
+
+            classroom = Classroom.objects.get(id=classroom_id)
+            module = Module.objects.get(id=module_id)
+            students = StudentProfile.objects.filter(classroom=classroom).select_related('user')
+
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="grade_template_{classroom.name.replace(" ", "_")}.csv"'
+            
+            writer = csv.writer(response)
+            writer.writerow(['Student ID', 'Student Name', 'Module Code', 'Assessment', 'Type', 'Score', 'Total'])
+            
+            for student in students:
+                writer.writerow([
+                    student.student_id,
+                    student.user.get_full_name() or student.user.username,
+                    module.module_code,
+                    assessment_title,
+                    assessment_type,
+                    '', # Empty score for teacher to fill
+                    total_marks
+                ])
+            
+            return response
+        except Exception as e:
+            messages.error(request, f"Template generation error: {str(e)}")
+            return redirect('bulk_grade_import')
+
+    # Upload Logic
     if request.method == 'POST' and request.FILES.get('csv_file'):
         csv_file = request.FILES['csv_file']
         try:
@@ -1358,27 +1386,41 @@ def bulk_grade_import(request):
                     student_id = row.get('Student ID')
                     module_code = row.get('Module Code')
                     assessment_title = row.get('Assessment')
+                    assessment_type = row.get('Type', 'FA')
                     score = row.get('Score')
                     total = row.get('Total')
 
                     if not student_id or not module_code:
                         continue
 
+                    # Clean score and total
+                    if not score or str(score).strip() == '':
+                        continue
+                    
+                    try:
+                        score_val = float(score)
+                        total_val = float(total) if (total and str(total).strip() != '') else 100.0
+                    except (ValueError, TypeError):
+                        error_count += 1
+                        errors.append(f"Invalid score/total for Student {student_id}")
+                        continue
+
                     student_profile = StudentProfile.objects.get(student_id=student_id)
                     module = Module.objects.get(module_code=module_code, classroom=student_profile.classroom)
                     
-                    # Get or create assessment
                     assessment, created = Assessment.objects.get_or_create(
                         module=module,
-                        title=assessment_title,
-                        defaults={'total_marks': total if total else 100}
+                        title=assessment_title if assessment_title else "Bulk Import",
+                        defaults={
+                            'total_marks': total_val,
+                            'assessment_type': assessment_type
+                        }
                     )
 
-                    # Update or create mark
                     StudentMark.objects.update_or_create(
                         student=student_profile.user,
                         assessment=assessment,
-                        defaults={'score': score, 'total_marks': assessment.total_marks}
+                        defaults={'score': score_val, 'total_marks': assessment.total_marks}
                     )
                     success_count += 1
                 except Exception as e:
@@ -1399,7 +1441,21 @@ def bulk_grade_import(request):
             messages.error(request, f"File error: {str(e)}")
             return redirect('bulk_grade_import')
 
-    return render(request, 'bulk_import.html')
+    # Standard GET
+    my_classrooms = Classroom.objects.filter(teacher=request.user).prefetch_related('modules')
+    
+    # Pre-calculate mapping for JS to avoid template logic in script
+    mapping = {}
+    for c in my_classrooms:
+        mapping[str(c.id)] = [
+            {'id': m.id, 'name': f"{m.module_code} - {m.module_name}"} 
+            for m in c.modules.all()
+        ]
+    
+    return render(request, 'bulk_import.html', {
+        'classrooms': my_classrooms,
+        'mapping_json': json.dumps(mapping)
+    })
 
 @login_required
 def edit_profile(request):

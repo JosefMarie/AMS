@@ -89,6 +89,11 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD', 'npg_nbhTHg7Zv6YF'),
         'HOST': os.environ.get('DB_HOST', 'ep-winter-butterfly-aic6xaao-pooler.c-4.us-east-1.aws.neon.tech'),
         'PORT': os.environ.get('DB_PORT', '5432'),
+        'CONN_MAX_AGE': 0,  # Ensure fresh connections for serverless DB
+        'OPTIONS': {
+            'sslmode': 'require',
+            'connect_timeout': 10,
+        }
     }
 }
 
