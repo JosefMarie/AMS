@@ -11,7 +11,14 @@
     <link rel="icon" type="image/svg+xml" href="{% static 'img/AMS.svg' %}">
     <script>
         tailwind.config = {
-            darkMode: 'class'
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Ranclo', 'sans-serif'],
+                    }
+                }
+            }
         }
     </script>
     <style id="branding-styles">
