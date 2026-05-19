@@ -148,6 +148,8 @@ class Assessment(models.Model):
     assessment_type = models.CharField(max_length=2, choices=AssessmentType.choices, default=AssessmentType.FORMATIVE)
     total_marks = models.FloatField(default=100.0)
     questions_json = models.JSONField(default=dict) # Stores { "mcq": [], "tf": [], "matching": [] }
+    academic_year = models.ForeignKey('AcademicYear', on_delete=models.SET_NULL, null=True, blank=True, related_name='assessments')
+    term = models.CharField(max_length=10, choices=[('Term 1', 'Term 1'), ('Term 2', 'Term 2'), ('Term 3', 'Term 3')], default='Term 1')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -175,6 +177,8 @@ class Attendance(models.Model):
     classroom = models.ForeignKey(Classroom, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendances')
     module = models.ForeignKey(Module, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendances')
     
+    academic_year = models.ForeignKey('AcademicYear', on_delete=models.SET_NULL, null=True, blank=True, related_name='attendances')
+    term = models.CharField(max_length=10, choices=[('Term 1', 'Term 1'), ('Term 2', 'Term 2'), ('Term 3', 'Term 3')], default='Term 1')
     date = models.DateField(default=datetime.date.today)
     time_recorded = models.TimeField(auto_now=True, null=True, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PRESENT)
@@ -199,12 +203,42 @@ class Notification(models.Model):
     def __str__(self):
         return f"Notification for {self.user.username}: {self.message[:20]}"
 
+class AcademicYear(models.Model):
+    name = models.CharField(max_length=50, unique=True, help_text="e.g. 2025-2026")
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if self.is_active:
+            # Deactivate all other academic years
+            AcademicYear.objects.exclude(pk=self.pk).update(is_active=False)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['-name']
+
+
 class SystemSetting(models.Model):
     site_name = models.CharField(max_length=100, default="AMS PORTAL")
     site_logo = models.ImageField(upload_to='branding/', null=True, blank=True)
     enable_ai_quizzer = models.BooleanField(default=True)
     allow_public_registration = models.BooleanField(default=True)
     primary_color = models.CharField(max_length=20, default="#4f46e5")
+    gemini_api_key = models.CharField(max_length=200, blank=True, default='', help_text="Google Gemini API key for AI quiz and session plan generation.")
+    email_notify_marks = models.BooleanField(default=False, help_text="Email students when their marks are entered.")
+    email_notify_announcements = models.BooleanField(default=False, help_text="Email students when a new announcement is posted.")
+    email_notify_welcome = models.BooleanField(default=False, help_text="Email new users their login credentials when their account is created.")
+    current_academic_year = models.ForeignKey(AcademicYear, on_delete=models.SET_NULL, null=True, blank=True, related_name='system_settings')
+    current_term = models.CharField(
+        max_length=10,
+        choices=[('Term 1', 'Term 1'), ('Term 2', 'Term 2'), ('Term 3', 'Term 3')],
+        default='Term 1',
+        help_text="Active academic term. Student promotions are processed during Term 3."
+    )
+
     
     class Meta:
         verbose_name = "System Setting"

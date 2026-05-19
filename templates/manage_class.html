@@ -2,18 +2,11 @@
 {% block content %}
 <div class="animate-fadeIn">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-        <div class="flex items-center gap-4">
-            <a href="{% url 'dashboard' %}" class="p-2.5 bg-white rounded-2xl text-gray-400 hover:text-indigo-600 transition-all shadow-sm border border-gray-100">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
-            <div>
-                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight leading-none mb-1">Class Management</h1>
-                <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">
-                    Classroom: <span class="text-indigo-600 font-extrabold">{{ classroom.name }}</span>
-                </p>
-            </div>
+        <div>
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">Class Management</h1>
+            <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">
+                Classroom: <span class="text-indigo-600 font-extrabold">{{ classroom.name }}</span>
+            </p>
         </div>
         <div class="flex gap-3">
             <a href="{% url 'manage_attendance' classroom.id %}"
@@ -31,6 +24,13 @@
                         d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 Add Module
+            </a>
+            <a href="{% url 'promote_students' classroom.id %}"
+                class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-100 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z" />
+                </svg> Promote Students
             </a>
             <a href="{% url 'add_student' classroom.id %}"
                 class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">

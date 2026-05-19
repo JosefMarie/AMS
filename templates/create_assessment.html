@@ -2,14 +2,7 @@
 
 {% block content %}
 <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-    <div class="mb-8 flex items-center gap-4">
-        <a href="{% url 'dashboard' %}" class="p-2.5 bg-white rounded-2xl text-gray-400 hover:text-indigo-600 transition-all shadow-sm border border-gray-100">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-900">Create New Assessment</h1>
-    </div>
+    <h1 class="text-2xl font-bold mb-6 text-gray-900">Create New Assessment</h1>
 
     <form method="post">
         {% csrf_token %}

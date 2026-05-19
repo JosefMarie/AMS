@@ -110,15 +110,38 @@ class TrainerCreationForm(forms.ModelForm):
 from .models import SystemSetting
 
 class SystemSettingForm(forms.ModelForm):
+    gemini_api_key = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'glass-input w-full font-mono',
+            'placeholder': 'Enter Gemini API key...',
+            'autocomplete': 'new-password',
+        }),
+        help_text="Leave blank to keep the existing key."
+    )
+
     class Meta:
         model = SystemSetting
-        fields = ['site_name', 'site_logo', 'enable_ai_quizzer', 'allow_public_registration', 'primary_color']
+        fields = ['site_name', 'site_logo', 'enable_ai_quizzer', 'allow_public_registration', 'primary_color', 'gemini_api_key', 'email_notify_marks', 'email_notify_announcements', 'email_notify_welcome', 'current_term']
         widgets = {
             'site_name': forms.TextInput(attrs={'class': 'glass-input w-full', 'placeholder': 'Portal Name'}),
             'primary_color': forms.TextInput(attrs={'type': 'color', 'class': 'h-10 w-20 rounded-lg cursor-pointer'}),
             'enable_ai_quizzer': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500'}),
             'allow_public_registration': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500'}),
+            'email_notify_marks': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500'}),
+            'email_notify_announcements': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500'}),
+            'email_notify_welcome': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500'}),
+            'current_term': forms.Select(attrs={'class': 'glass-input w-full'}),
         }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        new_key = self.cleaned_data.get('gemini_api_key', '').strip()
+        if new_key:
+            instance.gemini_api_key = new_key
+        if commit:
+            instance.save()
+        return instance
 
 from .models import Announcement, Classroom
 

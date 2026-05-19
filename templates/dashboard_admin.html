@@ -7,6 +7,30 @@
             </h1>
             <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Core Management Dashboard</p>
         </div>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'manage_user_emails' %}"
+                class="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-xl transition-all uppercase tracking-widest border border-indigo-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Manage Emails
+            </a>
+            <a href="{% url 'admin_settings' %}"
+                class="flex items-center gap-2 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-black rounded-xl transition-all uppercase tracking-widest border border-gray-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Settings
+            </a>
+            <a href="{% url 'security_logs' %}"
+                class="flex items-center gap-2 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-black rounded-xl transition-all uppercase tracking-widest border border-gray-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                Audit Logs
+            </a>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
@@ -162,141 +186,120 @@
                         </div>
                     </div>
                     <div class="h-[300px]">
-                        <canvas id="growthChart" 
-                                data-labels="{{ growth_labels_json|escape }}"
-                                data-values="{{ growth_data_json|escape }}"></canvas>
+                        <canvas id="growthChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Chart Configuration Data -->
-    <div id="chart-data" class="hidden"
-         data-perf-labels="{{ perf_labels_json|escape }}"
-         data-perf-values="{{ perf_data_json|escape }}"
-         data-demo-values="{{ demo_data_json|escape }}">
-    </div>
-
     <!-- Chart Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var chartData = document.getElementById('chart-data');
-            var growthCanvas = document.getElementById('growthChart');
-            if (!chartData || !growthCanvas) return;
+            // Shared config
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
 
-            var isDark = document.documentElement.classList.contains('dark');
-            var textColor = isDark ? '#94a3b8' : '#64748b';
-            var gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-
-            var perfLabels = JSON.parse(chartData.getAttribute('data-perf-labels'));
-            var perfValues = JSON.parse(chartData.getAttribute('data-perf-values'));
-            var demoValues = JSON.parse(chartData.getAttribute('data-demo-values'));
-            var growthLabels = JSON.parse(growthCanvas.getAttribute('data-labels'));
-            var growthValues = JSON.parse(growthCanvas.getAttribute('data-values'));
-
-            console.log('Charts Debug:', {
-                perf: { labels: perfLabels, values: perfValues },
-                demo: { values: demoValues },
-                growth: { labels: growthLabels, values: growthValues }
-            });
+            // beautify ignore:start
 
             // 1. Performance Line Chart
-            var perfCtx = document.getElementById('performanceChart').getContext('2d');
+            const perfCtx = document.getElementById('performanceChart').getContext('2d');
             new Chart(perfCtx, {
                 type: 'line',
                 data: {
-                    labels: perfLabels,
-                    datasets: [{
-                        label: 'Average Score (%)',
-                        data: perfValues,
-                        borderColor: '#4f46e5',
-                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#4f46e5',
-                        pointBorderWidth: 2,
-                        tension: 0.4,
-                        fill: true
+                    labels: {{ perf_labels_json| safe }},
+            datasets: [{
+                label: 'Average Score (%)',
+                data: {{ perf_data_json| safe }},
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            borderWidth: 3,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#4f46e5',
+            pointBorderWidth: 2,
+            tension: 0.4,
+            fill: true
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { weight: 'bold' } }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: textColor, font: { weight: 'bold' } }
-                        }
-                    }
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { weight: 'bold' } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor, font: { weight: 'bold' } }
                 }
+            }
+        }
             });
 
-            // 2. Demographic Doughnut Chart
-            var demoCtx = document.getElementById('demoChart').getContext('2d');
-            new Chart(demoCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Boys', 'Girls'],
-                    datasets: [{
-                        data: demoValues,
-                        backgroundColor: ['#4f46e5', '#a855f7'],
-                        borderWidth: 0,
-                        hoverOffset: 15
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: textColor, font: { weight: 'bold' }, padding: 25 }
-                        }
-                    }
+        // 2. Demographic Doughnut Chart
+        const demoCtx = document.getElementById('demoChart').getContext('2d');
+        new Chart(demoCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Boys', 'Girls'],
+                datasets: [{
+                    data: {{ demo_data_json| safe }},
+                    backgroundColor: ['#4f46e5', '#a855f7'],
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: textColor, font: { weight: 'bold' }, padding: 25 }
                 }
+            }
+        }
             });
 
-            // 3. Enrollment Growth Bar Chart
-            var growthCtx = growthCanvas.getContext('2d');
-            new Chart(growthCtx, {
-                type: 'bar',
-                data: {
-                    labels: growthLabels,
-                    datasets: [{
-                        label: 'New Students',
-                        data: growthValues,
-                        backgroundColor: '#10b981',
-                        borderRadius: 8,
-                        hoverBackgroundColor: '#059669'
+        // 3. Enrollment Growth Bar Chart
+        const growthCtx = document.getElementById('growthChart').getContext('2d');
+        new Chart(growthCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ growth_labels_json| safe }},
+            datasets: [{
+                label: 'New Students',
+                data: {{ growth_data_json| safe }},
+            backgroundColor: '#10b981',
+            borderRadius: 8,
+            hoverBackgroundColor: '#059669'
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { weight: 'bold' }, precision: 0 }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: textColor, font: { weight: 'bold' } }
-                        }
-                    }
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { weight: 'bold' }, precision: 0 }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor, font: { weight: 'bold' } }
                 }
+            }
+        }
             });
+            // beautify ignore:end
         });
     </script>
 </div>

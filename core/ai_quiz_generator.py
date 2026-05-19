@@ -10,8 +10,16 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Configure Gemini API (loaded securely from environment, never hardcoded)
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+# Configure Gemini API — prefer env var, fall back to database setting
+def get_api_key():
+    key = os.environ.get('GEMINI_API_KEY', '')
+    if not key:
+        try:
+            from .models import SystemSetting
+            key = SystemSetting.get_settings().gemini_api_key or ''
+        except Exception:
+            pass
+    return key
 
 def generate_quiz_with_ai(syllabus_content, num_mcq=10, num_tf=5, num_matching=5):
     """
@@ -26,13 +34,13 @@ def generate_quiz_with_ai(syllabus_content, num_mcq=10, num_tf=5, num_matching=5
     Returns:
         dict: Quiz data with mcq, true_false, and matching questions
     """
-    
-    if not GEMINI_API_KEY:
+    api_key = get_api_key()
+    if not api_key:
         # Fallback to sample data if no API key
         return generate_sample_quiz(num_mcq, num_tf, num_matching)
     
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
+        genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-pro')
         
         prompt = f"""Based on the following syllabus content, generate a quiz with:

@@ -1,15 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="max-w-4xl mx-auto py-12 px-6 animate-fadeIn">
-    <div class="mb-6">
-        <a href="{% url 'dashboard' %}" 
-           class="inline-flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-md border border-white/40 text-gray-500 hover:text-indigo-600 transition-all rounded-xl text-xs font-black uppercase tracking-widest shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Dashboard
-        </a>
-    </div>
     <div class="mb-12">
         <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">Edit My Profile</h1>
         <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Customize your learning identity</p>
@@ -51,6 +42,37 @@
                 </div>
 
                 <div class="md:col-span-2 space-y-6">
+
+                    <!-- Email Address -->
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-3">
+                            Email Address
+                            <span class="ml-2 normal-case font-semibold text-indigo-500 text-[10px]">Used for notifications &amp; password reset</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400 pointer-events-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </span>
+                            <input type="email" name="email" value="{{ user.email }}"
+                                placeholder="your@email.com"
+                                class="w-full pl-11 pr-4 py-3.5 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium bg-gray-50/50">
+                        </div>
+                        {% if not user.email %}
+                        <p class="text-[10px] text-amber-600 font-bold mt-2 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                            No email set — you won't receive notifications or be able to reset your password.
+                        </p>
+                        {% else %}
+                        <p class="text-[10px] text-green-600 font-bold mt-2 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Email saved — notifications and password reset are active.
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Bio -->
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-3">About Me
                             (Bio)</label>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, StudentProfile, SessionPlan, Activity, Assessment, StudentMark, Attendance, Classroom, Module
+from .models import CustomUser, StudentProfile, SessionPlan, Activity, Assessment, StudentMark, Attendance, Classroom, Module, AcademicYear, SystemSetting
 
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'role', 'is_staff')
@@ -44,3 +44,5 @@ admin.site.register(StudentMark, StudentMarkAdmin)
 admin.site.register(Attendance)
 admin.site.register(Classroom)
 admin.site.register(Module)
+admin.site.register(AcademicYear)
+admin.site.register(SystemSetting)

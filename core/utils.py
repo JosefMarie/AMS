@@ -333,8 +333,9 @@ def analyze_student_weakness(marks_data):
     Uses Google Gemini AI (or mock fallback) to analyze a student's marks
     and suggest which module to study next based on their weak points.
     """
-    import google.generativeai as genai
-    from .ai_quiz_generator import GEMINI_API_KEY
+    from .ai_quiz_generator import get_api_key
+    GEMINI_API_key = get_api_key()
+    GEMINI_API_KEY = GEMINI_API_key
     
     if not GEMINI_API_KEY:
         # Fallback Mock logic
@@ -384,7 +385,8 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
     Provides a fallback to the standard static generator if API fails.
     """
     import google.generativeai as genai
-    from .ai_quiz_generator import GEMINI_API_KEY
+    from .ai_quiz_generator import get_api_key
+    GEMINI_API_KEY = get_api_key()
     
     if not GEMINI_API_KEY:
         print("No Gemini API key, falling back to static generation")

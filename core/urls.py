@@ -5,6 +5,8 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('timeline/select/', views.timeline_select_view, name='timeline_select'),
+    path('academic-year/create/', views.create_academic_year_view, name='create_academic_year'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path('session/create/<str:template_type>/', views.create_session_plan, name='create_session_plan'),
@@ -18,6 +20,7 @@ urlpatterns = [
     path('perform-attendance/<int:class_id>/', views.perform_attendance_view, name='perform_attendance'),
     path('class/create/', views.create_class_view, name='create_class'),
     path('class/<int:class_id>/', views.manage_class_view, name='manage_class'),
+    path('class/<int:class_id>/promote/', views.promote_students_view, name='promote_students'),
     path('class/<int:class_id>/add_module/', views.add_module_view, name='add_module'),
     path('class/<int:class_id>/add_student/', views.add_student_view, name='add_student'),
     path('student/report/<int:student_id>/', views.student_report_view, name='student_report'),
@@ -57,4 +60,28 @@ urlpatterns = [
     
     # AI Education Assistant
     path('student/ai-assistant/', views.ai_study_recommendation_view, name='ai_study_recommendation'),
+
+    # Admin AI testing
+    path('admin/test-ai/', views.test_ai_connection_view, name='test_ai_connection'),
+
+    # Manage User Emails
+    path('manage-emails/', views.manage_user_emails, name='manage_user_emails'),
+
+    # Password Reset
+    path('password-reset/', auth_views.PasswordResetView.as_view(
+        template_name='password_reset.html',
+        email_template_name='password_reset_email.html',
+        subject_template_name='password_reset_subject.txt',
+        success_url='/password-reset/done/'
+    ), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(
+        template_name='password_reset_done.html'
+    ), name='password_reset_done'),
+    path('password-reset/confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+        template_name='password_reset_confirm.html',
+        success_url='/password-reset/complete/'
+    ), name='password_reset_confirm'),
+    path('password-reset/complete/', auth_views.PasswordResetCompleteView.as_view(
+        template_name='password_reset_complete.html'
+    ), name='password_reset_complete'),
 ]

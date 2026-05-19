@@ -70,6 +70,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.global_settings',
                 'core.context_processors.unread_notifications',
+                'core.context_processors.academic_timeline',
             ],
         },
     },
@@ -81,19 +82,22 @@ WSGI_APPLICATION = 'ams_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+_db_host = os.environ.get('DB_HOST', 'ep-winter-butterfly-aic6xaao-pooler.c-4.us-east-1.aws.neon.tech')
+_use_ssl = 'neon.tech' in _db_host
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DB_NAME', 'neondb'),
         'USER': os.environ.get('DB_USER', 'neondb_owner'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'npg_nbhTHg7Zv6YF'),
-        'HOST': os.environ.get('DB_HOST', 'ep-winter-butterfly-aic6xaao-pooler.c-4.us-east-1.aws.neon.tech'),
+        'HOST': _db_host,
         'PORT': os.environ.get('DB_PORT', '5432'),
         'CONN_MAX_AGE': 0,  # Ensure fresh connections for serverless DB
         'OPTIONS': {
             'sslmode': 'require',
             'connect_timeout': 10,
-        }
+        } if _use_ssl else {}
     }
 }
 
@@ -148,6 +152,15 @@ AUTH_USER_MODEL = 'core.CustomUser'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home'
+
+# Email Configuration (for password reset and notifications)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # Gemini AI Configuration
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
