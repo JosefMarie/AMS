@@ -23,58 +23,110 @@
             {% csrf_token %}
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Basic Info -->
+                <!-- TVET Hierarchy -->
                 <div class="space-y-4">
-                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Topic Area / Range Details
-                        <span class="text-red-500">*</span></label>
-                    <input type="text" name="range_text" required placeholder="e.g. Introduction to Python Functions"
-                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Trade <span class="text-red-500">*</span></label>
+                    <select id="trade_select" name="trade_id" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
+                        <option value="">-- Select Trade --</option>
+                        {% for trade in trades %}
+                        <option value="{{ trade.id }}">{{ trade.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div class="space-y-4">
-                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Session Type <span
-                            class="text-red-500">*</span></label>
-                    <select name="template_type" required
-                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Session Type <span class="text-red-500">*</span></label>
+                    <select name="template_type" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
                         <option value="THEORY">Theory Session</option>
                         <option value="PRACTICAL">Practical / Workshop Session</option>
                     </select>
                 </div>
+                
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Curriculum <span class="text-red-500">*</span></label>
+                    <select id="curriculum_select" name="curriculum_id" required disabled class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700 bg-gray-50">
+                        <option value="">-- Select Curriculum --</option>
+                    </select>
+                </div>
+                
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Module <span class="text-red-500">*</span></label>
+                    <select id="module_select" name="module_id" required disabled class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700 bg-gray-50">
+                        <option value="">-- Select Module --</option>
+                    </select>
+                </div>
+                
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Learning Outcome (LO) <span class="text-red-500">*</span></label>
+                    <select id="lo_select" name="lo_id" required disabled class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700 bg-gray-50">
+                        <option value="">-- Select LO --</option>
+                    </select>
+                </div>
+                
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Indicative Content (IC) <span class="text-red-500">*</span></label>
+                    <select id="ic_select" name="ic_id" required disabled class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700 bg-gray-50">
+                        <option value="">-- Select IC --</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Syllabus Context -->
-            <div class="space-y-4">
-                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Syllabus Context (Paste Module
-                    Outline) <span class="text-red-500">*</span></label>
-                <textarea name="syllabus_text" rows="6" required
-                    placeholder="Paste the relevant syllabus objectives, content, and guidelines here..."
-                    class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700"></textarea>
-                <p class="text-xs text-gray-500">The AI will extract objectives, content summaries, and pedagogical flow
-                    from this text.</p>
+            <!-- Topics Selection -->
+            <div class="space-y-4 border border-gray-200 rounded-xl p-6 bg-gray-50 dark:bg-slate-800/50">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Select Topics to Cover <span class="text-red-500">*</span></label>
+                <div id="topics_container" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-4 bg-white rounded-xl border border-gray-200">
+                    <p class="text-xs text-gray-400 col-span-2 italic">Select an Indicative Content to load topics...</p>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <div class="space-y-4">
                     <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Duration (Minutes)</label>
                     <input type="number" name="duration" value="60"
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
                 </div>
                 <div class="space-y-4">
-                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Facilitation
-                        Technique</label>
-                    <input type="text" name="facilitation_technique" value="Brainstorming and Group Work"
-                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Facilitation Technique</label>
+                    <select id="facilitation_select" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
+                        <option value="Brainstorming and Group Work">Brainstorming & Group Work</option>
+                        <option value="Interactive Lecture / Presentation">Interactive Lecture & Presentation</option>
+                        <option value="Demonstration and Practice">Demonstration & Practice</option>
+                        <option value="Collaborative Project-Based Learning">Collaborative Project-Based Learning</option>
+                        <option value="Case Study and Problem Solving">Case Study & Problem Solving</option>
+                        <option value="Jigsaw facilitation technique">Jigsaw facilitation technique</option>
+                        <option value="Role-Playing and Simulations">Role-Playing & Simulations</option>
+                        <option value="Think-Pair-Share (TPS)">Think-Pair-Share (TPS)</option>
+                        <option value="Peer Tutoring / Facilitation">Peer Tutoring / Facilitation</option>
+                        <option value="Field Trip / Workplace Immersion">Field Trip & Workplace Immersion</option>
+                        <option value="Socratic Questioning">Socratic Questioning</option>
+                        <option value="Other">Other (Specify below)...</option>
+                    </select>
+                    <input type="text" id="facilitation_input" name="facilitation_technique" value="Brainstorming and Group Work"
+                        class="hidden mt-2 w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700" placeholder="Specify other facilitation technique...">
                 </div>
                 <div class="space-y-4">
                     <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">NVQF Level</label>
-                    <input type="text" name="level" value="Level 4"
+                    <input type="text" id="level_input" name="level" value="Level 4" readonly
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700 bg-gray-50 cursor-not-allowed" placeholder="Auto-filled from Curriculum...">
+                </div>
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Academic Term</label>
+                    <select name="term" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
+                        <option value="Term 1" {% if current_term == 'Term 1' %}selected{% endif %}>Term 1</option>
+                        <option value="Term 2" {% if current_term == 'Term 2' %}selected{% endif %}>Term 2</option>
+                        <option value="Term 3" {% if current_term == 'Term 3' %}selected{% endif %}>Term 3</option>
+                    </select>
+                </div>
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">Week(s)</label>
+                    <input type="text" name="weeks" value="1" placeholder="e.g. 1" required
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
                 </div>
             </div>
 
             <!-- Optional Context Toggle -->
             <details
-                class="group bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
+                class="group bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700 p-4" open>
                 <summary
                     class="flex items-center justify-between cursor-pointer font-bold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-widest">
                     Advanced Metadata (Optional)
@@ -84,15 +136,32 @@
                     </svg>
                 </summary>
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" name="trade" placeholder="Trade (e.g. Software Development)"
-                        class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
-                    <input type="text" name="class_name" placeholder="Class Name (e.g. Y1 SD)"
-                        class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
-                    <input type="number" name="num_students" placeholder="Number of Students"
-                        class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
-                    <input type="text" name="trainer_name" placeholder="Trainer Name"
-                        value="{{ request.user.get_full_name|default:request.user.username }}"
-                        class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Trade</label>
+                        <input type="text" name="trade" readonly placeholder="Trade (Auto-filled)"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 cursor-not-allowed">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Class Name</label>
+                        <select name="class_name" id="class_select"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
+                            <option value="">-- Select Class --</option>
+                            {% for cls in classrooms %}
+                            <option value="{{ cls.name }}">{{ cls.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Number of Students</label>
+                        <input type="number" name="num_students" placeholder="Number of Students"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Trainer Name</label>
+                        <input type="text" name="trainer_name" placeholder="Trainer Name"
+                            value="{{ request.user.get_full_name|default:request.user.username }}"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
+                    </div>
                 </div>
             </details>
 
@@ -112,4 +181,183 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const tradeSelect = document.getElementById("trade_select");
+        const curriculumSelect = document.getElementById("curriculum_select");
+        const moduleSelect = document.getElementById("module_select");
+        const loSelect = document.getElementById("lo_select");
+        const icSelect = document.getElementById("ic_select");
+        const topicsContainer = document.getElementById("topics_container");
+        
+        const facilitationSelect = document.getElementById("facilitation_select");
+        const facilitationInput = document.getElementById("facilitation_input");
+        const levelInput = document.getElementById("level_input");
+        const tradeInput = document.querySelector('input[name="trade"]');
+        const classSelect = document.getElementById("class_select");
+
+        let curriculumsCache = {};
+
+        function resetSelect(selectEl, defaultText) {
+            selectEl.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+            selectEl.disabled = true;
+            selectEl.classList.add("bg-gray-50");
+        }
+
+        // Facilitation Technique change listener
+        facilitationSelect.addEventListener("change", () => {
+            if (facilitationSelect.value === "Other") {
+                facilitationInput.classList.remove("hidden");
+                facilitationInput.value = "";
+                facilitationInput.focus();
+            } else {
+                facilitationInput.classList.add("hidden");
+                facilitationInput.value = facilitationSelect.value;
+            }
+        });
+
+        // Dynamic Class Name & Trade Auto-selection logic
+        function autoSelectClassName() {
+            if (!classSelect || !tradeSelect || !levelInput) return;
+            if (tradeSelect.selectedIndex <= 0) return;
+            
+            const tradeText = tradeSelect.options[tradeSelect.selectedIndex].text.toLowerCase();
+            const levelText = levelInput.value.toLowerCase();
+            const levelDigitMatch = levelText.match(/\d+/);
+            const levelDigit = levelDigitMatch ? levelDigitMatch[0] : "";
+            
+            for (let i = 1; i < classSelect.options.length; i++) {
+                const optText = classSelect.options[i].text.toLowerCase();
+                
+                // Matches "Level 4" / "L4" / "4"
+                const matchesLevel = levelDigit ? optText.includes("level " + levelDigit) || optText.includes("l" + levelDigit) || optText.includes("nvq " + levelDigit) : false;
+                
+                // Matches major keywords in the trade name
+                const tradeWords = tradeText.replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+                const matchesTrade = tradeWords.some(word => optText.includes(word));
+                
+                if (matchesLevel && matchesTrade) {
+                    classSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        tradeSelect.addEventListener("change", async (e) => {
+            const tradeId = e.target.value;
+            resetSelect(curriculumSelect, "Select Curriculum");
+            resetSelect(moduleSelect, "Select Module");
+            resetSelect(loSelect, "Select LO");
+            resetSelect(icSelect, "Select IC");
+            topicsContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-2 italic">Select an Indicative Content to load topics...</p>';
+            
+            // Auto-fill Trade Name
+            if (tradeSelect.selectedIndex > 0) {
+                tradeInput.value = tradeSelect.options[tradeSelect.selectedIndex].text;
+            } else {
+                tradeInput.value = "";
+            }
+            autoSelectClassName();
+
+            if (tradeId) {
+                const res = await fetch(`/api/curriculums/${tradeId}/`);
+                const data = await res.json();
+                curriculumsCache = {}; // Reset cache
+                data.forEach(item => {
+                    curriculumsCache[item.id] = item.qualification_level || '';
+                    curriculumSelect.innerHTML += `<option value="${item.id}">${item.title}</option>`;
+                });
+                curriculumSelect.disabled = false;
+                curriculumSelect.classList.remove("bg-gray-50");
+            }
+        });
+
+        curriculumSelect.addEventListener("change", async (e) => {
+            const curriculumId = e.target.value;
+            resetSelect(moduleSelect, "Select Module");
+            resetSelect(loSelect, "Select LO");
+            resetSelect(icSelect, "Select IC");
+            topicsContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-2 italic">Select an Indicative Content to load topics...</p>';
+
+            // Auto-fill NVQF Level from Curriculum
+            if (curriculumId && curriculumsCache[curriculumId]) {
+                levelInput.value = curriculumsCache[curriculumId];
+            } else {
+                levelInput.value = "Level 4";
+            }
+            autoSelectClassName();
+
+            if (curriculumId) {
+                const res = await fetch(`/api/modules/${curriculumId}/`);
+                const data = await res.json();
+                data.forEach(item => {
+                    moduleSelect.innerHTML += `<option value="${item.id}">${item.code} - ${item.title}</option>`;
+                });
+                moduleSelect.disabled = false;
+                moduleSelect.classList.remove("bg-gray-50");
+            }
+        });
+
+        moduleSelect.addEventListener("change", async (e) => {
+            const moduleId = e.target.value;
+            resetSelect(loSelect, "Select LO");
+            resetSelect(icSelect, "Select IC");
+            topicsContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-2 italic">Select an Indicative Content to load topics...</p>';
+
+            if (moduleId) {
+                const res = await fetch(`/api/learning_outcomes/${moduleId}/`);
+                const data = await res.json();
+                data.forEach(item => {
+                    loSelect.innerHTML += `<option value="${item.id}">${item.title}</option>`;
+                });
+                loSelect.disabled = false;
+                loSelect.classList.remove("bg-gray-50");
+            }
+        });
+
+        loSelect.addEventListener("change", async (e) => {
+            const loId = e.target.value;
+            resetSelect(icSelect, "Select IC");
+            topicsContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-2 italic">Select an Indicative Content to load topics...</p>';
+
+            if (loId) {
+                const res = await fetch(`/api/indicative_contents/${loId}/`);
+                const data = await res.json();
+                data.forEach(item => {
+                    icSelect.innerHTML += `<option value="${item.id}">${item.title}</option>`;
+                });
+                icSelect.disabled = false;
+                icSelect.classList.remove("bg-gray-50");
+            }
+        });
+
+        icSelect.addEventListener("change", async (e) => {
+            const icId = e.target.value;
+            topicsContainer.innerHTML = '';
+
+            if (icId) {
+                const res = await fetch(`/api/topics/${icId}/`);
+                const data = await res.json();
+                
+                if (data.length === 0) {
+                    topicsContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-2 italic">No topics found for this IC.</p>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const id = `topic_${item.id}`;
+                    topicsContainer.innerHTML += `
+                        <div class="flex items-start gap-3 p-3 rounded-lg border border-gray-100 hover:bg-purple-50 transition-colors">
+                            <input type="checkbox" id="${id}" name="topics" value="${item.id}" class="mt-1 w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500">
+                            <label for="${id}" class="text-sm text-gray-700 cursor-pointer flex-1">${item.title}</label>
+                        </div>
+                    `;
+                });
+            } else {
+                topicsContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-2 italic">Select an Indicative Content to load topics...</p>';
+            }
+        });
+    });
+</script>
 {% endblock %}

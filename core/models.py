@@ -11,6 +11,7 @@ class CustomUser(AbstractUser):
         STUDENT = "STUDENT", _("Student")
 
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.STUDENT)
+    trades = models.ManyToManyField('Trade', related_name='teachers', blank=True, help_text="Trades this teacher is qualified to teach")
 
     def save(self, *args, **kwargs):
         if self.is_superuser:
@@ -88,14 +89,14 @@ class SessionPlan(models.Model):
     
     # Common Fields
     sector = models.CharField(max_length=100)
-    trade = models.CharField(max_length=100)
+    trade = models.TextField()
     level = models.CharField(max_length=50, blank=True)
     class_name = models.CharField(max_length=100, blank=True)
     num_students = models.IntegerField(null=True, blank=True)
     academic_year = models.CharField(max_length=50, blank=True)
     term = models.CharField(max_length=50, blank=True)
     weeks = models.CharField(max_length=50, blank=True)
-    module = models.CharField(max_length=100) # e.g., Software Development
+    module = models.TextField() # e.g., Software Development
     learning_outcome = models.TextField()
     indicative_content = models.TextField(blank=True)
     performance_criteria = models.TextField(blank=True, help_text="Specific performance criteria from RTB curriculum")
@@ -106,7 +107,7 @@ class SessionPlan(models.Model):
     special_needs_support = models.TextField(blank=True, help_text="Support for students with special educational needs")
     
     # Specific Fields
-    topic = models.CharField(max_length=200)
+    topic = models.TextField()
     objectives = models.TextField()
     facilitation_technique = models.CharField(max_length=100, blank=True) # e.g. Jig-saw
     resources = models.TextField(blank=True)
@@ -115,6 +116,13 @@ class SessionPlan(models.Model):
     range_details = models.TextField(blank=True, help_text="Range of variables")
     duration = models.CharField(max_length=50, blank=True) # e.g. "2 Hours"
     reflection = models.TextField(blank=True)
+    references = models.TextField(blank=True, help_text="References and citations")
+    
+    # Differentiated Learning & Inclusivity Strategies
+    slow_learners_strategy = models.TextField(blank=True, help_text="Strategy for slow learners")
+    advanced_learners_strategy = models.TextField(blank=True, help_text="Strategy for advanced learners")
+    inclusivity_strategy = models.TextField(blank=True, help_text="Strategy for inclusivity/accommodations")
+    student_summary = models.TextField(blank=True, help_text="A student-friendly simple summary of the session")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -275,3 +283,52 @@ class Announcement(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+# --- NEW TVET HIERARCHY MODELS ---
+
+class Trade(models.Model):
+    name = models.CharField(max_length=150) # e.g., "Software Development Level 4"
+    sector = models.CharField(max_length=150, blank=True) # e.g., "ICT"
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class Curriculum(models.Model):
+    trade = models.ForeignKey(Trade, on_delete=models.CASCADE, related_name='curriculums')
+    title = models.CharField(max_length=200) # e.g., "RTQF Level 4 Software 2026"
+    qualification_level = models.CharField(max_length=50, blank=True, null=True) # e.g., "Level 4"
+    pdf_document = models.FileField(upload_to='curriculums/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.trade.name})"
+
+class SyllabusModule(models.Model):
+    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, related_name='modules')
+    code = models.CharField(max_length=50) # e.g., "ICT SDV 4 01"
+    title = models.TextField() # e.g., "Develop Web Applications"
+    
+    def __str__(self):
+        return f"{self.code} - {self.title}"
+
+class LearningOutcome(models.Model):
+    module = models.ForeignKey(SyllabusModule, on_delete=models.CASCADE, related_name='learning_outcomes')
+    title = models.TextField() # e.g., "LO2: Create database"
+
+    def __str__(self):
+        return self.title
+
+class IndicativeContent(models.Model):
+    learning_outcome = models.ForeignKey(LearningOutcome, on_delete=models.CASCADE, related_name='indicative_contents')
+    title = models.TextField() # e.g., "IC1: Database schemas"
+
+    def __str__(self):
+        return self.title
+
+class Topic(models.Model):
+    indicative_content = models.ForeignKey(IndicativeContent, on_delete=models.CASCADE, related_name='topics')
+    title = models.TextField() # e.g., "Primary Keys and Foreign Keys"
+
+    def __str__(self):
+        return self.title

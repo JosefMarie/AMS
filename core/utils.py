@@ -61,7 +61,26 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
     Simulates AI Session Plan Generation based on syllabus and range.
     Objectives and Development content are now derived directly from analyzing the syllabus text.
     """
-    topic = range_text or kwargs.get('topic', 'General Topic')
+    raw_topic = range_text or kwargs.get('topic', 'General Topic')
+    import re
+    # Convert comma-separated or single-line topics to a numbered list
+    if "," in raw_topic and "\n" not in raw_topic:
+        topics_list = [t.strip() for t in raw_topic.split(",") if t.strip()]
+        topic = "\n".join([f"{i+1}. {t}" for i, t in enumerate(topics_list)])
+    elif "\n" in raw_topic:
+        # Re-number or structure existing lines
+        lines = [l.strip() for l in raw_topic.split("\n") if l.strip()]
+        formatted = []
+        for i, line in enumerate(lines):
+            cleaned = re.sub(r'^\d+[\.\)]\s*', '', line).strip()
+            cleaned = re.sub(r'^-\s*', '', cleaned).strip()
+            formatted.append(f"{i+1}. {cleaned}")
+        topic = "\n".join(formatted)
+    else:
+        # Single topic: ensure numbered
+        cleaned = re.sub(r'^\d+[\.\)]\s*', '', raw_topic).strip()
+        cleaned = re.sub(r'^-\s*', '', cleaned).strip()
+        topic = f"1. {cleaned}"
     technique = kwargs.get('facilitation_technique', 'Brainstorming')
     duration_str = str(kwargs.get('duration', '60'))
     
@@ -274,29 +293,57 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
     ict_tools = "Digital projector, simulation software, and internet access."
     special_needs = "Provide large-print handouts and ensure accessibility."
 
-    # SMART Objectives Generation Logic
+    # SMART Objectives Generation Logic based on Selected Topics & Template Type
     objective_items = []
-    stem = "By the end of this lesson, students will be able to"
-    
-    nvqf_level = str(kwargs.get('level', '4'))
-    if "5" in nvqf_level:
-        verbs = ["analyze", "evaluate", "implement"]
-    elif "3" in nvqf_level:
-        verbs = ["list", "identify", "describe"]
-    else:
-        verbs = ["explain", "demonstrate", "discuss"]
-
-    for i, line in enumerate(extracted_objectives[:3]):
-        # Remove common bullet points or numbering
-        clean_line = re.sub(r'^\d+[\.\)]\s*', '', line).strip()
-        if not clean_line.lower().startswith("by the end"):
-            objective_items.append(f"{i+1}. {stem} {verbs[i % len(verbs)]} {clean_line}.")
+    selected_topics_list = [t.strip() for t in re.split(r'[,;\n\r]', topic) if t.strip()]
+    topics_clean = []
+    for t in selected_topics_list:
+        cleaned = re.sub(r'^(Module|Learning Outcome|Indicative Content|IC|LO):\s*', '', t, flags=re.IGNORECASE).strip()
+        cleaned = re.sub(r'^\d+[\.\)]\s*', '', cleaned).strip()
+        cleaned = re.sub(r'^-\s*', '', cleaned).strip()
+        if cleaned:
+            topics_clean.append(cleaned)
+    if not topics_clean:
+        topics_clean = [topic]
+    is_practical = template_type.upper() == 'PRACTICAL'
+    if is_practical:
+        if len(topics_clean) == 1:
+            objective_items = [
+                f"1. By the end of this lesson, students will be able to demonstrate the setup and safety configuration for {topics_clean[0]}.",
+                f"2. By the end of this lesson, students will be able to implement and execute practical procedures for {topics_clean[0]} safely and accurately.",
+                f"3. By the end of this lesson, students will be able to test, debug, and troubleshoot operational issues related to {topics_clean[0]}."
+            ]
+        elif len(topics_clean) == 2:
+            objective_items = [
+                f"1. By the end of this lesson, students will be able to demonstrate hands-on setup, tools inspection, and safety checks for {topics_clean[0]}.",
+                f"2. By the end of this lesson, students will be able to configure, construct, and operate tasks related to {topics_clean[1]}.",
+                f"3. By the end of this lesson, students will be able to integrate, test, and troubleshoot a unified system combining {topics_clean[0]} and {topics_clean[1]}."
+            ]
         else:
-            objective_items.append(f"{i+1}. {clean_line}")
-
-    if not objective_items:
-        objective_items = [f"1. {stem} {verbs[0]} the key principles of {topic}."]
-
+            objective_items = [
+                f"1. By the end of this lesson, students will be able to demonstrate practical setup and tools inspection for {topics_clean[0]}.",
+                f"2. By the end of this lesson, students will be able to implement, configure, and execute the procedures of {topics_clean[1]} successfully.",
+                f"3. By the end of this lesson, students will be able to troubleshoot, maintain, and optimize tasks for {', '.join(topics_clean[2:])}."
+            ]
+    else:
+        if len(topics_clean) == 1:
+            objective_items = [
+                f"1. By the end of this lesson, students will be able to define and explain the fundamental theoretical concepts of {topics_clean[0]}.",
+                f"2. By the end of this lesson, students will be able to discuss and analyze the structure, operations, and use cases of {topics_clean[0]}.",
+                f"3. By the end of this lesson, students will be able to evaluate and outline theoretical best practices when working with {topics_clean[0]}."
+            ]
+        elif len(topics_clean) == 2:
+            objective_items = [
+                f"1. By the end of this lesson, students will be able to explain the core principles and theoretical framework of {topics_clean[0]}.",
+                f"2. By the end of this lesson, students will be able to describe and analyze the operations and theoretical behavior of {topics_clean[1]}.",
+                f"3. By the end of this lesson, students will be able to compare, contrast, and discuss the relationships between {topics_clean[0]} and {topics_clean[1]}."
+            ]
+        else:
+            objective_items = [
+                f"1. By the end of this lesson, students will be able to describe the theoretical concepts and rules of {topics_clean[0]}.",
+                f"2. By the end of this lesson, students will be able to explain, illustrate, and map the mechanisms of {topics_clean[1]}.",
+                f"3. By the end of this lesson, students will be able to analyze, discuss, and summarize the theoretical aspects and applications of {', '.join(topics_clean[2:])}."
+            ]
     objectives_text = "\n".join(objective_items)
 
     return {
@@ -325,6 +372,10 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
         "range_details": topic,
         "duration": f"{total_minutes} min",
         "reflection": "Session conducted successfully based on syllabus content.",
+        "slow_learners_strategy": f"<p>1. Provide a step-by-step visual diagram/flowchart explaining <strong>{topic}</strong>.</p><p>2. Pair struggling students with advanced peers for collaborative review.</p>",
+        "advanced_learners_strategy": f"<p>1. Assign a complex real-world extension challenge based on <strong>{topic}</strong>.</p><p>2. Direct them to design a comprehensive system architecture mapping this concept.</p>",
+        "inclusivity_strategy": "<p>1. Offer large-font visual materials and dynamic captions.</p><p>2. Ensure physical/visual assistance options are highlighted and paired.</p>",
+        "student_summary": f"<p>In this session, we will discover the core parameters of <strong>{topic}</strong>, exploring its real-world implementation, step-by-step applications, and practical tools to master this competency.</p>",
         "activities": activities
     }
 
@@ -398,13 +449,23 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
     
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         prompt = f"""
         Act as an expert TVET (Technical and Vocational Education and Training) Trainer.
         You need to generate a {template_type} session plan for a class on {topic}.
         The total duration of the class is {duration_str} minutes.
         The facilitation technique requested is {technique}.
+        
+        CRITICAL OBJECTIVE INSTRUCTIONS:
+        1. Generate EXACTLY 3 objectives strictly based on the specific selected topics ({topic}), NOT the whole syllabus.
+        2. Always use Bloom's Taxonomy action verbs (e.g., Analyze, Design, Evaluate, Construct, Explain).
+        3. NEVER include raw syllabus headers or prefixes like "Module: ...", "Learning Outcome: ...", or "Indicative Content: ..." in the objectives. Focus directly on the concrete topic.
+        4. For THEORY sessions ({template_type} == 'THEORY'), focus all 3 objectives on cognitive theoretical understanding (e.g., Explain, Discuss, Analyze, Compare).
+        5. For PRACTICAL sessions ({template_type} == 'PRACTICAL'), focus all 3 objectives on hands-on, psychomotor, and troubleshooting performance skills (e.g., Demonstrate, Implement, Configure, Troubleshoot).
+        6. For "topic": List the selected topics strictly as a formatted numbered or bulleted list (e.g., "1. Topic A\n2. Topic B"), NOT as a paragraph. Keep "range_details" as a paragraph describing the scope/range.
+        7. Provide 2-3 specific technical or pedagogical references/citations for these topics in the "references" field.
+        8. Provide highly custom and specific differentiated strategies in HTML paragraphs (<p>...<p>) for slow learners, advanced learners, and inclusivity accommodations. Generate a student-friendly visual/interactive lesson summary for students to view.
         
         Syllabus Context:
         {syllabus_text}
@@ -428,14 +489,19 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
             "hse_considerations": "Specific Health and Safety requirements for this topic",
             "ict_tools": "Tools needed...",
             "special_needs_support": "How to support students...",
-            "topic": "{topic}",
-            "objectives": "1. By the end of this lesson, students will be able to...\\n2. ...",
+            "topic": "1. Selected Topic A\\n2. Selected Topic B...",
+            "objectives": "Knowledge Objectives:\\n1. By the end of this lesson...\\nSkill Objectives:\\n2. By the end of this lesson...",
             "facilitation_technique": "{technique}",
             "resources": "Projector, Task sheets, etc.",
-            "indicative_content": "Summary of the content...",
-            "range_details": "{topic}",
+            "indicative_content": "Summary of the content (bulleted list)...",
+            "range_details": "Paragraph describing the range/scope...",
             "duration": "{duration_str} min",
             "reflection": "Post-session reflection placeholder",
+            "references": "1. Reference Book/Doc A\\n2. Reference Book/Doc B...",
+            "slow_learners_strategy": "<p>Specific supportive strategy in HTML paragraphs...</p>",
+            "advanced_learners_strategy": "<p>Specific extension strategy in HTML paragraphs...</p>",
+            "inclusivity_strategy": "<p>Specific accessibility strategy in HTML paragraphs...</p>",
+            "student_summary": "<p>A student-friendly simple summary of the session in HTML paragraphs...</p>",
             "activities": [
                 {{
                     "step_name": "Introduction",

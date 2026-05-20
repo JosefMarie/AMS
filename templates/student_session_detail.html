@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-8 animate-fadeIn">
+    <!-- Breadcrumbs / Back Navigation -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Dashboard
+        </a>
+        <span class="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">
+            Student Lesson Hub
+        </span>
+    </div>
+
+    <!-- Premium Glassmorphism Header Card -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 p-8 md:p-10 shadow-2xl text-white">
+        <!-- Background Blur Accents -->
+        <div class="absolute -top-12 -right-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-12 -left-12 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+
+        <div class="relative z-10 space-y-6">
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white/10 backdrop-blur-sm border border-white/20">
+                    NVQF Level {{ session.level }}
+                </span>
+                <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-indigo-500/30 backdrop-blur-sm border border-indigo-400/20 text-indigo-200">
+                    {{ session.trade }}
+                </span>
+            </div>
+
+            <div class="space-y-2">
+                <p class="text-indigo-400 font-bold text-sm uppercase tracking-wider">Module: {{ session.module }}</p>
+                <h1 class="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+                    {{ session.topic|linebreaksbr }}
+                </h1>
+            </div>
+
+            <div class="border-t border-white/10 pt-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                    <p class="text-white/40 text-[10px] font-black uppercase tracking-widest">Trainer</p>
+                    <p class="text-sm font-bold text-white/95 mt-1">{{ session.trainer_name }}</p>
+                </div>
+                <div>
+                    <p class="text-white/40 text-[10px] font-black uppercase tracking-widest">Duration</p>
+                    <p class="text-sm font-bold text-white/95 mt-1">{{ session.duration }}</p>
+                </div>
+                <div>
+                    <p class="text-white/40 text-[10px] font-black uppercase tracking-widest">Technique</p>
+                    <p class="text-sm font-bold text-white/95 mt-1">{{ session.facilitation_technique }}</p>
+                </div>
+                <div>
+                    <p class="text-white/40 text-[10px] font-black uppercase tracking-widest">Your Module Grade</p>
+                    <p class="text-sm font-black mt-1">
+                        {% if has_marks %}
+                            <span class="{% if score_pct >= 80 %}text-emerald-400{% elif score_pct < 60 %}text-rose-400{% else %}text-amber-400{% endif %}">
+                                {{ score_pct|floatformat:1 }}%
+                            </span>
+                        {% else %}
+                            <span class="text-slate-400 italic font-medium">No Marks Yet</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student-Friendly Summary Card -->
+    {% if session.student_summary %}
+    <div class="glass-card p-8 border border-slate-100 dark:border-slate-800 shadow-xl space-y-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/20 flex items-center justify-center text-purple-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Interactive Lesson Summary</h3>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">A quick bird's-eye view of this topic</p>
+            </div>
+        </div>
+        <div class="prose prose-indigo dark:prose-invert max-w-none text-slate-600 dark:text-slate-300">
+            {{ session.student_summary|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 🧠 Dynamic Differentiated Learning Accommodations Panel -->
+    <div class="glass-card p-8 border border-indigo-50 dark:border-slate-800/80 shadow-2xl relative overflow-hidden">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Your Personalized Smart Strategy</h2>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Custom accommodations based on academic grade metrics</p>
+                </div>
+            </div>
+
+            {% if has_marks %}
+                <span class="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100 animate-pulse flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Grade-Triangulated Unlock
+                </span>
+            {% else %}
+                <span class="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-100">
+                    All Access Mode
+                </span>
+            {% endif %}
+        </div>
+
+        <!-- Accommodation Content Dynamic Display -->
+        <div class="space-y-6">
+            {% if has_marks %}
+                {% if score_pct < 60 %}
+                    <!-- Slow Learner Booster Strategy -->
+                    <div class="p-6 rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50/50 border border-rose-100 dark:from-rose-950/20 dark:border-rose-900/50 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">🚀</span>
+                            <div>
+                                <h4 class="font-extrabold text-rose-800 dark:text-rose-300 text-lg">Tailored Concept Booster Strategy</h4>
+                                <p class="text-xs text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider">Unlocked because module performance is under 60%</p>
+                            </div>
+                        </div>
+                        <div class="prose prose-rose dark:prose-invert text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                            {{ session.slow_learners_strategy|safe }}
+                        </div>
+                        <div class="bg-white/60 dark:bg-slate-900/40 p-4 rounded-xl border border-rose-100/50 text-xs text-rose-700 dark:text-rose-400 font-medium">
+                            💡 <strong>Trainer Encouragement:</strong> "Everyone learns at their own pace! Review this booster checklist and visual summary to master the concept step-by-step."
+                        </div>
+                    </div>
+                {% elif score_pct >= 80 %}
+                    <!-- Advanced Learner Extension Challenge -->
+                    <div class="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-indigo-50/50 border border-emerald-100 dark:from-emerald-950/20 dark:border-emerald-900/50 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">🏆</span>
+                            <div>
+                                <h4 class="font-extrabold text-emerald-800 dark:text-emerald-300 text-lg">High-Flyer Extension Challenge</h4>
+                                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">Unlocked because module performance is 80% or above</p>
+                            </div>
+                        </div>
+                        <div class="prose prose-emerald dark:prose-invert text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                            {{ session.advanced_learners_strategy|safe }}
+                        </div>
+                        <div class="bg-white/60 dark:bg-slate-900/40 p-4 rounded-xl border border-emerald-100/50 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                            🔥 <strong>Trainer Encouragement:</strong> "Excellent work! Push your boundaries by diving into these extension tasks and complex troubleshooting options."
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- On-Track Standard Strategy Selector -->
+                    <div class="p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50/50 border border-indigo-100 dark:from-indigo-950/20 dark:border-indigo-900/50 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">✨</span>
+                            <div>
+                                <h4 class="font-extrabold text-indigo-800 dark:text-indigo-300 text-lg">Solid Competency Track</h4>
+                                <p class="text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider">Keep up the steady work! Your average is in the normal range.</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 dark:text-slate-300">You are doing fantastic! Below, you can explore helper booster aids or extend your learning with challenges:</p>
+                        
+                        <!-- Mini Tabs for Middle Tier Students -->
+                        <div class="flex gap-2">
+                            <button onclick="toggleOnTrackTab('booster')" id="btn-booster" class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all">Booster Aids</button>
+                            <button onclick="toggleOnTrackTab('challenge')" id="btn-challenge" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-xl transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">Extension Challenges</button>
+                        </div>
+                        <div id="ontrack-content" class="bg-white/50 dark:bg-slate-900/40 p-4 rounded-xl border border-indigo-100/50 mt-2">
+                            <div id="ontrack-booster" class="prose prose-indigo dark:prose-invert text-xs">
+                                {{ session.slow_learners_strategy|safe }}
+                            </div>
+                            <div id="ontrack-challenge" class="prose prose-indigo dark:prose-invert text-xs hidden">
+                                {{ session.advanced_learners_strategy|safe }}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <!-- No Marks Registered -> Tabbed selection allowing full exploration of all strategy options -->
+                <div class="space-y-4">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Since you have no grades recorded for this module yet, you have complete all-access! Select any strategy pill below to view:</p>
+                    
+                    <div class="flex flex-wrap gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <button onclick="showStrategyTab('slow')" id="tab-slow" class="px-4 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md">
+                            🐢 Struggling? Booster Tasks
+                        </button>
+                        <button onclick="showStrategyTab('advanced')" id="tab-advanced" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                            ⚡ Excelling? Extensions
+                        </button>
+                        <button onclick="showStrategyTab('inclusivity')" id="tab-inclusivity" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                            👁️ Inclusivity & Support
+                        </button>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
+                        <div id="strat-content-slow" class="prose prose-indigo dark:prose-invert text-sm max-w-none">
+                            {{ session.slow_learners_strategy|safe }}
+                        </div>
+                        <div id="strat-content-advanced" class="prose prose-indigo dark:prose-invert text-sm max-w-none hidden">
+                            {{ session.advanced_learners_strategy|safe }}
+                        </div>
+                        <div id="strat-content-inclusivity" class="prose prose-indigo dark:prose-invert text-sm max-w-none hidden">
+                            {{ session.inclusivity_strategy|safe }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Always Display Inclusivity Accommodations Block if student has marks -->
+            {% if has_marks %}
+            <div class="p-5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">👁️</span>
+                    <h5 class="font-bold text-slate-700 dark:text-slate-200 text-sm">General Learning Accommodations (Accessibility support)</h5>
+                </div>
+                <div class="prose prose-slate dark:prose-invert text-xs text-slate-500 dark:text-slate-400">
+                    {{ session.inclusivity_strategy|safe }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Interactive Lesson Timeline Roadmap -->
+    <div class="glass-card p-8 border border-slate-100 dark:border-slate-800 shadow-xl space-y-6">
+        <div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Lesson Roadmap & Flow</h3>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Interact and check off steps as you complete them in class!</p>
+        </div>
+
+        <div class="relative pl-6 border-l-2 border-indigo-100 dark:border-slate-800 space-y-8">
+            {% for activity in session.activities.all %}
+            <div class="relative group">
+                <!-- Timeline bullet indicator -->
+                <div class="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-white dark:bg-slate-900 border-4 border-indigo-500 group-hover:scale-125 transition-transform"></div>
+
+                <div class="glass-card p-5 border border-slate-100 hover:border-indigo-100 dark:border-slate-800/80 transition-all space-y-3">
+                    <div class="flex justify-between items-start gap-4">
+                        <div class="space-y-1">
+                            <h4 class="font-bold text-slate-800 dark:text-slate-100">{{ activity.step_name }}</h4>
+                            <p class="text-[10px] text-indigo-500 dark:text-indigo-400 font-extrabold uppercase tracking-wider">Duration: {{ activity.time_allocation }}</p>
+                        </div>
+                        <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 rounded">
+                            Step {{ forloop.counter }}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="space-y-1 bg-indigo-50/30 dark:bg-indigo-950/10 p-3 rounded-lg border border-indigo-100/30">
+                            <p class="font-black text-indigo-700 dark:text-indigo-400 uppercase text-[9px] tracking-widest">Learner Role & Focus</p>
+                            <p class="text-slate-600 dark:text-slate-300 leading-relaxed">{{ activity.learner_activity|linebreaksbr }}</p>
+                        </div>
+                        <div class="space-y-1 bg-slate-50 dark:bg-slate-800/20 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                            <p class="font-black text-slate-500 uppercase text-[9px] tracking-widest">Required Resources</p>
+                            <p class="text-slate-600 dark:text-slate-400 leading-relaxed">
+                                {% if activity.resources_needed %}
+                                    {{ activity.resources_needed }}
+                                {% else %}
+                                    Standard Class Material
+                                {% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching helpers for middle range students
+    function toggleOnTrackTab(tab) {
+        const booster = document.getElementById('ontrack-booster');
+        const challenge = document.getElementById('ontrack-challenge');
+        const btnBooster = document.getElementById('btn-booster');
+        const btnChallenge = document.getElementById('btn-challenge');
+        
+        if (tab === 'booster') {
+            booster.classList.remove('hidden');
+            challenge.classList.add('hidden');
+            btnBooster.className = "px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all";
+            btnChallenge.className = "px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-xl transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300";
+        } else {
+            booster.classList.add('hidden');
+            challenge.classList.remove('hidden');
+            btnChallenge.className = "px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all";
+            btnBooster.className = "px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-xl transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300";
+        }
+    }
+
+    // Tab switching helpers for students with no marks
+    function showStrategyTab(type) {
+        const tabs = ['slow', 'advanced', 'inclusivity'];
+        tabs.forEach(tab => {
+            const btn = document.getElementById('tab-' + tab);
+            const content = document.getElementById('strat-content-' + tab);
+            if (tab === type) {
+                btn.className = "px-4 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md";
+                content.classList.remove('hidden');
+            } else {
+                btn.className = "px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300";
+                content.classList.add('hidden');
+            }
+        });
+    }
+</script>
+{% endblock %}

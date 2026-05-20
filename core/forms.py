@@ -91,12 +91,13 @@ class TrainerCreationForm(forms.ModelForm):
     
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email']
+        fields = ['username', 'first_name', 'last_name', 'email', 'trades']
         widgets = {
             'username': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Username'}),
             'first_name': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'First Name'}),
             'last_name': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Last Name'}),
             'email': forms.EmailInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Email Address'}),
+            'trades': forms.SelectMultiple(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32'}),
         }
 
     def save(self, commit=True):
@@ -105,6 +106,7 @@ class TrainerCreationForm(forms.ModelForm):
         user.role = CustomUser.Role.TEACHER
         if commit:
             user.save()
+            self.save_m2m()
         return user
 
 from .models import SystemSetting

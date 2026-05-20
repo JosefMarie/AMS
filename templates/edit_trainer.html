@@ -56,6 +56,18 @@
                     required>
             </div>
 
+            <div class="mt-6">
+                <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Assigned Trades</label>
+                <select name="trades" multiple class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 transition-all h-32 text-sm text-gray-700">
+                    {% for trade in all_trades %}
+                        <option value="{{ trade.id }}" {% if trade.id in assigned_trade_ids %}selected{% endif %}>
+                            {{ trade.name }} {% if trade.sector %}({{ trade.sector }}){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                <p class="text-[10px] text-gray-400 font-bold mt-2">Hold Ctrl (or Cmd on Mac) to select multiple trades.</p>
+            </div>
+
             <div class="pt-6 border-t border-gray-100 flex justify-end">
                 <button type="submit"
                     class="px-8 py-4 rounded-2xl bg-indigo-600 text-white font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center gap-3 group">

@@ -227,6 +227,64 @@
                     </tbody>
                 </table>
             </div>
-            </section>
         </div>
-    </div>{% endblock %}
+    </div>
+
+    <!-- 📚 Classroom Session Plans & Differentiated Summaries -->
+    <div class="glass-card p-8 border border-slate-100 dark:border-slate-800 shadow-xl mb-8">
+        <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
+            <div>
+                <h3 class="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>📚</span> My Class Lessons & Session Plans
+                </h3>
+                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">Explore generated summaries, visual roadmaps, and tailored learning boosters</p>
+            </div>
+            <span class="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-black uppercase tracking-wider rounded-lg">
+                {{ session_plans|length }} Sessions Available
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for plan in session_plans %}
+            <div class="group relative overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800/80 p-6 hover:shadow-lg hover:border-indigo-100 transition-all flex flex-col justify-between bg-white dark:bg-slate-900">
+                <div class="space-y-3">
+                    <div class="flex justify-between items-start gap-2">
+                        <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[9px] font-black uppercase tracking-widest text-slate-500 rounded">
+                            Level {{ plan.level }}
+                        </span>
+                        <span class="text-[9px] font-bold text-slate-400">
+                            {{ plan.created_at|date:"M d, Y" }}
+                        </span>
+                    </div>
+
+                    <h4 class="font-extrabold text-slate-900 dark:text-white text-base group-hover:text-indigo-600 transition-colors line-clamp-2">
+                        {{ plan.topic|truncatewords:10 }}
+                    </h4>
+                    
+                    <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                        Module: {{ plan.module }}
+                    </p>
+                </div>
+
+                <div class="pt-5 mt-4 border-t border-slate-50 dark:border-slate-800/60 flex items-center justify-between">
+                    <span class="text-[10px] text-slate-400 font-bold">
+                        By Trainer {{ plan.trainer_name }}
+                    </span>
+                    <a href="{% url 'student_session_detail' plan.id %}"
+                        class="px-4 py-2 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5 shadow-sm group-hover:scale-105">
+                        Open Lesson
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-2 text-center py-10 text-slate-400 italic">
+                No active classroom session plans found yet. Check back once your trainer publishes one!
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

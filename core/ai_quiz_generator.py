@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(override=True)
 
 # Configure Gemini API — prefer env var, fall back to database setting
 def get_api_key():

@@ -70,7 +70,12 @@ def dashboard(request):
         context['trainers'] = trainers
         context['search_query'] = search_query
         
-        recent_sessions = SessionPlan.objects.all().select_related('teacher').order_by('-created_at')[:5]
+        from django.utils import timezone
+        today = timezone.localdate()
+        recent_sessions = SessionPlan.objects.all().select_related('teacher').filter(
+            created_at__date=today,
+            term=active_term
+        ).order_by('-created_at')
         # Attach presentation attributes
         for s in recent_sessions:
             s.s_topic = s.topic
@@ -78,6 +83,7 @@ def dashboard(request):
             s.s_type = s.template_type
             s.s_date = s.created_at.strftime("%b %d")
         context['recent_sessions'] = recent_sessions
+        context['active_term'] = active_term
 
         # 1. Performance Trends: Average score per module
         marks_qs = StudentMark.objects.filter(assessment__academic_year=active_year)
@@ -134,12 +140,20 @@ def dashboard(request):
 
         return render(request, 'dashboard_admin.html', context)
     elif user.role == CustomUser.Role.TEACHER:
-        sessions = SessionPlan.objects.filter(teacher=user).order_by('-created_at')[:5]
+        from django.utils import timezone
+        today = timezone.localdate()
+        sessions = SessionPlan.objects.filter(
+            teacher=user,
+            created_at__date=today,
+            term=active_term
+        ).order_by('-created_at')
         for s in sessions:
             s.stype = s.template_type
             s.stopic = s.topic
             s.sdate = s.created_at.strftime("%b %d")
         context['my_sessions'] = sessions
+        context['active_term'] = active_term
+        context['today'] = today
         
         classrooms = Classroom.objects.filter(teacher=user)
         total_students = 0
@@ -188,13 +202,45 @@ def dashboard(request):
             m.m_max = m.total_max if hasattr(m, 'total_max') and m.total_max else (m.assessment.total_marks if m.assessment else 100)
             m.m_name = m.assessment.module_name if m.assessment and hasattr(m.assessment, 'module_name') and m.assessment.module_name else "CORE MODULE"
         # Announcements for student's classroom
-        from .models import Announcement
+        from .models import Announcement, SessionPlan
         classroom = user.student_profile.classroom if hasattr(user, 'student_profile') else None
         if classroom:
             context['announcements'] = Announcement.objects.filter(classroom=classroom)[:5]
         else:
             context['announcements'] = []
 
+        # Strictly filter session plans based on class level (Level 3 sees level 3, Level 4 sees level 4, etc.)
+        student_level_str = getattr(user.student_profile, 'level', '')
+        student_level_digit = None
+        for char in student_level_str:
+            if char.isdigit():
+                student_level_digit = char
+                break
+        if not student_level_digit and classroom:
+            for char in classroom.name:
+                if char.isdigit():
+                    student_level_digit = char
+                    break
+
+        all_plans_qs = SessionPlan.objects.all().order_by('-created_at')
+        session_plans = []
+        for plan in all_plans_qs:
+            plan_level_str = getattr(plan, 'level', '')
+            plan_digit = None
+            for char in plan_level_str:
+                if char.isdigit():
+                    plan_digit = char
+                    break
+            
+            # If both have digit designations, enforce a strict match
+            if student_level_digit and plan_digit:
+                if student_level_digit == plan_digit:
+                    session_plans.append(plan)
+            # If no levels are set for the student, fall back to showing all
+            elif not student_level_digit:
+                session_plans.append(plan)
+
+        context['session_plans'] = session_plans[:6]
         context['marks'] = marks
         context['ufirst'] = user.username[0].upper() if user.username else "U"
         context['sid'] = user.student_profile.student_id if hasattr(user, 'student_profile') and user.student_profile and user.student_profile.student_id else "STU-2026-X"
@@ -213,6 +259,70 @@ def dashboard(request):
         context['profile_completion_total'] = len(completion_items)
 
         return render(request, 'dashboard_student.html', context)
+
+@login_required
+def student_session_detail_view(request, session_id):
+    if request.user.role != CustomUser.Role.STUDENT:
+        messages.error(request, "Access restricted to students.")
+        return redirect('dashboard')
+        
+    session = get_object_or_404(SessionPlan, id=session_id)
+    student = request.user
+    classroom = getattr(student.student_profile, 'classroom', None)
+    
+    # Enforce Class Level Security Authorization
+    student_level_str = getattr(student.student_profile, 'level', '')
+    student_level_digit = None
+    for char in student_level_str:
+        if char.isdigit():
+            student_level_digit = char
+            break
+    if not student_level_digit and classroom:
+        for char in classroom.name:
+            if char.isdigit():
+                student_level_digit = char
+                break
+                
+    plan_level_str = getattr(session, 'level', '')
+    plan_digit = None
+    for char in plan_level_str:
+        if char.isdigit():
+            plan_digit = char
+            break
+            
+    if student_level_digit and plan_digit and student_level_digit != plan_digit:
+        messages.error(request, "You are not authorized to view session plans for another class level.")
+        return redirect('dashboard')
+        
+    # Calculate student average marks for this session's module
+    from .models import StudentMark
+    marks = StudentMark.objects.filter(student=student)
+    
+    module_marks = []
+    for mark in marks:
+        if mark.assessment and mark.assessment.module:
+            m_code = mark.assessment.module.module_code.lower()
+            m_name = mark.assessment.module.module_name.lower()
+            s_mod = session.module.lower()
+            if m_code in s_mod or m_name in s_mod:
+                module_marks.append(mark)
+                
+    if module_marks:
+        total_score = sum(m.score for m in module_marks)
+        total_max = sum(m.total_marks if m.total_marks else 100 for m in module_marks)
+        score_pct = (total_score / total_max) * 100 if total_max > 0 else 0
+        has_marks = True
+    else:
+        score_pct = 0.0
+        has_marks = False
+        
+    context = {
+        'session': session,
+        'score_pct': score_pct,
+        'has_marks': has_marks,
+    }
+    return render(request, 'student_session_detail.html', context)
+
 @login_required
 def admin_settings(request):
     if request.user.role != CustomUser.Role.ADMIN:
@@ -305,106 +415,74 @@ def view_session_pdf(request, session_id):
         html = HTML(string=html_string)
         pdf = html.write_pdf()
         response = HttpResponse(pdf, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="{session.topic}.pdf"'
+        # Sanitize filename to prevent newlines/quotes in HTTP header
+        clean_topic = session.topic.replace('\n', ' ').replace('\r', '').replace('"', '').replace("'", "").strip()
+        if len(clean_topic) > 100:
+            clean_topic = clean_topic[:97] + "..."
+        response['Content-Disposition'] = f'inline; filename="{clean_topic}.pdf"'
         return response
     else:
         return HttpResponse("WeasyPrint not installed or configured.", status=500)
 
-@login_required
-def generate_session_plan_view(request):
-    from .utils import generate_session_plan_ai
-    from .models import SessionPlan, Activity
-    
-    if request.method == 'POST':
-        syllabus_text = request.POST.get('syllabus_text', '')
-        range_text = request.POST.get('range_text', '')
-        template_type = request.POST.get('template_type', 'THEORY')
-        
-        # New manual fields
-        extra_data = {
-            'sector': request.POST.get('sector', ''),
-            'trade': request.POST.get('trade', ''),
-            'level': request.POST.get('level', ''),
-            'class_name': request.POST.get('class_name', ''),
-            'num_students': request.POST.get('num_students', 0),
-            'academic_year': request.POST.get('academic_year', '2025/2026'),
-            'term': request.POST.get('term', 'Term 1'),
-            'weeks': request.POST.get('weeks', '1'),
-            'module_name': request.POST.get('module_name', ''),
-            'learning_outcome': request.POST.get('learning_outcome', ''),
-            'indicative_content': request.POST.get('indicative_content', ''),
-            'range_details': request.POST.get('range_details', ''),
-            'topic': range_text,
-            'duration': request.POST.get('duration', '60'),
-            'facilitation_technique': request.POST.get('facilitation_technique', 'Brainstorming'),
-            'trainer_name': request.POST.get('trainer_name', ''),
-            'performance_criteria': request.POST.get('performance_criteria', ''),
-            'pre_requisite_knowledge': request.POST.get('pre_requisite_knowledge', '')
-        }
-        
-        if syllabus_text and range_text:
-            # Generate Data
-            plan_data = generate_session_plan_ai(syllabus_text, range_text, template_type, **extra_data)
-            
-            # Save Session Plan
-            session = SessionPlan.objects.create(
-                teacher=request.user,
-                template_type=template_type,
-                sector=plan_data['sector'],
-                trade=plan_data['trade'],
-                level=plan_data['level'],
-                class_name=plan_data['class_name'],
-                num_students=plan_data['num_students'] if plan_data['num_students'] else 0,
-                trainer_name=plan_data['trainer_name'],
-                academic_year=plan_data['academic_year'],
-                term=plan_data['term'],
-                weeks=plan_data['weeks'],
-                module=plan_data['module'],
-                learning_outcome=plan_data['learning_outcome'],
-                indicative_content=plan_data.get('indicative_content', ''),
-                topic=plan_data['topic'],
-                objectives=plan_data['objectives'],
-                performance_criteria=plan_data.get('performance_criteria', ''),
-                pre_requisite_knowledge=plan_data.get('pre_requisite_knowledge', ''),
-                cross_cutting_issues=plan_data.get('cross_cutting_issues', ''),
-                hse_considerations=plan_data.get('hse_considerations', ''),
-                ict_tools=plan_data.get('ict_tools', ''),
-                special_needs_support=plan_data.get('special_needs_support', ''),
-                facilitation_technique=plan_data['facilitation_technique'],
-                resources=plan_data['resources'],
-                range_details=plan_data.get('range_details', ''),
-                duration=plan_data.get('duration', ''),
-                reflection=plan_data.get('reflection', '')
-            )
-            
-            # Save Activities
-            for act in plan_data['activities']:
-                Activity.objects.create(
-                    session=session,
-                    step_name=act['step_name'],
-                    trainer_activity=act['trainer'],
-                    learner_activity=act['learner'],
-                    time_allocation=act['time']
-                )
-            
-            messages.success(request, f"Session plan for '{plan_data['topic']}' generated successfully!")
-            return redirect('dashboard')
-            
-    return render(request, 'generate_session_plan.html')
+
 
 @login_required
 def generate_advanced_session_plan_view(request):
     from .utils import generate_advanced_session_plan_ai
-    from .models import SessionPlan, Activity
+    from .models import SessionPlan, Activity, Trade, Curriculum, SyllabusModule, LearningOutcome, IndicativeContent, Topic
     
+    if request.user.role == CustomUser.Role.ADMIN:
+        trades = Trade.objects.all()
+    else:
+        trades = request.user.trades.all()
+        
     if request.method == 'POST':
-        syllabus_text = request.POST.get('syllabus_text', '')
-        range_text = request.POST.get('range_text', '')
+        # Now we read from the cascaded dropdowns instead of manual text
+        trade_id = request.POST.get('trade_id', '')
+        curriculum_id = request.POST.get('curriculum_id', '')
+        module_id = request.POST.get('module_id', '')
+        lo_id = request.POST.get('lo_id', '')
+        ic_id = request.POST.get('ic_id', '')
+        topic_ids = request.POST.getlist('topics') # Checkboxes
+        
         template_type = request.POST.get('template_type', 'THEORY')
         
+        # Build strict context from DB models
+        syllabus_text = ""
+        range_text = ""
+        trade_name = ""
+        
+        if trade_id:
+            trade = Trade.objects.filter(id=trade_id).first()
+            trade_name = trade.name if trade else ""
+            
+        if module_id:
+            mod = SyllabusModule.objects.filter(id=module_id).first()
+            if mod: syllabus_text += f"Module: {mod.code} - {mod.title}\n"
+            
+        if lo_id:
+            lo = LearningOutcome.objects.filter(id=lo_id).first()
+            if lo: syllabus_text += f"Learning Outcome: {lo.title}\n"
+            
+        if ic_id:
+            ic = IndicativeContent.objects.filter(id=ic_id).first()
+            if ic: syllabus_text += f"Indicative Content: {ic.title}\n"
+            
+        if topic_ids:
+            selected_topics = Topic.objects.filter(id__in=topic_ids)
+            topics_str = "\n".join([f"{i+1}. {t.title}" for i, t in enumerate(selected_topics)])
+            range_text = topics_str
+            syllabus_text += f"Selected Topics to Cover:\n{topics_str}\n"
+            
+        # Fallbacks to the old form inputs if people didn't use the cascade
+        if not syllabus_text:
+            syllabus_text = request.POST.get('syllabus_text', '')
+        if not range_text:
+            range_text = request.POST.get('range_text', '')
+            
         extra_data = {
             'sector': request.POST.get('sector', ''),
-            'trade': request.POST.get('trade', ''),
+            'trade': trade_name or request.POST.get('trade', ''),
             'level': request.POST.get('level', ''),
             'class_name': request.POST.get('class_name', ''),
             'num_students': request.POST.get('num_students', 0),
@@ -438,9 +516,9 @@ def generate_advanced_session_plan_view(request):
                 academic_year=plan_data['academic_year'],
                 term=plan_data['term'],
                 weeks=plan_data['weeks'],
-                module=plan_data['module'],
-                learning_outcome=plan_data['learning_outcome'],
-                indicative_content=plan_data.get('indicative_content', ''),
+                module=f"{mod.code} - {mod.title}" if (module_id and mod) else plan_data['module'],
+                learning_outcome=lo.title if (lo_id and lo) else plan_data['learning_outcome'],
+                indicative_content=ic.title if (ic_id and ic) else plan_data.get('indicative_content', ''),
                 topic=plan_data['topic'],
                 objectives=plan_data['objectives'],
                 performance_criteria=plan_data.get('performance_criteria', ''),
@@ -453,7 +531,12 @@ def generate_advanced_session_plan_view(request):
                 resources=plan_data['resources'],
                 range_details=plan_data.get('range_details', ''),
                 duration=plan_data.get('duration', ''),
-                reflection=plan_data.get('reflection', '')
+                reflection=plan_data.get('reflection', ''),
+                references=plan_data.get('references', ''),
+                slow_learners_strategy=plan_data.get('slow_learners_strategy', ''),
+                advanced_learners_strategy=plan_data.get('advanced_learners_strategy', ''),
+                inclusivity_strategy=plan_data.get('inclusivity_strategy', ''),
+                student_summary=plan_data.get('student_summary', '')
             )
             
             for act in plan_data['activities']:
@@ -465,10 +548,124 @@ def generate_advanced_session_plan_view(request):
                     time_allocation=act['time']
                 )
             
-            messages.success(request, f"Advanced session plan for '{plan_data['topic']}' generated successfully!")
-            return redirect('dashboard')
+            messages.success(request, f"Advanced session plan for '{plan_data['topic'][:50]}...' generated successfully! Tweak it below before printing.")
+            return redirect('edit_session_plan', session_id=session.id)
             
-    return render(request, 'generate_advanced_session_plan.html')
+    # Pass current term and classrooms list to context
+    from .models import Classroom
+    classrooms = Classroom.objects.all().order_by('name')
+    active_term = SystemSetting.get_settings().current_term
+    return render(request, 'generate_advanced_session_plan.html', {
+        'trades': trades, 
+        'current_term': active_term,
+        'classrooms': classrooms
+    })
+
+@login_required
+def edit_session_plan_view(request, session_id):
+    session = get_object_or_404(SessionPlan, id=session_id)
+    
+    # Check permissions (must be creator or admin)
+    if not request.user.is_superuser and request.user.role != CustomUser.Role.ADMIN and session.teacher != request.user:
+        messages.error(request, "You do not have permission to edit this session plan.")
+        return redirect('dashboard')
+        
+    if request.method == 'POST':
+        # Retrieve form data
+        session.sector = request.POST.get('sector', '')
+        session.trade = request.POST.get('trade', '')
+        session.level = request.POST.get('level', '')
+        session.class_name = request.POST.get('class_name', '')
+        session.num_students = int(request.POST.get('num_students', 0) or 0)
+        session.academic_year = request.POST.get('academic_year', '')
+        session.term = request.POST.get('term', '')
+        session.weeks = request.POST.get('weeks', '')
+        session.module = request.POST.get('module', '')
+        session.learning_outcome = request.POST.get('learning_outcome', '')
+        session.indicative_content = request.POST.get('indicative_content', '')
+        session.performance_criteria = request.POST.get('performance_criteria', '')
+        session.pre_requisite_knowledge = request.POST.get('pre_requisite_knowledge', '')
+        session.topic = request.POST.get('topic', '')
+        session.range_details = request.POST.get('range_details', '')
+        session.duration = request.POST.get('duration', '')
+        session.facilitation_technique = request.POST.get('facilitation_technique', '')
+        
+        # Quill / WYSIWYG rich text fields
+        session.objectives = request.POST.get('objectives', '')
+        session.cross_cutting_issues = request.POST.get('cross_cutting_issues', '')
+        session.hse_considerations = request.POST.get('hse_considerations', '')
+        session.ict_tools = request.POST.get('ict_tools', '')
+        session.special_needs_support = request.POST.get('special_needs_support', '')
+        session.resources = request.POST.get('resources', '')
+        session.reflection = request.POST.get('reflection', '')
+        session.references = request.POST.get('references', '')
+        session.slow_learners_strategy = request.POST.get('slow_learners_strategy', '')
+        session.advanced_learners_strategy = request.POST.get('advanced_learners_strategy', '')
+        session.inclusivity_strategy = request.POST.get('inclusivity_strategy', '')
+        session.student_summary = request.POST.get('student_summary', '')
+        
+        session.save()
+        
+        # Dynamic Activities / Steps Table
+        # Delete old activities and re-create them to allow full inserts/deletes/re-ordering
+        session.activities.all().delete()
+        
+        step_names = request.POST.getlist('step_name[]')
+        trainer_activities = request.POST.getlist('trainer_activity[]')
+        learner_activities = request.POST.getlist('learner_activity[]')
+        time_allocations = request.POST.getlist('time_allocation[]')
+        resources_needed_list = request.POST.getlist('resources_needed[]')
+        
+        for i in range(len(step_names)):
+            if step_names[i].strip():
+                Activity.objects.create(
+                    session=session,
+                    step_name=step_names[i],
+                    trainer_activity=trainer_activities[i] if i < len(trainer_activities) else '',
+                    learner_activity=learner_activities[i] if i < len(learner_activities) else '',
+                    time_allocation=time_allocations[i] if i < len(time_allocations) else '',
+                    resources_needed=resources_needed_list[i] if i < len(resources_needed_list) else ''
+                )
+                
+        messages.success(request, "Session plan changes saved successfully!")
+        
+        if 'export_pdf' in request.POST:
+            return redirect('view_session_pdf', session_id=session.id)
+            
+        return redirect('dashboard')
+        
+    return render(request, 'edit_session_plan.html', {'session': session})
+
+@login_required
+def session_plans_list_view(request):
+    from .models import SessionPlan
+    user = request.user
+    
+    # Simple search
+    q = request.GET.get('q', '').strip()
+    
+    if user.role == CustomUser.Role.TEACHER:
+        sessions_qs = SessionPlan.objects.filter(teacher=user)
+    elif user.role == CustomUser.Role.ADMIN:
+        sessions_qs = SessionPlan.objects.all().select_related('teacher')
+    else:
+        return redirect('dashboard')
+        
+    if q:
+        sessions_qs = sessions_qs.filter(topic__icontains=q)
+        
+    sessions = sessions_qs.order_by('-created_at')
+    
+    for s in sessions:
+        s.stype = s.template_type
+        s.stopic = s.topic
+        s.sdate = s.created_at.strftime("%b %d, %Y")
+        s.s_teacher = s.teacher.get_full_name() or s.teacher.username
+        
+    return render(request, 'session_plans_list.html', {
+        'sessions': sessions,
+        'q': q
+    })
 
 @login_required
 def create_assessment_view(request):
@@ -1275,12 +1472,19 @@ def edit_trainer_view(request, user_id):
         return redirect('dashboard')
     
     trainer = get_object_or_404(CustomUser, id=user_id, role=CustomUser.Role.TEACHER)
+    from .models import Trade
+    all_trades = Trade.objects.all()
     
     if request.method == 'POST':
         trainer.username = request.POST.get('username')
         trainer.first_name = request.POST.get('first_name')
         trainer.last_name = request.POST.get('last_name')
         trainer.email = request.POST.get('email')
+        
+        # Update trades
+        trade_ids = request.POST.getlist('trades')
+        trainer.trades.set(trade_ids)
+        
         trainer.save()
         from .models import AuditLog
         AuditLog.objects.create(
@@ -1290,7 +1494,11 @@ def edit_trainer_view(request, user_id):
         )
         return redirect('dashboard')
         
-    return render(request, 'edit_trainer.html', {'trainer': trainer})
+    return render(request, 'edit_trainer.html', {
+        'trainer': trainer,
+        'all_trades': all_trades,
+        'assigned_trade_ids': list(trainer.trades.values_list('id', flat=True))
+    })
 
 @login_required
 def delete_trainer_view(request, user_id):
@@ -1991,3 +2199,103 @@ def create_academic_year_view(request):
             
     return redirect('admin_settings')
 
+
+@login_required
+def upload_curriculum_view(request):
+    from .models import CustomUser, Trade, Curriculum
+    from .ai_curriculum_parser import parse_curriculum_pdf
+    
+    if request.user.role != CustomUser.Role.ADMIN:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    trades = Trade.objects.all()
+    
+    if request.method == 'POST':
+        trade_id = request.POST.get('trade')
+        title = request.POST.get('title')
+        qualification_level = request.POST.get('qualification_level', '')
+        pdf_file = request.FILES.get('pdf_file')
+        
+        if trade_id and title and pdf_file:
+            trade = get_object_or_404(Trade, id=trade_id)
+            curriculum = Curriculum.objects.create(
+                trade=trade,
+                title=title,
+                qualification_level=qualification_level,
+                pdf_document=pdf_file
+            )
+            
+            try:
+                # Trigger AI Parsing
+                modules_created = parse_curriculum_pdf(curriculum)
+                messages.success(request, f"Successfully uploaded and extracted {modules_created} modules from the syllabus!")
+            except Exception as e:
+                import traceback
+                print(f"--- AI EXTRACTION ERROR ---")
+                traceback.print_exc()
+                print(f"---------------------------")
+                # Write to file so I can read it
+                with open("extraction_error.log", "w") as f:
+                    f.write(traceback.format_exc())
+                messages.error(request, f"Curriculum saved, but AI extraction failed: {repr(e)}")
+                
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Please provide all required fields.")
+            
+    return render(request, 'upload_curriculum.html', {'trades': trades})
+@login_required
+def get_curriculums(request, trade_id):
+    from django.http import JsonResponse
+    from .models import Curriculum
+    curriculums = Curriculum.objects.filter(trade_id=trade_id).values('id', 'title', 'qualification_level')
+    return JsonResponse(list(curriculums), safe=False)
+
+@login_required
+def get_modules(request, curriculum_id):
+    from django.http import JsonResponse
+    from .models import SyllabusModule
+    modules = SyllabusModule.objects.filter(curriculum_id=curriculum_id).values('id', 'code', 'title')
+    return JsonResponse(list(modules), safe=False)
+
+@login_required
+def get_learning_outcomes(request, module_id):
+    from django.http import JsonResponse
+    from .models import LearningOutcome
+    los = LearningOutcome.objects.filter(module_id=module_id).values('id', 'title')
+    return JsonResponse(list(los), safe=False)
+
+@login_required
+def get_indicative_contents(request, lo_id):
+    from django.http import JsonResponse
+    from .models import IndicativeContent
+    ics = IndicativeContent.objects.filter(learning_outcome_id=lo_id).values('id', 'title')
+    return JsonResponse(list(ics), safe=False)
+
+@login_required
+def get_topics(request, ic_id):
+    from django.http import JsonResponse
+    from .models import Topic
+    topics = Topic.objects.filter(indicative_content_id=ic_id).values('id', 'title')
+    return JsonResponse(list(topics), safe=False)
+
+@login_required
+def create_trade_view(request):
+    from .models import CustomUser, Trade
+    if request.user.role != CustomUser.Role.ADMIN:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        sector = request.POST.get('sector', '')
+        
+        if name:
+            Trade.objects.create(name=name, sector=sector)
+            messages.success(request, f"Trade '{name}' created successfully!")
+            return redirect('upload_curriculum')
+        else:
+            messages.error(request, "Trade name is required.")
+            
+    return render(request, 'create_trade.html')

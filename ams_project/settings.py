@@ -15,7 +15,7 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(override=True)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -96,7 +96,7 @@ DATABASES = {
         'CONN_MAX_AGE': 0,  # Ensure fresh connections for serverless DB
         'OPTIONS': {
             'sslmode': 'require',
-            'connect_timeout': 10,
+            'connect_timeout': 30,
         } if _use_ssl else {}
     }
 }

@@ -1,15 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, StudentProfile, SessionPlan, Activity, Assessment, StudentMark, Attendance, Classroom, Module, AcademicYear, SystemSetting
+from .models import CustomUser, StudentProfile, SessionPlan, Activity, Assessment, StudentMark, Attendance, Classroom, Module, AcademicYear, SystemSetting, Trade, Curriculum, SyllabusModule, LearningOutcome, IndicativeContent, Topic
 
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'role', 'is_staff')
     list_filter = ('role', 'is_staff', 'is_superuser')
     fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('role',)}),
+        (None, {'fields': ('role', 'trades')}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        (None, {'fields': ('role',)}),
+        (None, {'fields': ('role', 'trades')}),
     )
 
 class ActivityInline(admin.TabularInline):
@@ -46,3 +46,9 @@ admin.site.register(Classroom)
 admin.site.register(Module)
 admin.site.register(AcademicYear)
 admin.site.register(SystemSetting)
+admin.site.register(Trade)
+admin.site.register(Curriculum)
+admin.site.register(SyllabusModule)
+admin.site.register(LearningOutcome)
+admin.site.register(IndicativeContent)
+admin.site.register(Topic)
