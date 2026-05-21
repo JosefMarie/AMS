@@ -1,19 +1,60 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-    <h1 class="text-2xl font-bold mb-6 text-gray-900">Take Attendance - Select Class</h1>
+<div class="min-h-screen bg-slate-50/50 dark:bg-slate-900/50 py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto space-y-8 animate-fadeIn">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <a href="{% url 'dashboard' %}" class="p-2 rounded-2xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700/50 text-gray-500 hover:text-indigo-600 shadow-sm transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    </a>
+                    <h1 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Take Attendance</h1>
+                </div>
+                <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest pl-14">
+                    Select a classroom to perform attendance marking
+                </p>
+            </div>
+        </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for classroom in classrooms %}
-        <a href="{% url 'perform_attendance' classroom.id %}"
-            class="block bg-gray-50 p-6 rounded-lg border border-gray-200 hover:bg-gray-100 hover:shadow-md transition">
-            <h3 class="font-bold text-xl text-indigo-700 mb-2">{{ classroom.name }}</h3>
-            <p class="text-gray-600">{{ classroom.students.count }} Students</p>
-        </a>
-        {% empty %}
-        <p class="col-span-3 text-center text-gray-500">You have no classes to take attendance for.</p>
-        {% endfor %}
+        <!-- Class Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-stagger-children">
+            {% for classroom in classrooms %}
+            <a href="{% url 'perform_attendance' classroom.id %}"
+                class="glass-card block bg-white/50 dark:bg-slate-800/50 border border-white/40 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500/50 p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:shadow-indigo-100 dark:hover:shadow-indigo-900/20 hover:-translate-y-1 transition-all group relative overflow-hidden">
+                
+                <!-- Decorative background elements -->
+                <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-indigo-50 dark:bg-indigo-900/20 blur-2xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors pointer-events-none"></div>
+
+                <div class="relative z-10">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black mb-6 shadow-sm border border-indigo-100/50 dark:border-indigo-900/50 group-hover:scale-110 group-hover:rotate-3 transition-transform">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    
+                    <h3 class="font-extrabold text-2xl text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ classroom.name }}</h3>
+                    
+                    <div class="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-4">
+                        <span class="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-lg border border-gray-100 dark:border-slate-700/50">
+                            <span class="w-2 h-2 rounded-full bg-green-400"></span>
+                            {{ classroom.students.count }} Enrolled
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="col-span-full py-16 text-center glass-card bg-white/30 dark:bg-slate-800/30 rounded-3xl border border-dashed border-gray-200 dark:border-slate-700">
+                <div class="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-slate-700/50">
+                    <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <h4 class="text-base font-bold text-gray-900 dark:text-white mb-1">No Classes Assigned</h4>
+                <p class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold">You have no active classes to take attendance for.</p>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

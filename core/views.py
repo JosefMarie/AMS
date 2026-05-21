@@ -7,6 +7,8 @@ from django.contrib.auth import login, logout
 from django.contrib import messages
 import json
 from django.forms import inlineformset_factory
+from django.db.models import Q
+
 
 try:
     from weasyprint import HTML
@@ -14,7 +16,7 @@ except (ImportError, OSError):
     # Handles "dlopen" or "missing library" errors on Windows/Linux
     HTML = None
 
-from .models import SessionPlan, Activity, CustomUser, StudentProfile, AuditLog, Classroom, Module, Assessment, StudentMark, Attendance, SystemSetting, Notification, Resource, Announcement
+from .models import SessionPlan, Activity, CustomUser, StudentProfile, AuditLog, Classroom, Module, Assessment, StudentMark, Attendance, SystemSetting, Notification, Resource, Announcement, ClassroomShareRequest
 
 def _get_active_timeline(request):
     from .models import AcademicYear, SystemSetting
@@ -155,19 +157,23 @@ def dashboard(request):
         context['active_term'] = active_term
         context['today'] = today
         
-        classrooms = Classroom.objects.filter(teacher=user)
+        classrooms = Classroom.objects.filter(Q(teacher=user) | Q(co_teachers=user)).distinct()
         total_students = 0
         for c in classrooms:
             c.cname = c.name
             c.scount = c.students.count()
             c.mcount = c.modules.count()
+            c.is_owner = (c.teacher == user)
             total_students += c.scount
         context['my_classrooms'] = classrooms
         context['total_students'] = total_students
 
         # Metrics Calculations
         # 1. Avg Attendance
-        all_attendance = Attendance.objects.filter(classroom__teacher=user, academic_year=active_year)
+        all_attendance = Attendance.objects.filter(
+            teacher=user,
+            academic_year=active_year
+        ).distinct()
         if active_term != 'Term 3':
             all_attendance = all_attendance.filter(term=active_term)
         total_att = all_attendance.count()
@@ -175,12 +181,17 @@ def dashboard(request):
         context['avg_attendance'] = round((present_att / total_att * 100), 1) if total_att > 0 else 0
 
         # Gender Breakdown for Overview
-        teacher_students = StudentProfile.objects.filter(classroom__teacher=user).order_by('user__first_name', 'user__last_name')
+        teacher_students = StudentProfile.objects.filter(
+            Q(classroom__teacher=user) | Q(classroom__co_teachers=user)
+        ).distinct().order_by('user__first_name', 'user__last_name')
         context['total_boys'] = teacher_students.filter(sex='Male').count()
         context['total_girls'] = teacher_students.filter(sex='Female').count()
 
         # 2. Avg Score
-        marks_qs = StudentMark.objects.filter(assessment__module__classroom__teacher=user, assessment__academic_year=active_year)
+        marks_qs = StudentMark.objects.filter(
+            assessment__module__teacher=user,
+            assessment__academic_year=active_year
+        ).distinct()
         if active_term != 'Term 3':
             marks_qs = marks_qs.filter(assessment__term=active_term)
         avg_score = marks_qs.aggregate(Avg('score'), Avg('total_marks'))
@@ -188,6 +199,35 @@ def dashboard(request):
             context['avg_score'] = round((avg_score['score__avg'] / avg_score['total_marks__avg'] * 100), 1)
         else:
             context['avg_score'] = 0
+
+        # School Peers & Share Requests
+        if user.school_name:
+            school_peers = CustomUser.objects.filter(
+                role=CustomUser.Role.TEACHER,
+                school_name__iexact=user.school_name
+            ).exclude(id=user.id)
+            peer_classrooms = []
+            for peer in school_peers:
+                for cls in peer.classrooms.all():
+                    already_co = cls.co_teachers.filter(id=user.id).exists()
+                    pending_req = ClassroomShareRequest.objects.filter(
+                        classroom=cls, requester=user, status='PENDING'
+                    ).exists()
+                    peer_classrooms.append({
+                        'id': cls.id,
+                        'name': cls.name,
+                        'owner': peer.get_full_name() or peer.username,
+                        'already_co': already_co,
+                        'pending': pending_req,
+                    })
+            context['peer_classrooms'] = peer_classrooms
+        else:
+            context['peer_classrooms'] = []
+
+        # Incoming share requests (as classroom owner)
+        context['incoming_requests'] = ClassroomShareRequest.objects.filter(
+            receiver=user, status='PENDING'
+        ).select_related('requester', 'classroom')
 
         return render(request, 'dashboard_teacher.html', context)
     elif user.role == CustomUser.Role.STUDENT:
@@ -293,35 +333,110 @@ def student_session_detail_view(request, session_id):
     if student_level_digit and plan_digit and student_level_digit != plan_digit:
         messages.error(request, "You are not authorized to view session plans for another class level.")
         return redirect('dashboard')
-        
-    # Calculate student average marks for this session's module
+
+    # ── Collect marks across ALL terms and ALL academic years ──────────────────
+    # We use two strategies and merge:
+    #   1. Direct FK link: assessment.session == this session plan
+    #   2. Module name / code fuzzy or keyword match against session text fields
     from .models import StudentMark
-    marks = StudentMark.objects.filter(student=student)
-    
-    module_marks = []
-    for mark in marks:
+    s_mod = session.module.lower().strip() if session.module else ''
+
+    # Strategy 1 – direct session link
+    direct_qs = StudentMark.objects.filter(
+        student=student,
+        assessment__session=session
+    ).select_related('assessment__module', 'assessment__academic_year')
+
+    # Strategy 2 – module name/code match (all terms, all years)
+    all_student_marks = StudentMark.objects.filter(
+        student=student,
+        assessment__module__isnull=False
+    ).select_related('assessment__module', 'assessment__academic_year')
+
+    seen_ids = set()
+    combined = []
+    for mark in list(direct_qs):
+        if mark.id not in seen_ids:
+            seen_ids.add(mark.id)
+            combined.append(mark)
+
+    # Pre-compile the session text fields for broader keyword matching if direct fields don't match
+    session_text = " ".join([
+        session.module or '',
+        session.topic or '',
+        session.objectives or '',
+        session.learning_outcome or '',
+        session.indicative_content or '',
+        session.performance_criteria or '',
+        session.trade or '',
+    ]).lower()
+
+    for mark in all_student_marks:
+        if mark.id in seen_ids:
+            continue
         if mark.assessment and mark.assessment.module:
-            m_code = mark.assessment.module.module_code.lower()
-            m_name = mark.assessment.module.module_name.lower()
-            s_mod = session.module.lower()
-            if m_code in s_mod or m_name in s_mod:
-                module_marks.append(mark)
-                
-    if module_marks:
-        total_score = sum(m.score for m in module_marks)
-        total_max = sum(m.total_marks if m.total_marks else 100 for m in module_marks)
-        score_pct = (total_score / total_max) * 100 if total_max > 0 else 0
-        has_marks = True
+            m_code = mark.assessment.module.module_code.lower().strip()
+            m_name = mark.assessment.module.module_name.lower().strip()
+            
+            # Check 1: Fuzzy/substring match using session's module field (if present)
+            matched = False
+            if s_mod and (m_code in s_mod or m_name in s_mod or s_mod in m_code or s_mod in m_name):
+                matched = True
+            
+            # Check 2: Broader search in session plan text if not already matched
+            if not matched:
+                if m_code in session_text or m_name in session_text:
+                    matched = True
+                else:
+                    # Check 3: Word overlap for multi-word modules (e.g. "Develop Website" vs "Website Development")
+                    ignore_words = {'and', 'or', 'of', 'using', 'apply', 'develop', 'the', 'for', 'with', 'in', 'to', 'a', 'an'}
+                    m_words = [w for w in m_name.replace("  ", " ").split() if w not in ignore_words and len(w) > 2]
+                    if m_words and all(w in session_text for w in m_words):
+                        matched = True
+            
+            if matched:
+                seen_ids.add(mark.id)
+                combined.append(mark)
+
+    # Build rich breakdown list for template
+    marks_breakdown = []
+    for mark in combined:
+        total = mark.total_marks if mark.total_marks else 100
+        pct = round((mark.score / total) * 100, 1) if total > 0 else 0
+        colour = 'emerald' if pct >= 80 else ('amber' if pct >= 60 else 'rose')
+        marks_breakdown.append({
+            'title':    mark.assessment.title if mark.assessment else 'Assessment',
+            'atype':    mark.assessment.get_assessment_type_display() if mark.assessment else '',
+            'term':     getattr(mark.assessment, 'term', '') or '',
+            'year':     str(mark.assessment.academic_year) if mark.assessment and mark.assessment.academic_year else '',
+            'score':    mark.score,
+            'total':    total,
+            'pct':      pct,
+            'colour':   colour,
+        })
+
+    # Sort by year then term then assessment title for a clean chronological view
+    term_order = {'Term 1': 0, 'Term 2': 1, 'Term 3': 2}
+    marks_breakdown.sort(key=lambda x: (x['year'], term_order.get(x['term'], 9), x['title']))
+
+    # Combined overall percentage across all collected marks
+    if marks_breakdown:
+        total_score = sum(m['score'] for m in marks_breakdown)
+        total_max   = sum(m['total'] for m in marks_breakdown)
+        score_pct   = round((total_score / total_max) * 100, 1) if total_max > 0 else 0
+        has_marks   = True
     else:
         score_pct = 0.0
         has_marks = False
-        
+
     context = {
-        'session': session,
-        'score_pct': score_pct,
-        'has_marks': has_marks,
+        'session':        session,
+        'score_pct':      score_pct,
+        'has_marks':      has_marks,
+        'marks_breakdown': marks_breakdown,
     }
     return render(request, 'student_session_detail.html', context)
+
 
 @login_required
 def admin_settings(request):
@@ -753,7 +868,7 @@ def take_attendance_view(request):
     if request.user.role == CustomUser.Role.STUDENT:
         return redirect('dashboard')
     
-    classrooms = Classroom.objects.filter(teacher=request.user)
+    classrooms = Classroom.objects.filter(Q(teacher=request.user) | Q(co_teachers=request.user)).distinct()
     return render(request, 'select_attendance_class.html', {'classrooms': classrooms})
 
 @login_required
@@ -761,7 +876,9 @@ def perform_attendance_view(request, class_id):
     from .models import StudentProfile, Attendance, Classroom
     import datetime
     
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    classroom = get_object_or_404(Classroom, id=class_id)
+    if classroom.teacher != request.user and request.user not in classroom.co_teachers.all():
+        return redirect('dashboard')
     date_str = request.GET.get('date', datetime.date.today().strftime('%Y-%m-%d'))
     active_year, active_term = _get_active_timeline(request)
     
@@ -824,8 +941,13 @@ def perform_attendance_view(request, class_id):
 @login_required
 def manage_class_view(request, class_id):
     from .models import Classroom, Assessment, StudentMark, Attendance
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
-    modules = classroom.modules.all()
+    classroom = get_object_or_404(Classroom, id=class_id)
+    is_owner = classroom.teacher == request.user
+    is_co_teacher = request.user in classroom.co_teachers.all()
+    if not is_owner and not is_co_teacher:
+        return redirect('dashboard')
+    # Only show modules owned by the current teacher
+    modules = classroom.modules.filter(teacher=request.user)
     # Pre-calculate student data to avoid template logic breakage
     profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
     students_list = []
@@ -839,9 +961,9 @@ def manage_class_view(request, class_id):
             'uid': p.user.id
         })
     
-    # Fetch all assessments for this classroom's modules
+    # Fetch all assessments for this teacher's modules
     active_year, active_term = _get_active_timeline(request)
-    assessments = Assessment.objects.filter(module__classroom=classroom, academic_year=active_year).select_related('module').order_by('-created_at')
+    assessments = Assessment.objects.filter(module__classroom=classroom, academic_year=active_year, module__teacher=request.user).select_related('module').order_by('-created_at')
     if active_term != 'Term 3':
         assessments = assessments.filter(term=active_term)
     assessments_data = []
@@ -869,8 +991,8 @@ def manage_class_view(request, class_id):
             'marks_count': len(marks_list)
         })
     
-    # Calculate Avg Attendance for this class
-    class_att = Attendance.objects.filter(classroom=classroom, academic_year=active_year)
+    # Calculate Avg Attendance for this teacher's records
+    class_att = Attendance.objects.filter(classroom=classroom, academic_year=active_year, teacher=request.user)
     if active_term != 'Term 3':
         class_att = class_att.filter(term=active_term)
     total_class_att = class_att.count()
@@ -881,6 +1003,14 @@ def manage_class_view(request, class_id):
     boys_count = profiles.filter(sex='Male').count()
     girls_count = profiles.filter(sex='Female').count()
     
+    # School peers eligible to be added as co-teachers (owner only, same school, not already co-teacher)
+    school_peers_for_invite = []
+    if is_owner and request.user.school_name:
+        school_peers_for_invite = CustomUser.objects.filter(
+            role=CustomUser.Role.TEACHER,
+            school_name__iexact=request.user.school_name
+        ).exclude(id=request.user.id).exclude(id__in=classroom.co_teachers.values_list('id', flat=True))
+
     return render(request, 'manage_class.html', {
         'classroom': classroom,
         'modules': modules,
@@ -888,7 +1018,10 @@ def manage_class_view(request, class_id):
         'assessments': assessments_data,
         'avg_attendance': class_avg_attendance,
         'boys_count': boys_count,
-        'girls_count': girls_count
+        'girls_count': girls_count,
+        'is_owner': is_owner,
+        'co_teachers': classroom.co_teachers.all(),
+        'school_peers_for_invite': school_peers_for_invite,
     })
 
 @login_required
@@ -1114,8 +1247,10 @@ def add_student_view(request, class_id):
 @login_required
 def add_module_view(request, class_id):
     from .models import Classroom, Module
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
-    
+    classroom = get_object_or_404(Classroom, id=class_id)
+    if classroom.teacher != request.user and request.user not in classroom.co_teachers.all():
+        return redirect('dashboard')
+
     if request.method == 'POST':
         module_code = request.POST.get('module_code')
         module_name = request.POST.get('module_name')
@@ -1262,7 +1397,9 @@ def print_student_list_view(request, class_id):
     from .models import Classroom
     import datetime
     
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    classroom = get_object_or_404(Classroom, id=class_id)
+    if classroom.teacher != request.user and request.user not in classroom.co_teachers.all():
+        return redirect('dashboard')
     students = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
     
     html_string = render_to_string('pdf_student_list.html', {
@@ -1300,12 +1437,14 @@ def manage_attendance_view(request, class_id):
     from .models import Classroom, Attendance
     from django.db.models import Count, Q, Max
     
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    classroom = get_object_or_404(Classroom, id=class_id)
+    if classroom.teacher != request.user and request.user not in classroom.co_teachers.all():
+        return redirect('dashboard')
     active_year, active_term = _get_active_timeline(request)
     
-    # Get all distinct dates with attendance for this class
+    # Get all distinct dates with attendance for this class by the current teacher
     # Annotate with counts and latest time recorded
-    att_qs = Attendance.objects.filter(classroom=classroom, academic_year=active_year)
+    att_qs = Attendance.objects.filter(classroom=classroom, academic_year=active_year, teacher=request.user)
     if active_term != 'Term 3':
         att_qs = att_qs.filter(term=active_term)
         
@@ -1324,11 +1463,13 @@ def manage_attendance_view(request, class_id):
 @login_required
 def delete_attendance_view(request, class_id):
     from .models import Classroom, Attendance
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    classroom = get_object_or_404(Classroom, id=class_id)
+    if classroom.teacher != request.user and request.user not in classroom.co_teachers.all():
+        return redirect('dashboard')
     date_str = request.POST.get('date') or request.GET.get('date')
     
     if date_str:
-        Attendance.objects.filter(classroom=classroom, date=date_str).delete()
+        Attendance.objects.filter(classroom=classroom, date=date_str, teacher=request.user).delete()
         messages.success(request, f"Attendance records for {date_str} deleted.")
     
     return redirect('manage_attendance', class_id=class_id)
@@ -1409,6 +1550,16 @@ def create_teacher_view(request):
         messages.error(request, "Only administrators can create teacher accounts.")
         return redirect('dashboard')
     
+    # Collect all existing distinct school names so the admin can reuse one or create new
+    existing_schools = list(
+        CustomUser.objects
+        .filter(school_name__isnull=False)
+        .exclude(school_name='')
+        .values_list('school_name', flat=True)
+        .distinct()
+        .order_by('school_name')
+    )
+
     if request.method == 'POST':
         form = TrainerCreationForm(request.POST)
         if form.is_valid():
@@ -1426,13 +1577,30 @@ def create_teacher_view(request):
     else:
         form = TrainerCreationForm()
     
-    return render(request, 'create_trainer.html', {'form': form})
+    return render(request, 'create_trainer.html', {'form': form, 'existing_schools': existing_schools})
 
 def privacy_policy_view(request):
     return render(request, 'privacy_policy.html')
 
 def terms_of_service_view(request):
     return render(request, 'terms_of_service.html')
+
+def teacher_persona_view(request):
+    """High-fidelity Teacher User Persona & Navigation Guide."""
+    return render(request, 'teacher_persona.html')
+
+def student_persona_view(request):
+    """High-fidelity Student User Persona & Navigation Guide."""
+    return render(request, 'student_persona.html')
+
+@login_required
+def admin_persona_view(request):
+    """High-fidelity Admin User Persona & Navigation Guide."""
+    if request.user.role != 'ADMIN' and not request.user.is_superuser:
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("Only administrators can access the admin workspace guide.")
+    return render(request, 'admin_persona.html')
+
 
 @login_required
 def change_password_view(request):
@@ -1480,6 +1648,7 @@ def edit_trainer_view(request, user_id):
         trainer.first_name = request.POST.get('first_name')
         trainer.last_name = request.POST.get('last_name')
         trainer.email = request.POST.get('email')
+        trainer.school_name = request.POST.get('school_name', '').strip()
         
         # Update trades
         trade_ids = request.POST.getlist('trades')
@@ -1556,9 +1725,12 @@ def interactive_gradebook(request, class_id):
         return redirect('dashboard')
     
     from .models import Classroom, StudentProfile, Module, StudentMark
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    classroom = get_object_or_404(Classroom, id=class_id)
+    if classroom.teacher != request.user and request.user not in classroom.co_teachers.all():
+        return redirect('dashboard')
     students = StudentProfile.objects.filter(classroom=classroom).order_by('user__first_name', 'user__last_name')
-    modules = Module.objects.filter(classroom=classroom)
+    # Teachers (both primary and co-teachers) only see their own modules in the gradebook
+    modules = Module.objects.filter(classroom=classroom, teacher=request.user)
     
     # Pre-fetch marks for performance
     marks = StudentMark.objects.filter(student__student_profile__in=students, assessment__module__in=modules)
@@ -1736,7 +1908,7 @@ def edit_profile(request):
 
 @login_required
 def portfolio_view(request, username=None):
-    from .models import CustomUser, StudentMark
+    from .models import CustomUser, StudentMark, Attendance
     from django.db.models import Max
     
     target_user = get_object_or_404(CustomUser, username=username) if username else request.user
@@ -1751,10 +1923,79 @@ def portfolio_view(request, username=None):
         .annotate(best_score=Max('score'))\
         .order_by('-best_score')[:3]
 
+    # Calculate Badges Dynamically
+    # 1. Verified Learner
+    is_verified = bool(profile.student_id) if profile else False
+    
+    # 2. Attendance Champ
+    attendances = Attendance.objects.filter(student=target_user)
+    total_att = attendances.count()
+    present_att = attendances.filter(status__in=[Attendance.Status.PRESENT, Attendance.Status.LATE]).count()
+    att_percent = (present_att / total_att * 100) if total_att > 0 else 0
+    att_unlocked = total_att >= 3 and att_percent >= 90
+
+    # 3. Academic Elite
+    marks = StudentMark.objects.filter(student=target_user)
+    total_marks_count = marks.count()
+    if total_marks_count > 0:
+        total_pct = sum([round((m.score / m.total_marks * 100), 1) if m.total_marks > 0 else 0 for m in marks])
+        avg_pct = total_pct / total_marks_count
+    else:
+        avg_pct = 0
+    elite_unlocked = total_marks_count >= 2 and avg_pct >= 80
+
+    # 4. Polymath (Multidisciplinary)
+    distinct_modules = StudentMark.objects.filter(student=target_user).values('assessment__module').distinct().count()
+    polymath_unlocked = distinct_modules >= 3
+
+    badges = [
+        {
+            'id': 'verified',
+            'title': 'Verified Learner',
+            'subtitle': 'Identity Verified',
+            'icon': 'shield',
+            'unlocked': is_verified,
+            'desc': 'Assigned to students with a verified institutional student ID.',
+            'progress': 'Verified' if is_verified else 'Not Verified',
+            'color_class': 'from-blue-500 to-indigo-600 shadow-blue-500/20 text-blue-500'
+        },
+        {
+            'id': 'attendance',
+            'title': 'Attendance Champ',
+            'subtitle': 'Reliability & Presence',
+            'icon': 'calendar',
+            'unlocked': att_unlocked,
+            'desc': 'Maintained a 90%+ attendance rate across 3+ recorded sessions.',
+            'progress': f'{present_att}/{total_att} sessions ({att_percent:.0f}%)' if total_att > 0 else 'No Attendance Records',
+            'color_class': 'from-emerald-500 to-teal-600 shadow-emerald-500/20 text-emerald-500'
+        },
+        {
+            'id': 'elite',
+            'title': 'Academic Elite',
+            'subtitle': 'Scholastic Excellence',
+            'icon': 'medal',
+            'unlocked': elite_unlocked,
+            'desc': 'Achieved an overall marks average of 80%+ across all assessments.',
+            'progress': f'Avg: {avg_pct:.1f}% ({total_marks_count} marks)' if total_marks_count > 0 else 'No Marks Recorded',
+            'color_class': 'from-amber-500 to-orange-500 shadow-amber-500/20 text-amber-500'
+        },
+        {
+            'id': 'polymath',
+            'title': 'Polymath',
+            'subtitle': 'Cross-Disciplinary',
+            'icon': 'sparkles',
+            'unlocked': polymath_unlocked,
+            'desc': 'Demonstrated competence across at least 3 distinct course modules.',
+            'progress': f'{distinct_modules}/3 Modules',
+            'color_class': 'from-purple-500 to-fuchsia-600 shadow-purple-500/20 text-purple-500'
+        }
+    ]
+
     return render(request, 'portfolio.html', {
         'student': target_user,
         'profile': profile,
-        'top_skills': top_marks
+        'top_skills': top_marks,
+        'badges': badges
     })
 
 @login_required
@@ -2299,3 +2540,110 @@ def create_trade_view(request):
             messages.error(request, "Trade name is required.")
             
     return render(request, 'create_trade.html')
+
+
+@login_required
+def send_share_request(request, classroom_id):
+    from .models import Classroom, ClassroomShareRequest
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('dashboard')
+    
+    classroom = get_object_or_404(Classroom, id=classroom_id)
+    # Check if they are in the same school
+    if not request.user.school_name or not classroom.teacher.school_name or request.user.school_name.lower() != classroom.teacher.school_name.lower():
+        messages.error(request, "You can only request access to classrooms in your own school.")
+        return redirect('dashboard')
+    
+    if classroom.teacher == request.user:
+        messages.error(request, "You are already the owner of this classroom.")
+        return redirect('dashboard')
+        
+    if classroom.co_teachers.filter(id=request.user.id).exists():
+        messages.error(request, "You are already a co-teacher in this classroom.")
+        return redirect('dashboard')
+        
+    share_request, created = ClassroomShareRequest.objects.get_or_create(
+        classroom=classroom,
+        requester=request.user,
+        receiver=classroom.teacher,
+        defaults={'status': 'PENDING'}
+    )
+    if created:
+        messages.success(request, f"Access request sent to {classroom.teacher.get_full_name() or classroom.teacher.username} for classroom '{classroom.name}'.")
+    else:
+        if share_request.status == 'PENDING':
+            messages.info(request, "You already have a pending request for this classroom.")
+        else:
+            share_request.status = 'PENDING'
+            share_request.save()
+            messages.success(request, f"Access request re-sent to {classroom.teacher.get_full_name() or classroom.teacher.username} for classroom '{classroom.name}'.")
+            
+    return redirect('dashboard')
+
+
+@login_required
+def respond_share_request(request, request_id, action):
+    from .models import ClassroomShareRequest
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('dashboard')
+        
+    share_request = get_object_or_404(ClassroomShareRequest, id=request_id, receiver=request.user)
+    
+    if action == 'approve':
+        share_request.status = 'APPROVED'
+        share_request.save()
+        share_request.classroom.co_teachers.add(share_request.requester)
+        messages.success(request, f"Request approved. {share_request.requester.get_full_name() or share_request.requester.username} is now a co-teacher for '{share_request.classroom.name}'.")
+    elif action == 'reject':
+        share_request.status = 'REJECTED'
+        share_request.save()
+        messages.success(request, f"Request from {share_request.requester.get_full_name() or share_request.requester.username} rejected.")
+    else:
+        messages.error(request, "Invalid action.")
+        
+    return redirect('dashboard')
+
+
+@login_required
+def add_co_teacher_direct(request, classroom_id, teacher_id):
+    from .models import Classroom, CustomUser
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('manage_class', class_id=classroom_id)
+        
+    classroom = get_object_or_404(Classroom, id=classroom_id, teacher=request.user)
+    teacher = get_object_or_404(CustomUser, id=teacher_id, role=CustomUser.Role.TEACHER)
+    
+    if not request.user.school_name or not teacher.school_name or request.user.school_name.lower() != teacher.school_name.lower():
+        messages.error(request, "You can only add co-teachers from your own school.")
+        return redirect('manage_class', class_id=classroom_id)
+        
+    classroom.co_teachers.add(teacher)
+    
+    from .models import ClassroomShareRequest
+    ClassroomShareRequest.objects.filter(classroom=classroom, requester=teacher, status='PENDING').update(status='APPROVED')
+    
+    messages.success(request, f"{teacher.get_full_name() or teacher.username} has been added as a co-teacher.")
+    return redirect('manage_class', class_id=classroom_id)
+
+
+@login_required
+def remove_co_teacher_view(request, classroom_id, teacher_id):
+    from .models import Classroom, CustomUser
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('manage_class', class_id=classroom_id)
+        
+    classroom = get_object_or_404(Classroom, id=classroom_id, teacher=request.user)
+    teacher = get_object_or_404(CustomUser, id=teacher_id, role=CustomUser.Role.TEACHER)
+    
+    classroom.co_teachers.remove(teacher)
+    
+    from .models import ClassroomShareRequest
+    ClassroomShareRequest.objects.filter(classroom=classroom, requester=teacher).delete()
+    
+    messages.success(request, f"{teacher.get_full_name() or teacher.username} has been removed as a co-teacher.")
+    return redirect('manage_class', class_id=classroom_id)
+

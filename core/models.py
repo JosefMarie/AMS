@@ -11,6 +11,7 @@ class CustomUser(AbstractUser):
         STUDENT = "STUDENT", _("Student")
 
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.STUDENT)
+    school_name = models.CharField(max_length=150, blank=True, null=True, help_text="The school/institution name this user belongs to")
     trades = models.ManyToManyField('Trade', related_name='teachers', blank=True, help_text="Trades this teacher is qualified to teach")
 
     def save(self, *args, **kwargs):
@@ -21,10 +22,30 @@ class CustomUser(AbstractUser):
 class Classroom(models.Model):
     name = models.CharField(max_length=100) # e.g., "Level 4 Software"
     teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': CustomUser.Role.TEACHER}, related_name='classrooms')
+    co_teachers = models.ManyToManyField(CustomUser, related_name='co_taught_classrooms', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+class ClassroomShareRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', _('Pending')
+        APPROVED = 'APPROVED', _('Approved')
+        REJECTED = 'REJECTED', _('Rejected')
+
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='share_requests')
+    requester = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_share_requests')
+    receiver = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='received_share_requests')
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('classroom', 'requester')
+
+    def __str__(self):
+        return f"{self.requester.username} request for {self.classroom.name} ({self.status})"
+
 
 class Module(models.Model):
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='modules')

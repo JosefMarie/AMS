@@ -79,27 +79,35 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ams_project.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-_db_host = os.environ.get('DB_HOST', 'ep-winter-butterfly-aic6xaao-pooler.c-4.us-east-1.aws.neon.tech')
-_use_ssl = 'neon.tech' in _db_host
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'neondb'),
-        'USER': os.environ.get('DB_USER', 'neondb_owner'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'npg_nbhTHg7Zv6YF'),
-        'HOST': _db_host,
-        'PORT': os.environ.get('DB_PORT', '5432'),
-        'CONN_MAX_AGE': 0,  # Ensure fresh connections for serverless DB
-        'OPTIONS': {
-            'sslmode': 'require',
-            'connect_timeout': 30,
-        } if _use_ssl else {}
+import sys
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    _db_host = os.environ.get('DB_HOST', 'ep-winter-butterfly-aic6xaao-pooler.c-4.us-east-1.aws.neon.tech')
+    _use_ssl = 'neon.tech' in _db_host
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'neondb'),
+            'USER': os.environ.get('DB_USER', 'neondb_owner'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'npg_nbhTHg7Zv6YF'),
+            'HOST': _db_host,
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'CONN_MAX_AGE': 600,  # Keep connection open for 10 minutes to avoid SSL handshake lag
+            'CONN_HEALTH_CHECKS': True,  # Verify connection is active before reusing
+            'OPTIONS': {
+                'sslmode': 'require',
+                'connect_timeout': 30,
+            } if _use_ssl else {}
+        }
+    }
+
 
 
 # Password validation

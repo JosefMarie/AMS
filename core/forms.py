@@ -91,12 +91,13 @@ class TrainerCreationForm(forms.ModelForm):
     
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email', 'trades']
+        fields = ['username', 'first_name', 'last_name', 'email', 'school_name', 'trades']
         widgets = {
             'username': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Username'}),
             'first_name': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'First Name'}),
             'last_name': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Last Name'}),
             'email': forms.EmailInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'Email Address'}),
+            'school_name': forms.TextInput(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline', 'placeholder': 'School / Institution Name (e.g. Centennial Tech)'}),
             'trades': forms.SelectMultiple(attrs={'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32'}),
         }
 

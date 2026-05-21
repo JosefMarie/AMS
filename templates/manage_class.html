@@ -25,6 +25,7 @@
                 </svg>
                 Add Module
             </a>
+            {% if is_owner %}
             <a href="{% url 'promote_students' classroom.id %}"
                 class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-100 flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,6 +40,7 @@
                         d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg> Add Student
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -110,6 +112,7 @@
                     <td class="px-8 py-5 whitespace-nowrap"><span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider {{ s.sex_class }}">{{ s.sex }}</span></td>
                     <td class="px-8 py-5 text-right whitespace-nowrap"><div class="flex justify-end gap-2">
                         <a href="{% url 'student_report' s.uid %}" class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[10px] uppercase tracking-wider">View Report</a>
+                        {% if is_owner %}
                         <a href="{% url 'edit_student_entry' s.uid %}" class="p-1.5 rounded-lg bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all" title="Edit Student">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </a>
@@ -119,6 +122,7 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                         </form>
+                        {% endif %}
                     </div></td>
                     <!-- beautify ignore:end -->
                     </tr>{% empty %}<tr>
@@ -130,6 +134,123 @@
         </div>
     </section>
 
+    <!-- Co-Teaching & Collaboration Section -->
+    <section class="glass-card overflow-hidden mb-12 animate-slide-up" style="animation-delay: 0.15s;">
+        <div class="px-8 py-6 border-b border-gray-100 bg-white/50 flex justify-between items-center">
+            <div>
+                <h3 class="text-xl font-bold text-gray-900 font-extrabold italic uppercase tracking-tighter">Co-Teaching & Collaboration</h3>
+                <p class="text-[10px] text-gray-500 font-black tracking-widest uppercase">Manage shared classroom instruction</p>
+            </div>
+            <span class="text-xs font-black px-3 py-1 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 uppercase tracking-wider">
+                {% if is_owner %}Owner{% else %}Collaborator{% endif %}
+            </span>
+        </div>
+        <div class="p-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Current Co-Teachers -->
+                <div class="space-y-4">
+                    <h4 class="text-xs font-black text-gray-400 uppercase tracking-wider">Classroom Staff</h4>
+                    <div class="divide-y divide-gray-50 bg-gray-50/50 rounded-2xl border border-gray-100 overflow-hidden">
+                        <!-- Owner -->
+                        <div class="px-5 py-4 flex items-center justify-between hover:bg-white/40 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-65 flex items-center justify-center font-bold text-xs">
+                                    OW
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-950">{{ classroom.teacher.get_full_name|default:classroom.teacher.username }}</p>
+                                    <p class="text-[10px] text-gray-455 font-bold uppercase tracking-wider">Class Owner (Primary)</p>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-wider">Primary</span>
+                        </div>
+                        
+                        <!-- Co-teachers -->
+                        {% for ct in co_teachers %}
+                        <div class="px-5 py-4 flex items-center justify-between hover:bg-white/40 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs">
+                                    CT
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-950">{{ ct.get_full_name|default:ct.username }}</p>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Co-Teacher</p>
+                                </div>
+                            </div>
+                            {% if is_owner %}
+                            <form method="post" action="{% url 'remove_co_teacher' classroom.id ct.id %}" onsubmit="return confirm('Are you sure you want to remove {{ ct.get_full_name|default:ct.username }} from this classroom?');">
+                                {% csrf_token %}
+                                <button type="submit" class="text-[10px] font-black text-red-65 bg-red-50 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded-lg border border-red-100 transition-all uppercase tracking-wider">
+                                    Remove
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-[9px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md uppercase tracking-wider">Co-Teacher</span>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        {% if not co_teachers %}
+                        <div class="px-5 py-6 text-center text-xs text-gray-450 font-bold italic">
+                            No co-teachers assigned to this classroom yet.
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Invite / Add Colleagues (Owner Only) -->
+                <div class="space-y-4">
+                    <h4 class="text-xs font-black text-gray-400 uppercase tracking-wider">School Colleagues</h4>
+                    {% if is_owner %}
+                    <div class="divide-y divide-gray-50 bg-gray-50/50 rounded-2xl border border-gray-100 overflow-hidden max-h-[220px] overflow-y-auto">
+                        {% for peer in school_peers_for_invite %}
+                        <div class="px-5 py-4 flex items-center justify-between hover:bg-white/40 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-xs">
+                                    {{ peer.username|slice:":2"|upper }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-950">{{ peer.get_full_name|default:peer.username }}</p>
+                                    <p class="text-[10px] text-gray-400 font-medium">@{{ peer.username }}</p>
+                                </div>
+                            </div>
+                            <form method="post" action="{% url 'add_co_teacher' classroom.id peer.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="text-[10px] font-black text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg shadow-sm transition-all uppercase tracking-wider">
+                                    Add Teacher
+                                </button>
+                            </form>
+                        </div>
+                        {% empty %}
+                        <div class="px-5 py-8 text-center text-xs text-gray-450 font-bold italic">
+                            {% if request.user.school_name %}
+                            No other peer teachers in "{{ request.user.school_name }}".
+                            {% else %}
+                            Please set a school name in your profile to discover peer teachers.
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Collaborator Info card -->
+                    <div class="p-6 rounded-2xl bg-indigo-50/50 border border-indigo-100/50 flex flex-col justify-between h-full">
+                        <div>
+                            <h5 class="text-sm font-extrabold text-indigo-900 mb-2">Collaboration Mode Active</h5>
+                            <p class="text-xs text-indigo-750 font-medium leading-relaxed">
+                                As a co-teacher, you have full access to view this classroom's student roster. You can create your own modules, record attendance, and evaluate assessments.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-indigo-100 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                            <span class="text-[10px] font-black text-indigo-800 uppercase tracking-widest">Authorized co-teacher</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="glass-card overflow-hidden">
         <div class="px-8 py-6 border-b border-gray-100 bg-white/50">
             <h3 class="text-xl font-bold text-gray-900 font-extrabold italic uppercase tracking-tighter">Assessments &
@@ -138,29 +259,38 @@
         <div class="p-8">
             {% if assessments %}
             <!-- beautify ignore:start -->
-            {% for a in assessments %}<div class="border border-gray-200 rounded-2xl mb-6 overflow-hidden bg-white/50">
-                <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200">
-                    <div class="flex items-center justify-between">
+            {% for a in assessments %}
+            <div class="glass-card border border-gray-100 dark:border-slate-800 rounded-3xl mb-6 overflow-hidden bg-white/30 dark:bg-slate-900/30 shadow-sm transition-all duration-300">
+                <div class="px-6 py-5 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border-b border-gray-100 dark:border-slate-800">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h4 class="text-lg font-bold text-gray-900">{{ a.title }}</h4>
-                            <p class="text-xs text-gray-500 font-bold mt-1">{{ a.module_name }} • {{ a.type }} • Total: {{ a.total_marks }} marks</p>
+                            <h4 class="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-tight mb-1">{{ a.title }}</h4>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <span class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">{{ a.module_name }}</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                                <span class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-[9px] font-black text-indigo-600 dark:text-indigo-400 rounded-lg uppercase tracking-widest">{{ a.type }}</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                                <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400">Total: <strong class="text-gray-900 dark:text-white">{{ a.total_marks }}</strong> marks</span>
+                            </div>
                         </div>
-                    <div class="flex items-center gap-3">
-                            <span class="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold">{{ a.marks_count }} student{{ a.marks_count|pluralize }}</span>
+                        <div class="flex items-center gap-2.5 self-end sm:self-auto">
+                            <span class="px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 text-xs font-black uppercase tracking-wider border border-purple-100/50 dark:border-purple-900/50">
+                                {{ a.marks_count }} student{{ a.marks_count|pluralize }}
+                            </span>
                             
                             <!-- Toggle Collapse Button -->
-                            <button onclick="toggleAssessment('{{ a.id }}')" id="toggle-btn-{{ a.id }}" class="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all transform rotate-0" title="Expand/Collapse">
+                            <button onclick="toggleAssessment('{{ a.id }}')" id="toggle-btn-{{ a.id }}" class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 hover:text-indigo-600 transition-all shadow-sm transform rotate-0" title="Expand/Collapse">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                             </button>
 
                             <!-- Update Marks Button -->
-                            <a href="{% url 'enter_marks' a.id %}" class="p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all" title="Update Marks / Add New Students">
+                            <a href="{% url 'enter_marks' a.id %}" class="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-500 transition-all border border-indigo-100/30 dark:border-indigo-900/30" title="Update Marks / Add New Students">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                             </a>
                             <!-- Delete Assessment Button -->
-                            <form method="post" action="{% url 'delete_assessment' a.id %}" onsubmit="return confirm('WARNING: Are you sure you want to delete this ENTIRE assessment? All student marks associated with it will be permanently deleted.');">
+                            <form method="post" action="{% url 'delete_assessment' a.id %}" onsubmit="return confirm('WARNING: Are you sure you want to delete this ENTIRE assessment? All student marks associated with it will be permanently deleted.');" class="inline">
                                 {% csrf_token %}
-                                <button type="submit" class="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-all" title="Delete Assessment">
+                                <button type="submit" class="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white dark:hover:bg-rose-500 transition-all border border-rose-100/30 dark:border-rose-900/30" title="Delete Assessment">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                 </button>
                             </form>
@@ -168,24 +298,78 @@
                     </div>
                 </div>
                 <div id="assessment-body-{{ a.id }}" class="overflow-x-auto hidden transition-all duration-300 ease-in-out">
-                    <table class="w-full">
-                        <thead><tr class="bg-gray-50/50 border-b border-gray-100"><th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Student</th><th class="px-6 py-3 text-center text-xs font-bold text-gray-400 uppercase">Score</th><th class="px-6 py-3 text-center text-xs font-bold text-gray-400 uppercase">Percentage</th><th class="px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase">Actions</th></tr></thead>
-                        <tbody class="divide-y divide-gray-100">
-                            {% for m in a.marks %}<tr class="hover:bg-white/80 transition-all">
-                                <td class="px-6 py-4"><p class="text-sm font-bold text-gray-900">{{ m.student_name }}</p><p class="text-xs text-gray-400 font-medium">{{ m.student_id }}</p></td>
-                                <td class="px-6 py-4 text-center"><span class="text-sm font-black text-gray-900">{{ m.score }}</span><span class="text-xs text-gray-400"> / {{ m.total }}</span></td>
-                                <td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md text-xs font-black {% if m.percentage >= 70 %}bg-green-50 text-green-600{% elif m.percentage >= 50 %}bg-yellow-50 text-yellow-600{% else %}bg-red-50 text-red-600{% endif %}">{{ m.percentage }}%</span></td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex justify-end gap-2">
-                                        <button onclick="editMark('{{ m.id }}', '{{ m.student_name }}', '{{ m.score }}', '{{ m.total }}')" class="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all" title="Edit Mark"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                                        <form method="post" action="{% url 'delete_mark' m.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this mark for {{ m.student_name }}?');">{% csrf_token %}<button type="submit" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all" title="Delete Mark"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-gray-50/50 dark:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800">
+                                <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Student</th>
+                                <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-center">Score</th>
+                                <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-center">Percentage</th>
+                                <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 dark:divide-slate-800/80">
+                            {% for m in a.marks %}
+                            <tr class="hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10 transition-colors group">
+                                <td class="px-8 py-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-black text-xs shadow-sm flex-shrink-0">
+                                            {{ m.student_name|first|upper }}
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-black text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors leading-tight">{{ m.student_name }}</p>
+                                            <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-tighter mt-0.5">{{ m.student_id }}</p>
+                                        </div>
                                     </div>
                                 </td>
-                            </tr>{% empty %}<tr><td colspan="4" class="px-6 py-8 text-center text-gray-400 text-sm font-medium italic">No marks recorded yet.</td></tr>{% endfor %}
+                                <td class="px-8 py-5 text-center whitespace-nowrap">
+                                    <span class="text-sm font-black text-gray-900 dark:text-white">{{ m.score }}</span>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500 font-bold">/ {{ m.total }}</span>
+                                </td>
+                                <td class="px-8 py-5 text-center">
+                                    <div class="inline-flex flex-col items-center gap-1">
+                                        <span class="px-3 py-1 rounded-xl text-xs font-black 
+                                            {% if m.percentage >= 80 %} bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-100 dark:border-green-900/50
+                                            {% elif m.percentage >= 50 %} bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50
+                                            {% else %} bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50
+                                            {% endif %} shadow-sm">
+                                            {{ m.percentage }}%
+                                        </span>
+                                        <!-- Mini progress bar -->
+                                        <div class="w-16 h-1 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="h-full rounded-full
+                                                {% if m.percentage >= 80 %}bg-green-400 dark:bg-green-500
+                                                {% elif m.percentage >= 50 %}bg-amber-400 dark:bg-amber-500
+                                                {% else %}bg-red-400 dark:bg-red-500{% endif %}"
+                                                style="width: {{ m.percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-8 py-5 text-right whitespace-nowrap">
+                                    <div class="flex justify-end gap-2">
+                                        <button onclick="editMark('{{ m.id }}', '{{ m.student_name }}', '{{ m.score }}', '{{ m.total }}')" class="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-500 transition-all" title="Edit Mark">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </button>
+                                        <form method="post" action="{% url 'delete_mark' m.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this mark for {{ m.student_name }}?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white dark:hover:bg-rose-500 transition-all" title="Delete Mark">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-8 py-10 text-center text-gray-400 dark:text-gray-500 text-sm font-medium italic">
+                                    No marks recorded yet.
+                                </td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
-            </div>{% endfor %}
+            </div>
+            {% endfor %}
             <!-- beautify ignore:end -->
             {% else %}
             <div class="text-center py-12">

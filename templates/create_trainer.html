@@ -16,50 +16,137 @@
 
     <div class="glass-card overflow-hidden">
         <div class="px-8 py-6 border-b border-gray-100 bg-white/50">
-            <h3 class="text-lg font-bold text-gray-900 font-extrabold italic uppercase tracking-tighter">Trainer Details
-            </h3>
+            <h3 class="text-lg font-bold text-gray-900 font-extrabold italic uppercase tracking-tighter">Trainer Details</h3>
         </div>
         <form method="post" class="p-8 space-y-6">
             {% csrf_token %}
 
+            <!-- First / Last Name -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">First
-                        Name</label>
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">First Name</label>
                     {{ form.first_name }}
                 </div>
                 <div>
-                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Last
-                        Name</label>
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Last Name</label>
                     {{ form.last_name }}
                 </div>
             </div>
 
+            <!-- Email -->
             <div>
-                <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Email
-                    Address</label>
+                <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Email Address</label>
                 {{ form.email }}
             </div>
 
+            <!-- Username / Password -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label
-                        class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Username</label>
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Username</label>
                     {{ form.username }}
                 </div>
                 <div>
-                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Temporary
-                        Password</label>
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Temporary Password</label>
                     {{ form.password }}
                 </div>
             </div>
 
+            <!-- ── School / Institution ── -->
+            <div>
+                <label for="school-input" class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                    School / Institution
+                </label>
+
+                <!-- Combo wrapper -->
+                <div class="relative">
+                    <!-- Icon -->
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+
+                    <input
+                        id="school-input"
+                        name="school_name"
+                        type="text"
+                        list="school-list"
+                        autocomplete="off"
+                        placeholder="Type or select an institution…"
+                        value="{{ form.school_name.value|default:'' }}"
+                        class="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 transition-all text-gray-800 font-medium"
+                        oninput="updateSchoolBadge(this.value)"
+                    >
+
+                    <!-- Clear button -->
+                    <button type="button" id="clear-school"
+                        class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-300 hover:text-red-400 transition-colors hidden"
+                        onclick="clearSchool()" title="Clear">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Datalist of existing schools -->
+                <datalist id="school-list">
+                    {% for school in existing_schools %}
+                    <option value="{{ school }}">{{ school }}</option>
+                    {% endfor %}
+                </datalist>
+
+                <!-- Live badge preview -->
+                <div id="school-badge-wrap" class="mt-3 hidden">
+                    <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black">
+                        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span id="school-badge-text"></span>
+                        <!-- NEW pill shown when typing a name not in the list -->
+                        <span id="school-new-pill"
+                            class="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider hidden">
+                            New
+                        </span>
+                    </span>
+                </div>
+
+                <!-- Hint row -->
+                <div class="mt-2 flex items-center gap-2">
+                    {% if existing_schools %}
+                    <p class="text-[10px] text-gray-400 font-bold">
+                        {{ existing_schools|length }} institution{{ existing_schools|length|pluralize }} already in the system. Start typing to filter or enter a brand-new name.
+                    </p>
+                    {% else %}
+                    <p class="text-[10px] text-gray-400 font-bold">
+                        No institutions registered yet — type a new school name to create the first one.
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Existing schools quick-pick chips (only shown when ≤ 8 schools) -->
+                {% if existing_schools and existing_schools|length <= 8 %}
+                <div class="mt-3 flex flex-wrap gap-2" id="school-chips">
+                    {% for school in existing_schools %}
+                    <button type="button"
+                        class="school-chip px-3 py-1 rounded-lg border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                        onclick="pickSchool('{{ school|escapejs }}')">
+                        {{ school }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <!-- ── / School / Institution ── -->
+
+            <!-- Trades -->
             <div>
                 <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Assign Trades (Optional)</label>
                 {{ form.trades }}
                 <p class="text-[10px] text-gray-400 font-bold mt-2">Hold Ctrl (or Cmd on Mac) to select multiple trades.</p>
             </div>
 
+            <!-- Submit -->
             <div class="pt-6 border-t border-gray-100 flex justify-end">
                 <button type="submit"
                     class="px-8 py-4 rounded-2xl bg-indigo-600 text-white font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center gap-3 group">
@@ -83,8 +170,63 @@
         </div>
         <p class="text-sm text-amber-800 font-medium leading-relaxed">
             New trainers will be able to log in immediately using the credentials provided. They can then create
-            classrooms, modules, and manage student attendance.
+            classrooms, modules, and manage student attendance. Assigning a school enables the peer co-teaching network.
         </p>
     </div>
 </div>
+
+<script>
+    const existingSchools = [{% for school in existing_schools %}"{{ school|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+
+    function updateSchoolBadge(val) {
+        const badge   = document.getElementById('school-badge-wrap');
+        const text    = document.getElementById('school-badge-text');
+        const newPill = document.getElementById('school-new-pill');
+        const clearBtn = document.getElementById('clear-school');
+
+        if (val.trim()) {
+            badge.classList.remove('hidden');
+            text.textContent = val.trim();
+            clearBtn.classList.remove('hidden');
+
+            // Show "New" pill when the value isn't in the existing list
+            const isExisting = existingSchools.some(s => s.toLowerCase() === val.trim().toLowerCase());
+            newPill.classList.toggle('hidden', isExisting);
+
+            // Highlight active chip
+            document.querySelectorAll('.school-chip').forEach(chip => {
+                const active = chip.textContent.trim().toLowerCase() === val.trim().toLowerCase();
+                chip.classList.toggle('border-indigo-400', active);
+                chip.classList.toggle('text-indigo-600', active);
+                chip.classList.toggle('bg-indigo-50', active);
+            });
+        } else {
+            badge.classList.add('hidden');
+            clearBtn.classList.add('hidden');
+            document.querySelectorAll('.school-chip').forEach(c => {
+                c.classList.remove('border-indigo-400','text-indigo-600','bg-indigo-50');
+            });
+        }
+    }
+
+    function pickSchool(name) {
+        const input = document.getElementById('school-input');
+        input.value = name;
+        updateSchoolBadge(name);
+        input.focus();
+    }
+
+    function clearSchool() {
+        const input = document.getElementById('school-input');
+        input.value = '';
+        updateSchoolBadge('');
+        input.focus();
+    }
+
+    // Initialise badge if the form is re-rendered with a value (e.g. validation error)
+    document.addEventListener('DOMContentLoaded', () => {
+        const val = document.getElementById('school-input').value;
+        if (val) updateSchoolBadge(val);
+    });
+</script>
 {% endblock %}

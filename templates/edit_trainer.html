@@ -56,6 +56,13 @@
                     required>
             </div>
 
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">School / Institution Name</label>
+                <input type="text" name="school_name" value="{{ trainer.school_name|default:'' }}"
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 transition-all"
+                    placeholder="School / Institution Name (e.g. Centennial Tech)">
+            </div>
+
             <div class="mt-6">
                 <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Assigned Trades</label>
                 <select name="trades" multiple class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 transition-all h-32 text-sm text-gray-700">

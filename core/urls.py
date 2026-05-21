@@ -47,6 +47,13 @@ urlpatterns = [
     path('curriculum/upload/', views.upload_curriculum_view, name='upload_curriculum'),
     path('admin/trade/create/', views.create_trade_view, name='create_trade'),
     
+    # Co-teaching & Classroom Sharing
+    path('class/<int:classroom_id>/share/request/', views.send_share_request, name='send_share_request'),
+    path('share-request/<int:request_id>/<str:action>/', views.respond_share_request, name='respond_share_request'),
+    path('class/<int:classroom_id>/co-teacher/add/<int:teacher_id>/', views.add_co_teacher_direct, name='add_co_teacher'),
+    path('class/<int:classroom_id>/co-teacher/remove/<int:teacher_id>/', views.remove_co_teacher_view, name='remove_co_teacher'),
+
+    
     # AJAX API Endpoints
     path('api/curriculums/<int:trade_id>/', views.get_curriculums, name='api_get_curriculums'),
     path('api/modules/<int:curriculum_id>/', views.get_modules, name='api_get_modules'),
@@ -97,4 +104,9 @@ urlpatterns = [
     path('password-reset/complete/', auth_views.PasswordResetCompleteView.as_view(
         template_name='password_reset_complete.html'
     ), name='password_reset_complete'),
+
+    # User Persona Guides
+    path('guide/teacher/', views.teacher_persona_view, name='teacher_persona'),
+    path('guide/student/', views.student_persona_view, name='student_persona'),
+    path('guide/admin/', views.admin_persona_view, name='admin_persona'),
 ]
