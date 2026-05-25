@@ -80,7 +80,10 @@ WSGI_APPLICATION = 'ams_project.wsgi.application'
 
 
 import sys
-if 'test' in sys.argv:
+# Support using local SQLite database for development, offline work, or fallback
+_use_local_db = os.environ.get('USE_LOCAL_DB', 'False') == 'True'
+
+if 'test' in sys.argv or _use_local_db:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -88,8 +91,18 @@ if 'test' in sys.argv:
         }
     }
 else:
-    _db_host = os.environ.get('DB_HOST', 'ep-winter-butterfly-aic6xaao-pooler.c-4.us-east-1.aws.neon.tech')
+    _db_host = os.environ.get('DB_HOST', 'ep-winter-butterfly-aic6xaao.c-4.us-east-1.aws.neon.tech')
     _use_ssl = 'neon.tech' in _db_host
+    _is_pooler = '-pooler' in _db_host
+
+    _db_options = {}
+    if _use_ssl:
+        _db_options['sslmode'] = 'require'
+        _db_options['connect_timeout'] = 30
+    
+    # If using the Neon/PgBouncer pooler (transaction mode), prepared statements must be disabled
+    if _is_pooler:
+        _db_options['prepare_threshold'] = None
 
     DATABASES = {
         'default': {
@@ -99,14 +112,13 @@ else:
             'PASSWORD': os.environ.get('DB_PASSWORD', 'npg_nbhTHg7Zv6YF'),
             'HOST': _db_host,
             'PORT': os.environ.get('DB_PORT', '5432'),
-            'CONN_MAX_AGE': 600,  # Keep connection open for 10 minutes to avoid SSL handshake lag
-            'CONN_HEALTH_CHECKS': True,  # Verify connection is active before reusing
-            'OPTIONS': {
-                'sslmode': 'require',
-                'connect_timeout': 30,
-            } if _use_ssl else {}
+            # Keep connection open for 10 minutes to avoid SSL handshake lag, unless using a pooler
+            'CONN_MAX_AGE': 0 if _is_pooler else 600,
+            'CONN_HEALTH_CHECKS': not _is_pooler,
+            'OPTIONS': _db_options
         }
     }
+
 
 
 
