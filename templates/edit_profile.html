@@ -72,6 +72,25 @@
                         {% endif %}
                     </div>
 
+                    <!-- Personal Gemini API Key (Strategy D) -->
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-3">
+                            Personal Gemini API Key
+                            <span class="ml-2 normal-case font-semibold text-indigo-500 text-[10px]">Optional — overrides global school key</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400 pointer-events-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                </svg>
+                            </span>
+                            <input type="password" name="gemini_api_key" value="{{ user.gemini_api_key|default:'' }}"
+                                placeholder="AIzaSy..."
+                                class="w-full pl-11 pr-4 py-3.5 rounded-2xl border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium bg-gray-50/50">
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-2 font-medium">Add your own API key to bypass school usage limits for AI features.</p>
+                    </div>
+
                     <!-- Bio -->
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-3">About Me

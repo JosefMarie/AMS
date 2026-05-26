@@ -60,6 +60,7 @@ urlpatterns = [
     path('api/learning_outcomes/<int:module_id>/', views.get_learning_outcomes, name='api_get_learning_outcomes'),
     path('api/indicative_contents/<int:lo_id>/', views.get_indicative_contents, name='api_get_indicative_contents'),
     path('api/topics/<int:ic_id>/', views.get_topics, name='api_get_topics'),
+    path('api/save-user-gemini-key/', views.save_user_gemini_key, name='save_user_gemini_key'),
     
     path('admin-settings/', views.admin_settings, name='admin_settings'),
     path('security-logs/', views.security_logs, name='security_logs'),
@@ -109,4 +110,17 @@ urlpatterns = [
     path('guide/teacher/', views.teacher_persona_view, name='teacher_persona'),
     path('guide/student/', views.student_persona_view, name='student_persona'),
     path('guide/admin/', views.admin_persona_view, name='admin_persona'),
+
+    # Scheme of Work templates (Admin)
+    path('manage/scheme-templates/', views.admin_scheme_templates_view, name='admin_scheme_templates'),
+    path('manage/scheme-templates/<int:template_id>/delete/', views.delete_scheme_template_view, name='delete_scheme_template'),
+
+    # Schemes of Work (Teacher)
+    path('schemes-of-work/', views.scheme_of_work_list_view, name='scheme_of_work_list'),
+    path('schemes-of-work/create/', views.scheme_of_work_create_view, name='scheme_of_work_create'),
+    path('schemes-of-work/generate-ai/', views.generate_scheme_of_work_ai, name='generate_scheme_of_work_ai'),
+    path('schemes-of-work/<int:scheme_id>/edit/', views.scheme_of_work_editor_view, name='scheme_of_work_editor'),
+    path('schemes-of-work/<int:scheme_id>/save/', views.scheme_of_work_save, name='scheme_of_work_save'),
+    path('schemes-of-work/<int:scheme_id>/print/', views.scheme_of_work_pdf_view, name='scheme_of_work_pdf'),
+    path('schemes-of-work/<int:scheme_id>/delete/', views.delete_scheme_of_work, name='delete_scheme_of_work'),
 ]

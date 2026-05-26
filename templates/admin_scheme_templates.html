@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="animate-fadeIn max-w-4xl mx-auto py-12 px-4">
+    <div class="flex items-center gap-4 mb-12">
+        <a href="{% url 'dashboard' %}"
+            class="p-3 rounded-2xl bg-white border border-gray-100 text-gray-400 hover:text-indigo-600 hover:border-indigo-100 transition-all shadow-sm">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">Scheme Templates</h1>
+            <p class="text-gray-500 font-bold text-sm tracking-wide uppercase">Manage Scheme of Work Templates</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Upload Form Card -->
+        <div class="md:col-span-1">
+            <div class="glass-card overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-white/50">
+                    <h3 class="text-sm font-black text-indigo-600 uppercase tracking-widest">Upload Template</h3>
+                </div>
+                <form method="post" enctype="multipart/form-data" class="p-6 space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Template Title</label>
+                        <input type="text" name="title" placeholder="e.g. Standard RTB Layout"
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 transition-all text-xs font-bold text-gray-700"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Upload PDF Document</label>
+                        <input type="file" name="pdf_file" accept=".pdf"
+                            class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 transition-all bg-gray-50 text-xs text-gray-700"
+                            required>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-100 flex justify-end">
+                        <button type="submit"
+                            class="w-full py-3 rounded-xl bg-indigo-600 text-white font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all shadow-md flex items-center justify-center gap-2 group">
+                            Upload
+                            <svg class="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Templates List Card -->
+        <div class="md:col-span-2">
+            <div class="glass-card overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-white/50">
+                    <h3 class="text-sm font-black text-indigo-600 uppercase tracking-widest">Active PDF Templates</h3>
+                </div>
+                <div class="p-6">
+                    {% if templates %}
+                        <div class="divide-y divide-gray-100">
+                            {% for template in templates %}
+                                <div class="flex items-center justify-between py-4 {% if forloop.first %}pt-0{% endif %} {% if forloop.last %}pb-0{% endif %}">
+                                    <div class="flex items-center gap-3">
+                                        <div class="p-3 bg-red-50 text-red-600 rounded-xl">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-black text-gray-900 leading-tight">{{ template.title }}</p>
+                                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Uploaded on: {{ template.created_at|date:"M d, Y" }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ template.pdf_file.url }}" target="_blank"
+                                            class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-black uppercase tracking-wider transition-colors">
+                                            Download
+                                        </a>
+                                        <form action="{% url 'delete_scheme_template' template.id %}" method="post" onsubmit="return confirm('Are you sure you want to delete this template?');" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-black uppercase tracking-wider transition-colors">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-12">
+                            <div class="w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <h4 class="text-sm font-bold text-gray-900 uppercase tracking-tighter mb-1">No Templates Found</h4>
+                            <p class="text-xs text-gray-400">Upload a Scheme of Work template PDF on the left to get started.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -13,6 +13,10 @@ class CustomUser(AbstractUser):
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.STUDENT)
     school_name = models.CharField(max_length=150, blank=True, null=True, help_text="The school/institution name this user belongs to")
     trades = models.ManyToManyField('Trade', related_name='teachers', blank=True, help_text="Trades this teacher is qualified to teach")
+    gemini_api_key = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text="Personal Gemini API key (optional). If set, overrides the school's global key for AI features."
+    )
 
     def save(self, *args, **kwargs):
         if self.is_superuser:
@@ -329,6 +333,8 @@ class SyllabusModule(models.Model):
     curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, related_name='modules')
     code = models.CharField(max_length=50) # e.g., "ICT SDV 4 01"
     title = models.TextField() # e.g., "Develop Web Applications"
+    hours = models.IntegerField(default=100, help_text="Total learning hours for this module")
+    credits = models.IntegerField(default=10, help_text="Total credits for this module")
     
     def __str__(self):
         return f"{self.code} - {self.title}"
@@ -353,3 +359,58 @@ class Topic(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class SchemeOfWorkTemplate(models.Model):
+    title = models.CharField(max_length=200)
+    pdf_file = models.FileField(upload_to='scheme_templates/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class SchemeOfWork(models.Model):
+    teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': CustomUser.Role.TEACHER}, related_name='schemes_of_work')
+    template = models.ForeignKey(SchemeOfWorkTemplate, on_delete=models.SET_NULL, null=True, blank=True)
+    syllabus_module = models.ForeignKey(SyllabusModule, on_delete=models.CASCADE, related_name='schemes_of_work')
+    
+    # Header Details
+    sector = models.CharField(max_length=150)
+    trade = models.CharField(max_length=150)
+    qualification_title = models.CharField(max_length=200, blank=True)
+    school_year = models.CharField(max_length=50) # e.g. "2025-2026"
+    term = models.CharField(max_length=50) # e.g. "Term 1"
+    rqf_level = models.CharField(max_length=50) # e.g. "Level 4"
+    trainer_name = models.CharField(max_length=150)
+    
+    module_code = models.CharField(max_length=50)
+    module_title = models.TextField()
+    learning_hours = models.IntegerField(default=100)
+    num_classes = models.IntegerField(default=1)
+    class_name = models.CharField(max_length=100)
+    date = models.DateField(default=datetime.date.today)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Scheme of Work - {self.module_code} ({self.class_name})"
+
+
+class SchemeOfWorkWeek(models.Model):
+    scheme = models.ForeignKey(SchemeOfWork, on_delete=models.CASCADE, related_name='weeks')
+    term = models.CharField(max_length=50, default="1st Term", help_text="e.g. '1st Term', '2nd Term', '3rd Term'")
+    week_number = models.CharField(max_length=50, help_text="e.g. '1-2' or '3'")
+    dates = models.CharField(max_length=100, default="", blank=True, null=True, help_text="e.g. 'Sep 1 - Sep 5'")
+    learning_outcome = models.TextField()
+    duration = models.CharField(max_length=50) # e.g. "14hrs"
+    indicative_content = models.TextField()
+    learning_activities = models.TextField()
+    resources = models.TextField()
+    formative_assessment = models.TextField()
+    learning_place = models.CharField(max_length=150)
+    observation = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.scheme.module_code} - Week {self.week_number}"
+

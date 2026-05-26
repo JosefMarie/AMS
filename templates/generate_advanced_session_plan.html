@@ -17,6 +17,41 @@
             comprehensive, detailed session plans tailored to your syllabus.</p>
     </div>
 
+    <!-- Personal Gemini API Key Quick Settings -->
+    <div class="glass-card p-6 border border-violet-100/60 dark:border-violet-900/30">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                        </svg>
+                    </span>
+                    <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Personal Gemini API Key</h3>
+                    <span id="key_status_badge" class="px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full {% if user.gemini_api_key %}bg-emerald-100 text-emerald-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                        {% if user.gemini_api_key %}Active{% else %}Not Configured{% endif %}
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {% if user.gemini_api_key %}
+                        Your personal key is configured and will automatically be used for AI Session Plan generation.
+                    {% else %}
+                        Bypass global school quota limits by entering your own key (starts with AIzaSy...).
+                    {% endif %}
+                </p>
+            </div>
+            
+            <div class="flex flex-1 md:flex-initial items-center gap-3">
+                <input type="password" id="gemini_api_key_input" value="{{ user.gemini_api_key|default:'' }}" placeholder="AIzaSy..." 
+                    class="px-4 py-2 text-xs font-bold rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-gray-700 dark:text-gray-300 w-full md:w-64">
+                <button type="button" id="save_api_key_btn" class="px-4 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 transition-all rounded-xl shadow uppercase tracking-wider whitespace-nowrap">
+                    Save Key
+                </button>
+            </div>
+        </div>
+        <div id="api_key_msg" class="hidden mt-3 p-3 rounded-xl text-xs font-bold"></div>
+    </div>
+
     <!-- Generator Form -->
     <div class="glass-card p-8">
         <form method="POST" class="space-y-6">
@@ -358,6 +393,61 @@
                 topicsContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-2 italic">Select an Indicative Content to load topics...</p>';
             }
         });
+
+        // Save and test Gemini API key
+        const saveApiKeyBtn = document.getElementById("save_api_key_btn");
+        const apiKeyInput = document.getElementById("gemini_api_key_input");
+        const apiKeyMsg = document.getElementById("api_key_msg");
+        const keyStatusBadge = document.getElementById("key_status_badge");
+
+        if (saveApiKeyBtn && apiKeyInput) {
+            saveApiKeyBtn.addEventListener("click", async () => {
+                const keyVal = apiKeyInput.value.trim();
+                saveApiKeyBtn.disabled = true;
+                saveApiKeyBtn.textContent = keyVal ? "Testing & Saving..." : "Clearing Key...";
+                apiKeyMsg.className = "hidden mt-3 p-3 rounded-xl text-xs font-bold";
+                
+                try {
+                    const res = await fetch("{% url 'save_user_gemini_key' %}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                        },
+                        body: JSON.stringify({
+                            gemini_api_key: keyVal,
+                            test_key: true
+                        })
+                    });
+                    const result = await res.json();
+                    
+                    if (result.success) {
+                        apiKeyMsg.classList.remove("hidden");
+                        apiKeyMsg.classList.add("bg-emerald-50", "text-emerald-700");
+                        apiKeyMsg.textContent = result.message;
+                        
+                        if (keyVal) {
+                            keyStatusBadge.className = "px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800";
+                            keyStatusBadge.textContent = "Active";
+                        } else {
+                            keyStatusBadge.className = "px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full bg-amber-100 text-amber-800";
+                            keyStatusBadge.textContent = "Not Configured";
+                        }
+                    } else {
+                        apiKeyMsg.classList.remove("hidden");
+                        apiKeyMsg.classList.add("bg-red-50", "text-red-700");
+                        apiKeyMsg.textContent = result.error || "Failed to verify or save key.";
+                    }
+                } catch (err) {
+                    apiKeyMsg.classList.remove("hidden");
+                    apiKeyMsg.classList.add("bg-red-50", "text-red-700");
+                    apiKeyMsg.textContent = "Error communicating with server.";
+                } finally {
+                    saveApiKeyBtn.disabled = false;
+                    saveApiKeyBtn.textContent = "Save Key";
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

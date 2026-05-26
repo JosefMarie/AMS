@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8 animate-fadeIn py-8 px-4">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{% url 'scheme_of_work_list' %}" class="p-2 rounded-2xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700/50 text-gray-500 hover:text-indigo-600 shadow-sm transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </a>
+            <div>
+                <h1 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Scheme of Work Editor</h1>
+                <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Review and refine weekly learning schedules and hours distribution</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button id="save_btn" onclick="saveScheme(false)" class="px-5 py-2.5 rounded-xl border border-indigo-200 text-indigo-700 font-bold text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all">
+                Save Progress
+            </button>
+            <button onclick="saveScheme(true)" class="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Save & Print PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert / Notification Banner -->
+    <div id="status_alert" class="hidden p-4 rounded-xl text-xs font-bold transition-all"></div>
+
+    <form id="scheme_form" onsubmit="event.preventDefault();" class="space-y-6">
+        <!-- Section 1: Administrative Details -->
+        <div class="glass-card p-6 space-y-6">
+            <h2 class="text-sm font-black text-indigo-600 uppercase tracking-widest border-b border-gray-100 pb-3">Administrative Metadata</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Sector</label>
+                    <input type="text" id="sector" value="{{ scheme.sector }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Trade</label>
+                    <input type="text" id="trade" value="{{ scheme.trade }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Qualification Title</label>
+                    <input type="text" id="qualification_title" value="{{ scheme.qualification_title }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Trainer Name</label>
+                    <input type="text" id="trainer_name" value="{{ scheme.trainer_name }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">School Year</label>
+                    <input type="text" id="school_year" value="{{ scheme.school_year }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Term</label>
+                    <input type="text" id="term" value="{{ scheme.term }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">RQF Level</label>
+                    <input type="text" id="rqf_level" value="{{ scheme.rqf_level }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date</label>
+                    <input type="date" id="date" value="{{ scheme.date|date:'Y-m-d' }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Module Code</label>
+                    <input type="text" id="module_code" value="{{ scheme.module_code }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Module Title</label>
+                    <input type="text" id="module_title" value="{{ scheme.module_title }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Learning Hours</label>
+                    <input type="number" id="learning_hours" value="{{ scheme.learning_hours }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Number of Classes</label>
+                    <input type="number" id="num_classes" value="{{ scheme.num_classes }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Class Name</label>
+                    <input type="text" id="class_name" value="{{ scheme.class_name }}" required
+                        class="w-full text-xs font-bold text-gray-800 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 focus:border-indigo-500 outline-none rounded-xl p-2.5 transition-all">
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Tabular Weekly Spreadsheet -->
+        <div class="glass-card p-6 space-y-6 overflow-hidden">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                <h2 class="text-sm font-black text-indigo-600 uppercase tracking-widest">Weekly Distribution Schedule</h2>
+                <button type="button" onclick="addWeekRow()" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    Add Week Row
+                </button>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-100">
+                <table class="w-full text-left border-collapse" id="weeks_table" style="min-width: 1400px;">
+                    <thead>
+                        <tr class="bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-100">
+                            <th class="p-3 w-[7%]">Term</th>
+                            <th class="p-3 w-[5%]">Weeks</th>
+                            <th class="p-3 w-[9%]">Dates</th>
+                            <th class="p-3 w-[12%]">Learning Outcome (LO)</th>
+                            <th class="p-3 w-[5%]">Duration</th>
+                            <th class="p-3 w-[18%]">Indicative Content (IC)</th>
+                            <th class="p-3 w-[12%]">Learning Activities</th>
+                            <th class="p-3 w-[10%]">Resources Required</th>
+                            <th class="p-3 w-[10%]">Formative Assessment Evidence</th>
+                            <th class="p-3 w-[6%]">Learning Place</th>
+                            <th class="p-3 w-[6%]">Observation</th>
+                            <th class="p-3 w-[4%] text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weeks_body" class="divide-y divide-gray-100 bg-white">
+                        {% for week in weeks %}
+                            <tr class="hover:bg-slate-50/40 transition-colors">
+                                <td class="p-2">
+                                    <select class="term-val w-full p-2 border border-gray-150 rounded-lg text-xs font-bold text-gray-800 bg-white">
+                                        <option value="1st Term" {% if week.term == '1st Term' %}selected{% endif %}>1st Term</option>
+                                        <option value="2nd Term" {% if week.term == '2nd Term' %}selected{% endif %}>2nd Term</option>
+                                        <option value="3rd Term" {% if week.term == '3rd Term' %}selected{% endif %}>3rd Term</option>
+                                    </select>
+                                </td>
+                                <td class="p-2">
+                                    <input type="text" class="week-val w-full p-2 border border-gray-150 rounded-lg text-xs font-bold text-gray-800" value="{{ week.week_number }}" placeholder="e.g. 1">
+                                </td>
+                                <td class="p-2">
+                                    <input type="text" class="dates-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700" value="{{ week.dates|default:'' }}" placeholder="e.g. Sep 1 - Sep 5">
+                                </td>
+                                <td class="p-2">
+                                    <textarea rows="3" class="lo-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="LO Details">{{ week.learning_outcome }}</textarea>
+                                </td>
+                                <td class="p-2">
+                                    <input type="text" class="dur-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700" value="{{ week.duration }}" placeholder="e.g. 14hrs">
+                                </td>
+                                <td class="p-2">
+                                    <textarea rows="3" class="ic-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="Indicative Contents">{{ week.indicative_content }}</textarea>
+                                </td>
+                                <td class="p-2">
+                                    <textarea rows="3" class="act-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="Activities">{{ week.learning_activities }}</textarea>
+                                </td>
+                                <td class="p-2">
+                                    <textarea rows="3" class="res-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="Resources">{{ week.resources }}</textarea>
+                                </td>
+                                <td class="p-2">
+                                    <textarea rows="3" class="ass-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="Assessments">{{ week.formative_assessment }}</textarea>
+                                </td>
+                                <td class="p-2">
+                                    <input type="text" class="place-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700" value="{{ week.learning_place }}" placeholder="e.g. Lab">
+                                </td>
+                                <td class="p-2">
+                                    <input type="text" class="obs-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700" value="{{ week.observation|default:'' }}" placeholder="Observation">
+                                </td>
+                                <td class="p-2 text-center">
+                                    <button type="button" onclick="deleteWeekRow(this)" class="p-2 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors">
+                                        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr id="empty_row">
+                                <td colspan="12" class="p-8 text-center text-gray-400 italic text-xs">No weeks generated. Click "Add Week Row" to insert content.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    function addWeekRow() {
+        const body = document.getElementById("weeks_body");
+        const emptyRow = document.getElementById("empty_row");
+        if (emptyRow) {
+            emptyRow.remove();
+        }
+
+        const newRow = document.createElement("tr");
+        newRow.className = "hover:bg-slate-50/40 transition-colors";
+        newRow.innerHTML = `
+            <td class="p-2">
+                <select class="term-val w-full p-2 border border-gray-150 rounded-lg text-xs font-bold text-gray-800 bg-white">
+                    <option value="1st Term">1st Term</option>
+                    <option value="2nd Term">2nd Term</option>
+                    <option value="3rd Term">3rd Term</option>
+                </select>
+            </td>
+            <td class="p-2">
+                <input type="text" class="week-val w-full p-2 border border-gray-150 rounded-lg text-xs font-bold text-gray-800" placeholder="e.g. 1">
+            </td>
+            <td class="p-2">
+                <input type="text" class="dates-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700" placeholder="e.g. Sep 1 - Sep 5">
+            </td>
+            <td class="p-2">
+                <textarea rows="3" class="lo-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="LO Details"></textarea>
+            </td>
+            <td class="p-2">
+                <input type="text" class="dur-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700" placeholder="e.g. 4hrs">
+            </td>
+            <td class="p-2">
+                <textarea rows="3" class="ic-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="Indicative Contents"></textarea>
+            </td>
+            <td class="p-2">
+                <textarea rows="3" class="act-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="Activities"></textarea>
+            </td>
+            <td class="p-2">
+                <textarea rows="3" class="res-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="Resources"></textarea>
+            </td>
+            <td class="p-2">
+                <textarea rows="3" class="ass-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700 resize-y" placeholder="Assessments"></textarea>
+            </td>
+            <td class="p-2">
+                <input type="text" class="place-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700" placeholder="e.g. Lab">
+            </td>
+            <td class="p-2">
+                <input type="text" class="obs-val w-full p-2 border border-gray-150 rounded-lg text-xs text-gray-700" placeholder="Observation">
+            </td>
+            <td class="p-2 text-center">
+                <button type="button" onclick="deleteWeekRow(this)" class="p-2 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors">
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            </td>
+        `;
+        body.appendChild(newRow);
+    }
+
+    function deleteWeekRow(btn) {
+        const row = btn.closest("tr");
+        row.remove();
+
+        const body = document.getElementById("weeks_body");
+        if (body.children.length === 0) {
+            body.innerHTML = `
+                <tr id="empty_row">
+                    <td colspan="12" class="p-8 text-center text-gray-400 italic text-xs">No weeks generated. Click "Add Week Row" to insert content.</td>
+                </tr>
+            `;
+        }
+    }
+
+    async function saveScheme(shouldPrint) {
+        const statusAlert = document.getElementById("status_alert");
+        const saveBtn = document.getElementById("save_btn");
+        
+        statusAlert.className = "hidden p-4 rounded-xl text-xs font-bold transition-all";
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+
+        // Extract Weeks rows data
+        const rows = document.querySelectorAll("#weeks_body tr");
+        const weeksData = [];
+        
+        rows.forEach(row => {
+            if (row.id === "empty_row") return;
+            weeksData.push({
+                term: row.querySelector(".term-val").value,
+                week_number: row.querySelector(".week-val").value,
+                dates: row.querySelector(".dates-val").value,
+                learning_outcome: row.querySelector(".lo-val").value,
+                duration: row.querySelector(".dur-val").value,
+                indicative_content: row.querySelector(".ic-val").value,
+                learning_activities: row.querySelector(".act-val").value,
+                resources: row.querySelector(".res-val").value,
+                formative_assessment: row.querySelector(".ass-val").value,
+                learning_place: row.querySelector(".place-val").value,
+                observation: row.querySelector(".obs-val").value
+            });
+        });
+
+        const postData = {
+            sector: document.getElementById("sector").value,
+            trade: document.getElementById("trade").value,
+            qualification_title: document.getElementById("qualification_title").value,
+            trainer_name: document.getElementById("trainer_name").value,
+            school_year: document.getElementById("school_year").value,
+            term: document.getElementById("term").value,
+            rqf_level: document.getElementById("rqf_level").value,
+            date: document.getElementById("date").value,
+            module_code: document.getElementById("module_code").value,
+            module_title: document.getElementById("module_title").value,
+            learning_hours: document.getElementById("learning_hours").value,
+            num_classes: document.getElementById("num_classes").value,
+            class_name: document.getElementById("class_name").value,
+            weeks: weeksData
+        };
+
+        try {
+            const res = await fetch("{% url 'scheme_of_work_save' scheme.id %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                },
+                body: JSON.stringify(postData)
+            });
+            const result = await res.json();
+            
+            if (result.success) {
+                statusAlert.classList.remove("hidden");
+                statusAlert.className = "p-4 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-2";
+                statusAlert.innerHTML = '<svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>Scheme of Work saved successfully.</span>';
+                
+                if (shouldPrint) {
+                    window.open("{% url 'scheme_of_work_pdf' scheme.id %}", "_blank");
+                }
+            } else {
+                statusAlert.classList.remove("hidden");
+                statusAlert.className = "p-4 rounded-xl text-xs font-bold bg-red-50 text-red-700 border border-red-100";
+                statusAlert.textContent = result.error || "Failed to save Scheme of Work.";
+            }
+        } catch (err) {
+            statusAlert.classList.remove("hidden");
+            statusAlert.className = "p-4 rounded-xl text-xs font-bold bg-red-50 text-red-700 border border-red-100";
+            statusAlert.textContent = "Network error. Please try again.";
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save Progress";
+        }
+    }
+</script>
+{% endblock %}

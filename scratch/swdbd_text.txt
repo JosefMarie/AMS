@@ -1,0 +1,440 @@
+=== SWDBD.pdf ===
+Total Pages: 28
+
+
+--- Page 1 ---
+1 | P a g e  
+ 
+BACKEND APPLICATION DEVELOPMENT 
+Develop a Backend Application using Node Js 
+Competence  
+ 
+SWDBD401 
+RQF Level:  4       Learning Hours 
+             100 
+Credits:  10           
+ 
+Sector:  ICT and Multimedia 
+ 
+Trade:  Software Development 
+ 
+Module Type:  Specific 
+ 
+Curriculum:         ICTSWD4002 – TVET Certificate IV in Software Development 
+  
+Copyright:           © Rwanda TVET Board, 2023 
+                                                                 
+1200       Issue Date: September 2023 
+ 
+ 
+
+--- Page 2 ---
+2 | P a g e  
+ 
+ 
+Purpose statement This module describes the skills, knowledge and attitude required to 
+develop a backend application using NodeJS. This module is intended to 
+prepare students pursuing TVET Level 4 in Software Development. At the 
+end of this module the s tudent will be able to develop RESTFUL APIs with 
+Node JS, secure, test and manage backend application 
+Learning assumed 
+to be in place 
+▪ Apply Network Fundamentals 
+▪ Develop a Database 
+▪ Design Backend Application  
+▪ Apply Data Structure and Algorithm Fundamentals using JavaScript 
+Delivery modality  Training delivery  100% Assessment  Total 100% 
+Theoretical content  30% 
+Formative 
+assessment 
+30% 
+50% 
+Practical work:  
+70% 70% 
+Group project and 
+presentation 
+20% 
+Individual project 
+/Work 
+50% 
+ Summative Assessment  50% 
+--- Page 3 ---
+3 | P a g e  
+ 
+ 
+Elements of Competence and Performance Criteria 
+Elements of 
+competence 
+Performance criteria 
+1.Develop 
+RESTFUL APIs 
+with Node JS 
+1.1 Development environment is properly arranged based on coding 
+architecture methodology  
+1.2 Server a nd database connection are properly established according to 
+development environment 
+1.3 RESTFUL APIs are effectively implemented based on backend 
+functionalities 
+2.Secure 
+Backend 
+Application 
+2.1 Data encryption is correctly applied based on system security 
+2.2 Third-party libraries are carefully checked based on system security 
+2.3 User Authentication, Authorization and Accountability (AAA) are 
+carefully applied based on NPM Universal Access Control (UAC) 
+2.4 Environment variables are carefully Secured according to system security 
+ 
+3. Test Backend 
+Application 
+ 
+3.1 Unit tests are appropriately conducted based on software testing 
+techniques 
+3.2 Usability is correctly tested according to expected results 
+3.3 Security is properly tested based on system threats 
+4.Manage 
+Backend 
+Application 
+4.1 Application is appropriately deployed based on FURPS requirements 
+4.2 Backend is effectively maintained according to the system Functionalities 
+4.3 Application documentation is properly generated accordin g to the 
+--- Page 4 ---
+4 | P a g e  
+ 
+system backend 
+ 
+ 
+Knowledge Skills Attitude 
+✓ Describe node.js Key 
+Concepts 
+✓ Describe API 
+✓ Describe data encryption in 
+securing RESTFUL APIs 
+✓ Describe Environment 
+Variables 
+ 
+ 
+ 
+ 
+ 
+✓ Install Node Js Modules and 
+packages 
+✓ Connect node Js to the ES5 
+or ES6 server 
+✓ Establish database 
+connection 
+✓ Develop RESTFUL APIs 
+✓ Use of Middleware services 
+✓ Perform CRUD operations 
+using MySQL Database  
+✓ Use HTTP Status code 
+✓ Integrate and use Third-
+Party Libraries 
+✓ Maintain and Update third-
+Party libraries 
+✓ Implement Authentication, 
+Authorization and 
+Accountability 
+✓ Manage Environment 
+Variables 
+✓ Test Backend Application 
+✓ Team work 
+✓ Be critical thinker 
+✓ Being Innovative 
+✓ Being creative 
+✓ Practical oriented 
+✓ Detail oriented 
+✓ Be honesty 
+✓ Passion for Learning 
+✓ Problem-Solving Mindset 
+✓ Collaboration and 
+Communication 
+✓ Attention to Security 
+✓ Ethical Coding 
+ 
+ 
+ 
+Course content 
+Learning outcomes At the end of the module the learner will be able to: 
+1. Develop RESTFUL APIs with Node JS  
+2. Secure Backend Application 
+3. Test Backend Application 
+4. Manage Backend Application 
+ 
+Learning outcome 1: Develop RESTFUL APIs with Node JS Learning hours: 45 
+Intended Knowledge, Skills and Attitude 
+--- Page 5 ---
+5 | P a g e  
+ 
+Indicative content 
+• Setup Node. Js Environment 
+✓ Description of Node.js Key Concepts 
+ Node.Js 
+ Routes 
+ NPM 
+ Express Js 
+ Backend Application 
+ Class 
+ Object 
+ Method 
+ Properties 
+ Dependencies 
+ APIs 
+ Postman 
+ Nodemon 
+ DBMS (SQL Based, NoSQL Based) 
+✓ Installation of Node Js Modules and packages 
+ Node.Js and NPM 
+ Express Js 
+ Postman 
+ Nodemon 
+--- Page 6 ---
+6 | P a g e  
+ 
+✓ Configuration of MySQL Server 
+• Connection of Node Js to the ES5 or ES6 server 
+✓ Creation of basic server with Express Js 
+✓ Application of Client Libraries 
+ HTTP 
+ HTTPs 
+ Axios 
+ Request 
+✓ Establishment of server connection 
+ Setup Connection parameters 
+ Create / send Request 
+ Handle the response 
+✓ Test of Server Connection 
+• Establishment of database connection 
+✓ Create Database 
+✓ Schema Setup 
+✓ Configure Database Connection 
+✓ Test Database Connection 
+• Develop RESTFUL APIs 
+✓ Define endpoints and HTTP Methods 
+ Create POST End Point 
+ Create all Items GET endpoint 
+ Create specific ID GET endpoint 
+--- Page 7 ---
+7 | P a g e  
+ 
+ Create PUT endpoint 
+ Create DELETE endpoint 
+✓ Implementation of API endpoints 
+✓ Use of Middleware services 
+ Types of middleware services 
+ Error Handling 
+  Logging 
+ Input validation 
+✓ Perform CRUD operations using MySQL Database  
+✓ Use HTTP Status code 
+✓ Debugging RESTFUL APIs 
+Resources required for the learning outcome 
+Equipment  ▪ Computer 
+Materials  ▪ Internet 
+▪ Books 
+▪ Tutorials 
+▪ Code samples 
+▪ Online communities 
+Tools  ▪ Browser 
+▪ NodeJS 
+▪ ExpressJs IDE 
+--- Page 8 ---
+8 | P a g e  
+ 
+▪ Text Editor 
+▪ Node Packages 
+▪ MySQL Workbench 
+▪ Postman 
+▪ Swagger 
+▪ MochaNodemon 
+Facilitation 
+techniques   
+▪ Brainstorming 
+▪ Group Discussion 
+▪ Jig Saw 
+▪ Demonstration Visual Aids 
+Formative 
+assessment methods 
+/(CAT) 
+▪ Written assessment 
+▪ Performance 
+▪ Oral assessment 
+ 
+Learning outcome 2: Secure Backend Application Learning hours: 20 
+Indicative content 
+• Data encryption in securing RESTFUL APIs 
+✓ Introduction to data encryption 
+ Types of data encryption 
+ Encryption techniques 
+ Benefits and importance of data encryption 
+✓ Steps in securing RESTFUL APIs 
+--- Page 9 ---
+9 | P a g e  
+ 
+ Install the crypto module 
+ Create a key for encryption 
+ Use the key to encrypt data 
+ Convert the data to a buffer 
+ Encrypt the data 
+ Store the encrypted data 
+• Integrating and Using Third-Party Libraries 
+✓ Installing Node Js Package Manager (NPM) 
+✓ Incorporating common Node.js third-party libraries 
+ Express 
+ Lodash 
+ Moment.js  
+✓ Interacting with third-party libraries 
+ Callbacks 
+ Promises 
+ async/await 
+• Maintaining and Updating Third-Party Libraries 
+✓ Monitoring of library dependencies and version numbers 
+ Package. Json 
+ Npm-shrinkwrap. json 
+--- Page 10 ---
+10 | P a g e  
+ 
+✓ Checking for library updates and security vulnerabilities using tools 
+ NPM outdated 
+ NPM audit 
+ Snyk 
+✓ Updating third-party libraries safely 
+ Versioning 
+ semver rules 
+✓ Strategies for managing and testing library updates 
+ staging environments 
+ Version control systems. 
+• Implementation of Authentication 
+✓ Principles of authentication  
+✓ Role of authentication in system security 
+✓ Implementing user authentication in Node.js using frameworks 
+ Passport 
+ JWT (JSON Web Tokens)  
+ Social Auth. (Google, Facebook, …) 
+✓ Using authentication middleware to protect routes and resources 
+✓ Best practices for password storage and handling sensitive data 
+• Implementation of Authorization 
+--- Page 11 ---
+11 | P a g e  
+ 
+✓ Principles of authorization  
+✓ Role of authorization in system security 
+✓ Implementing role-based and attribute-based access control in Node.js 
+✓ Using authorization middleware to manage user permissions 
+✓ Implementing custom authorization logic for specific use cases 
+• Implementation of Accountability 
+✓ Principles of accountability 
+✓ Roles of Accountability in system security 
+✓ Implementing logging and auditing features in Node.js using popular libraries 
+ Winston 
+ Morgan 
+✓ Logs management 
+ Best prac tices for securely storing log data and protecting it from unauthorized 
+access 
+ Audit logs to detect security events and system errors 
+• Secure Environment Variables 
+✓      Types of information stored in environment variables 
+ Database credentials 
+ API keys 
+ Encryption keys 
+--- Page 12 ---
+12 | P a g e  
+ 
+✓ Potential security risks of storing sensitive information in environment variables 
+✓ Best practices for managing and securing environment variables in Node.js 
+✓ Implementing security measures for protecting environment variables 
+ Encrypting secrets  
+ Decrypting secrets 
+✓ Storing environment variables in a secure location 
+ key management service 
+ a. env file 
+✓ Management and loading environment variables in Node.js applications using dotenv  
+✓ Best practices for safely passing environment variables to other ser vices and 
+applications 
+• Monitor and Manage Environment Variables 
+✓ Implementing logging and auditing features to detect unauthorized access to 
+environment variables 
+✓ Monitoring changes to environment variables and detecting any suspicious activity 
+✓ Best practic es for managing and rotating environment variables to prevent data 
+breaches 
+Resources required for the indicative content 
+Equipment  ▪ Computer 
+Materials  ▪ Internet 
+▪ Books 
+--- Page 13 ---
+13 | P a g e  
+ 
+▪ Tutorials 
+▪ Code samples 
+▪ Online communities 
+Tools  ▪ Browser 
+▪ Node.Js 
+▪ Text Editor 
+▪ Express. Js 
+▪ Postman 
+▪ Git 
+▪ Swagger 
+▪ Middleware services and libraries 
+Facilitation 
+techniques   
+▪ Brainstorming 
+▪ Group Discussion 
+▪ Jig Saw 
+▪ Demonstration Visual Aids 
+Formative 
+assessment methods 
+/(CAT) 
+▪ Written assessment 
+▪ Performance 
+▪ Oral assessment 
+ 
+Learning outcome 3: Test Backend Application Learning hours: 20 
+Indicative content 
+--- Page 14 ---
+14 | P a g e  
+ 
+• Implementation of Unit testing 
+✓ Introduction to unit tests 
+ Importance of Unit Testing 
+ Unit Testing Process 
+ Unit Testing tools  
+ Frameworks 
+ Libraries 
+✓ Mocha Testing Framework  
+ Installation and Configuration 
+ Writing Unit tests 
+ Running Tests 
+✓ Chai assertion library 
+ Installation and configuration 
+ Writing assertions 
+ Chai Expect and Should APIs 
+✓ Monitor Test results 
+• Implementation of Usability testing 
+✓ Introduction to Usability tests 
+ Importance of Usability Testing 
+ Usability Testing Process 
+ Usability Testing tools 
+✓ Postman Testing Tool 
+--- Page 15 ---
+15 | P a g e  
+ 
+ Installation of Postman 
+ Create a collection 
+ Define Request 
+ Write test Cases 
+ Run tests 
+ Iterate and improve 
+✓ Puppeteer Testing Tool 
+ Installation of Puppeteer 
+ Define test scenarios 
+ Automate user interaction 
+ Measure page performance 
+ Test accessibility 
+ Generate Report 
+• Implementation of Security Testing 
+✓ Introduction Node.js Security 
+ Injection Attacks 
+ Broken Authentication and Session Management 
+ Cross-Site Scripting (XSS) 
+ Cross-Site Request Forgery (CSRF) 
+ Security Misconfiguration 
+ Insecure Cryptographic Storage 

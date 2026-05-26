@@ -379,14 +379,14 @@ def generate_session_plan_ai(syllabus_text, range_text, template_type='THEORY', 
         "activities": activities
     }
 
-def analyze_student_weakness(marks_data):
+def analyze_student_weakness(marks_data, user=None):
     """
     Uses Google Gemini AI (or mock fallback) to analyze a student's marks
     and suggest which module to study next based on their weak points.
+    Supports Strategies B (exponential retry) and D (per-user keys).
     """
-    from .ai_quiz_generator import get_api_key
-    GEMINI_API_key = get_api_key()
-    GEMINI_API_KEY = GEMINI_API_key
+    from .ai_quiz_generator import get_api_key, gemini_call_with_retry
+    GEMINI_API_KEY = get_api_key(user=user)
     
     if not GEMINI_API_KEY:
         # Fallback Mock logic
@@ -398,8 +398,8 @@ def analyze_student_weakness(marks_data):
         }
         
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-pro')
+        from google import genai
+        client = genai.Client(api_key=GEMINI_API_KEY)
         
         prompt = f"""
         Analyze the following student assessment marks and identify their weakest area.
@@ -415,7 +415,11 @@ def analyze_student_weakness(marks_data):
             "advice": "Actionable advice on how to improve..."
         }}
         """
-        response = model.generate_content(prompt)
+        response = gemini_call_with_retry(
+            client,
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
         # Parse the JSON response
         result_text = response.text.replace('```json', '').replace('```', '').strip()
         return json.loads(result_text)
@@ -429,15 +433,16 @@ def analyze_student_weakness(marks_data):
             "advice": "Try reviewing your previous class notes and ask your trainer for extra help."
         }
 
-def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='THEORY', **kwargs):
+def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='THEORY', user=None, **kwargs):
     """
     Uses Google Gemini AI to fully generate a comprehensive session plan,
     including timing, activities, objectives, and context.
     Provides a fallback to the standard static generator if API fails.
+    Supports Strategies B (exponential retry) and D (per-user keys).
     """
-    import google.generativeai as genai
-    from .ai_quiz_generator import get_api_key
-    GEMINI_API_KEY = get_api_key()
+    from google import genai
+    from .ai_quiz_generator import get_api_key, gemini_call_with_retry
+    GEMINI_API_KEY = get_api_key(user=user)
     
     if not GEMINI_API_KEY:
         print("No Gemini API key, falling back to static generation")
@@ -448,8 +453,7 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
     technique = kwargs.get('facilitation_technique', 'Brainstorming')
     
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        client = genai.Client(api_key=GEMINI_API_KEY)
         
         prompt = f"""
         Act as an expert TVET (Technical and Vocational Education and Training) Trainer.
@@ -523,7 +527,11 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
         If it's a THEORY session, focus on Introduction, Group Discussion, Sharing, Summary, Assessment, and Evaluation.
         """
         
-        response = model.generate_content(prompt)
+        response = gemini_call_with_retry(
+            client,
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
         result_text = response.text.replace('```json', '').replace('```', '').strip()
         return json.loads(result_text)
         

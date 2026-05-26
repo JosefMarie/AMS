@@ -617,7 +617,7 @@ def generate_advanced_session_plan_view(request):
         }
         
         if syllabus_text and range_text:
-            plan_data = generate_advanced_session_plan_ai(syllabus_text, range_text, template_type, **extra_data)
+            plan_data = generate_advanced_session_plan_ai(syllabus_text, range_text, template_type, user=request.user, **extra_data)
             
             session = SessionPlan.objects.create(
                 teacher=request.user,
@@ -1893,12 +1893,17 @@ def edit_profile(request):
     if request.method == 'POST':
         form = StudentProfileForm(request.POST, request.FILES, instance=profile)
         new_email = request.POST.get('email', '').strip()
+        new_key = request.POST.get('gemini_api_key', '').strip()
         if form.is_valid():
             form.save()
             # Save email on the user account
             if new_email != request.user.email:
                 request.user.email = new_email
                 request.user.save(update_fields=['email'])
+            # Save Gemini API key on the user account (Strategy D)
+            if new_key != request.user.gemini_api_key:
+                request.user.gemini_api_key = new_key
+                request.user.save(update_fields=['gemini_api_key'])
             messages.success(request, "Profile updated successfully!")
             return redirect('dashboard')
     else:
@@ -2109,7 +2114,7 @@ def ai_study_recommendation_view(request):
         messages.warning(request, "No assessment results found yet. Complete some assessments first.")
         return redirect('dashboard')
         
-    analysis = analyze_student_weakness(marks_data)
+    analysis = analyze_student_weakness(marks_data, user=request.user)
     
     return render(request, 'student_ai_assistant.html', {
         'marks_data': marks_data,
@@ -2125,10 +2130,10 @@ def test_ai_connection_view(request):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'POST required.'}, status=405)
 
-    from .ai_quiz_generator import get_api_key
-    import google.generativeai as genai
+    from .ai_quiz_generator import get_api_key, gemini_call_with_retry
+    from google import genai
 
-    api_key = get_api_key()
+    api_key = get_api_key(user=request.user)
     if not api_key:
         return JsonResponse({
             'status': 'error',
@@ -2136,9 +2141,12 @@ def test_ai_connection_view(request):
         })
 
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro')
-        response = model.generate_content("Reply with exactly: OK")
+        client = genai.Client(api_key=api_key)
+        response = gemini_call_with_retry(
+            client,
+            model='gemini-2.5-flash',
+            contents="Reply with exactly: OK"
+        )
         reply = response.text.strip()
         return JsonResponse({
             'status': 'success',
@@ -2469,7 +2477,7 @@ def upload_curriculum_view(request):
             
             try:
                 # Trigger AI Parsing
-                modules_created = parse_curriculum_pdf(curriculum)
+                modules_created = parse_curriculum_pdf(curriculum, user=request.user)
                 messages.success(request, f"Successfully uploaded and extracted {modules_created} modules from the syllabus!")
             except Exception as e:
                 import traceback
@@ -2520,6 +2528,40 @@ def get_topics(request, ic_id):
     from .models import Topic
     topics = Topic.objects.filter(indicative_content_id=ic_id).values('id', 'title')
     return JsonResponse(list(topics), safe=False)
+
+@login_required
+def save_user_gemini_key(request):
+    from django.http import JsonResponse
+    import json
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+    try:
+        data = json.loads(request.body)
+        key = data.get('gemini_api_key', '').strip()
+        
+        test_key = data.get('test_key', False)
+        if test_key and key:
+            from google import genai
+            from .ai_quiz_generator import gemini_call_with_retry
+            try:
+                client = genai.Client(api_key=key)
+                response = gemini_call_with_retry(
+                    client,
+                    model='gemini-2.5-flash',
+                    contents="Reply with exactly: OK"
+                )
+                reply = response.text.strip()
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': f'Test connection failed: {str(e)}'})
+        
+        request.user.gemini_api_key = key
+        request.user.save(update_fields=['gemini_api_key'])
+        return JsonResponse({
+            'success': True, 
+            'message': 'API key saved and verified successfully!' if (test_key and key) else 'API key saved successfully!'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
 def create_trade_view(request):
@@ -2646,4 +2688,400 @@ def remove_co_teacher_view(request, classroom_id, teacher_id):
     
     messages.success(request, f"{teacher.get_full_name() or teacher.username} has been removed as a co-teacher.")
     return redirect('manage_class', class_id=classroom_id)
+
+
+# --- SCHEME OF WORK MODULE SYSTEM VIEWS ---
+
+@login_required
+def admin_scheme_templates_view(request):
+    from .models import SchemeOfWorkTemplate, CustomUser
+    if request.user.role != CustomUser.Role.ADMIN:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    templates = SchemeOfWorkTemplate.objects.all()
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        pdf_file = request.FILES.get('pdf_file')
+        if title and pdf_file:
+            SchemeOfWorkTemplate.objects.create(title=title, pdf_file=pdf_file)
+            messages.success(request, "Scheme of Work Template uploaded successfully.")
+            return redirect('admin_scheme_templates')
+        else:
+            messages.error(request, "Please provide both a title and a PDF template file.")
+            
+    return render(request, 'admin_scheme_templates.html', {'templates': templates})
+
+
+@login_required
+def delete_scheme_template_view(request, template_id):
+    from .models import SchemeOfWorkTemplate, CustomUser
+    if request.user.role != CustomUser.Role.ADMIN:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    template = get_object_or_404(SchemeOfWorkTemplate, id=template_id)
+    template.delete()
+    messages.success(request, "Scheme of Work Template deleted successfully.")
+    return redirect('admin_scheme_templates')
+
+
+@login_required
+def scheme_of_work_list_view(request):
+    from .models import SchemeOfWork, CustomUser
+    if request.user.role != CustomUser.Role.TEACHER:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    schemes = SchemeOfWork.objects.filter(teacher=request.user).order_by('-created_at')
+    return render(request, 'scheme_of_work_list.html', {'schemes': schemes})
+
+
+@login_required
+def scheme_of_work_create_view(request):
+    from .models import Trade, SchemeOfWorkTemplate, CustomUser
+    if request.user.role != CustomUser.Role.TEACHER:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    trades = Trade.objects.all()
+    templates = SchemeOfWorkTemplate.objects.all()
+    trainer_name = request.user.get_full_name() or request.user.username
+    
+    from .models import SystemSetting
+    settings = SystemSetting.get_settings()
+    academic_year = settings.current_academic_year.name if settings.current_academic_year else ""
+    term = settings.current_term or "Term 1"
+    
+    return render(request, 'scheme_of_work_create.html', {
+        'trades': trades,
+        'templates': templates,
+        'trainer_name': trainer_name,
+        'academic_year': academic_year,
+        'term': term
+    })
+
+
+@login_required
+def generate_scheme_of_work_ai(request):
+    from google import genai
+    import json
+    import datetime
+    from django.http import JsonResponse
+    from django.urls import reverse
+    from .models import SyllabusModule, SchemeOfWorkTemplate, SchemeOfWork, SchemeOfWorkWeek, CustomUser
+    from .ai_quiz_generator import get_api_key
+    
+    if request.user.role != CustomUser.Role.TEACHER:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+        
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+        
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON body'}, status=400)
+        
+    module_id = data.get('module_id')
+    template_id = data.get('template_id')
+    school_year = data.get('school_year', '2025-2026')
+    term = data.get('term', 'Term 1')
+    class_name = data.get('class_name', 'L4 SOD')
+    num_classes = int(data.get('num_classes', 1))
+    date_str = data.get('date', '')
+    trainer_name = data.get('trainer_name', '')
+    
+    if not module_id:
+        return JsonResponse({'success': False, 'error': 'Module is required'}, status=400)
+        
+    module = get_object_or_404(SyllabusModule, id=module_id)
+    template = None
+    if template_id:
+        template = get_object_or_404(SchemeOfWorkTemplate, id=template_id)
+        
+    # Compile detailed curriculum info
+    curriculum_info = []
+    los = module.learning_outcomes.all().prefetch_related('indicative_contents__topics')
+    for lo in los:
+        lo_info = {
+            'title': lo.title,
+            'indicative_contents': []
+        }
+        for ic in lo.indicative_contents.all():
+            ic_info = {
+                'title': ic.title,
+                'topics': [t.title for t in ic.topics.all()]
+            }
+            lo_info['indicative_contents'].append(ic_info)
+        curriculum_info.append(lo_info)
+        
+    api_key = get_api_key(user=request.user)
+    if not api_key:
+        return JsonResponse({'success': False, 'error': 'Gemini API key is missing. Please add it in System Settings or your Profile.'}, status=400)
+        
+    client = genai.Client(api_key=api_key)
+    
+    prompt = f"""
+    You are an expert TVET Academic Planner.
+    Your task is to generate a comprehensive, high-fidelity Scheme of Work for the Syllabus Module described below.
+    
+    CRITICAL STRUCTURAL REQUIREMENTS:
+    1. The Scheme of Work covers the WHOLE ACADEMIC YEAR consisting of 3 terms: "1st Term", "2nd Term", and "3rd Term".
+    2. You must distribute the syllabus content and outcomes logically across these 3 terms.
+    3. GRANULAR ROW LAYOUT: Every row in the "weeks" array must represent exactly ONE Indicative Content (IC) item under its parent Learning Outcome (LO).
+         - DO NOT group multiple ICs into a single row. If an LO has 3 ICs, generate 3 separate rows in sequence (one for each IC), repeating the parent LO information.
+    4. Schedulings: Within each term, sequence weeks logically (e.g. "1", "2", etc.).
+    5. The sum of durations for all generated rows MUST EXACTLY sum to the total learning hours ({module.hours} hours). Format durations like "4hrs" or "6hrs".
+    6. For the "dates" field, suggest an empty string "" or a logical placeholder range e.g. "Sep 1 - Sep 5".
+    
+    Syllabus Module Details:
+    - Code: {module.code}
+    - Title: {module.title}
+    - RQF Level: {module.curriculum.qualification_level or 'IV'}
+    - Trade: {module.curriculum.trade.name}
+    - Sector: {module.curriculum.trade.sector or 'ICT'}
+    - Total Learning Hours: {module.hours} hours
+    - Credits: {module.credits}
+    
+    Curriculum Elements (Learning Outcomes, Indicative Content, and Topics):
+    {json.dumps(curriculum_info, indent=2)}
+    
+    For each row entry in the `"weeks"` list, populate the following fields:
+    - term: The academic term this row belongs to (exactly "1st Term", "2nd Term", or "3rd Term").
+    - week_number: e.g. "1", "2", "3" (week number within that term).
+    - dates: e.g. "" or a logical placeholder range like "Sep 1 - Sep 5".
+    - learning_outcome: The parent Learning Outcome (LO) title/description.
+    - duration: Allocated duration for this specific IC row, e.g. "4hrs" or "6hrs" (such that all rows add up to {module.hours} hours).
+    - indicative_content: The specific single Indicative Content (IC) item title and topics.
+    - learning_activities: Engaging, student-centered activities.
+    - resources: Software, tools, equipment required.
+    - formative_assessment: Assessment evidence/methods.
+    - learning_place: e.g. "Computer Lab" or "Classroom".
+    - observation: Any optional remarks or blank string.
+    
+    Output format must be strictly valid JSON ONLY, representing the structured Scheme of Work.
+    
+    Expected JSON Output structure:
+    {{
+        "sector": "...",
+        "trade": "...",
+        "qualification_title": "...",
+        "rqf_level": "...",
+        "weeks": [
+            {{
+                "term": "1st Term",
+                "week_number": "1",
+                "dates": "",
+                "learning_outcome": "LO1: Develop RESTFUL APIs with Node JS",
+                "duration": "4hrs",
+                "indicative_content": "IC1.1: Development environment properly arranged based on coding architecture",
+                "learning_activities": "Group Discussion, Practical lab exercise",
+                "resources": "VS Code, Nodejs, Internet, Laptops",
+                "formative_assessment": "Written assessment, Performance evaluation",
+                "learning_place": "Computer Lab",
+                "observation": ""
+            }},
+            {{
+                "term": "1st Term",
+                "week_number": "2",
+                "dates": "",
+                "learning_outcome": "LO1: Develop RESTFUL APIs with Node JS",
+                "duration": "4hrs",
+                "indicative_content": "IC1.2: Server and database connection setup",
+                "learning_activities": "Lab demonstration, Guided practice",
+                "resources": "VS Code, Nodejs, DBMS",
+                "formative_assessment": "Lab assignment",
+                "learning_place": "Computer Lab",
+                "observation": ""
+            }}
+        ]
+    }}
+    
+    Do not use markdown formatting block like ```json. Return the raw JSON text strictly.
+    """
+    
+    try:
+        from .ai_quiz_generator import gemini_call_with_retry
+        response = gemini_call_with_retry(
+            client,
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
+        response_text = response.text.strip()
+        
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+            
+        data_json = json.loads(response_text)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f"AI Generation failed: {str(e)}"}, status=500)
+        
+    sector = data_json.get('sector') or module.curriculum.trade.sector or 'ICT'
+    trade = data_json.get('trade') or module.curriculum.trade.name
+    qualification_title = data_json.get('qualification_title') or f"Certificate {module.curriculum.qualification_level or 'IV'} in {module.curriculum.trade.name}"
+    rqf_level = data_json.get('rqf_level') or module.curriculum.qualification_level or 'IV'
+    
+    try:
+        if date_str:
+            date_val = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        else:
+            date_val = datetime.date.today()
+    except ValueError:
+        date_val = datetime.date.today()
+        
+    scheme = SchemeOfWork.objects.create(
+        teacher=request.user,
+        template=template,
+        syllabus_module=module,
+        sector=sector,
+        trade=trade,
+        qualification_title=qualification_title,
+        school_year=school_year,
+        term=term,
+        rqf_level=rqf_level,
+        trainer_name=trainer_name or request.user.get_full_name() or request.user.username,
+        module_code=module.code,
+        module_title=module.title,
+        learning_hours=module.hours,
+        num_classes=num_classes,
+        class_name=class_name,
+        date=date_val
+    )
+    
+    for w in data_json.get('weeks', []):
+        SchemeOfWorkWeek.objects.create(
+            scheme=scheme,
+            term=w.get('term', '1st Term'),
+            week_number=w.get('week_number', '1'),
+            dates=w.get('dates', ''),
+            learning_outcome=w.get('learning_outcome', ''),
+            duration=w.get('duration', ''),
+            indicative_content=w.get('indicative_content', ''),
+            learning_activities=w.get('learning_activities', ''),
+            resources=w.get('resources', ''),
+            formative_assessment=w.get('formative_assessment', ''),
+            learning_place=w.get('learning_place', ''),
+            observation=w.get('observation', '')
+        )
+        
+    return JsonResponse({'success': True, 'redirect_url': reverse('scheme_of_work_editor', kwargs={'scheme_id': scheme.id})})
+
+
+@login_required
+def scheme_of_work_editor_view(request, scheme_id):
+    from .models import SchemeOfWork, CustomUser
+    if request.user.role != CustomUser.Role.TEACHER:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    scheme = get_object_or_404(SchemeOfWork, id=scheme_id, teacher=request.user)
+    weeks = scheme.weeks.all().order_by('id')
+    return render(request, 'scheme_of_work_editor.html', {
+        'scheme': scheme,
+        'weeks': weeks
+    })
+
+
+@login_required
+def scheme_of_work_save(request, scheme_id):
+    import json
+    import datetime
+    from django.http import JsonResponse
+    from .models import SchemeOfWork, SchemeOfWorkWeek, CustomUser
+    
+    if request.user.role != CustomUser.Role.TEACHER:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+        
+    scheme = get_object_or_404(SchemeOfWork, id=scheme_id, teacher=request.user)
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            scheme.sector = data.get('sector', scheme.sector)
+            scheme.trade = data.get('trade', scheme.trade)
+            scheme.qualification_title = data.get('qualification_title', scheme.qualification_title)
+            scheme.school_year = data.get('school_year', scheme.school_year)
+            scheme.term = data.get('term', scheme.term)
+            scheme.rqf_level = data.get('rqf_level', scheme.rqf_level)
+            scheme.trainer_name = data.get('trainer_name', scheme.trainer_name)
+            scheme.module_code = data.get('module_code', scheme.module_code)
+            scheme.module_title = data.get('module_title', scheme.module_title)
+            scheme.learning_hours = int(data.get('learning_hours', scheme.learning_hours))
+            scheme.num_classes = int(data.get('num_classes', scheme.num_classes))
+            scheme.class_name = data.get('class_name', scheme.class_name)
+            
+            date_str = data.get('date')
+            if date_str:
+                scheme.date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+                
+            scheme.save()
+            
+            # Recreate all week entries
+            SchemeOfWorkWeek.objects.filter(scheme=scheme).delete()
+            for w in data.get('weeks', []):
+                SchemeOfWorkWeek.objects.create(
+                    scheme=scheme,
+                    term=w.get('term', '1st Term'),
+                    week_number=w.get('week_number', '1'),
+                    dates=w.get('dates', ''),
+                    learning_outcome=w.get('learning_outcome', ''),
+                    duration=w.get('duration', ''),
+                    indicative_content=w.get('indicative_content', ''),
+                    learning_activities=w.get('learning_activities', ''),
+                    resources=w.get('resources', ''),
+                    formative_assessment=w.get('formative_assessment', ''),
+                    learning_place=w.get('learning_place', ''),
+                    observation=w.get('observation', '')
+                )
+                
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+            
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def delete_scheme_of_work(request, scheme_id):
+    from .models import SchemeOfWork, CustomUser
+    if request.user.role != CustomUser.Role.TEACHER:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    scheme = get_object_or_404(SchemeOfWork, id=scheme_id, teacher=request.user)
+    scheme.delete()
+    messages.success(request, "Scheme of Work deleted successfully.")
+    return redirect('scheme_of_work_list')
+
+
+@login_required
+def scheme_of_work_pdf_view(request, scheme_id):
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+    from .models import SchemeOfWork, CustomUser
+    
+    scheme = get_object_or_404(SchemeOfWork, id=scheme_id)
+    if request.user.role == CustomUser.Role.TEACHER and scheme.teacher != request.user:
+        messages.error(request, "Unauthorized access.")
+        return redirect('dashboard')
+        
+    weeks = scheme.weeks.all().order_by('id')
+    
+    html_string = render_to_string('scheme_of_work_pdf.html', {
+        'scheme': scheme,
+        'weeks': weeks,
+        'request': request
+    })
+    
+    pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+    
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="Scheme_of_Work_{scheme.module_code}.pdf"'
+    return response
 

@@ -1,0 +1,318 @@
+=== SCHEME_SWDBD.pdf ===
+Total Pages: 6
+
+
+--- Page 1 ---
+ 
+ 
+ 
+ 
+ 
+ 
+SCHEME OF WORK 
+ 
+ 
+TERM: I 
+ Sector:                                                                                           ICT Trainer: Joseph Marie ASHIMIRWE 
+Trade:  Software Development School Year: 2025-2026 
+Qualification 
+Title: 
+Certificate IV in software 
+Development 
+Term: I,II,III 
+RQF Level:                                                                       IV Module details 
+Module code and 
+title 
+SWDBD401: DEVELOP A BACKEND 
+APPLICATION USING NODE JS 
+Learning hours: 100 
+Number of Classes: 1 
+Date: 12.09.2025 Class Name: L4 SOD 
+ 
+ 
+
+--- Page 2 ---
+Weeks  
+Competence code and name:  SWDBD401-
+Develop a Backend Application using Node Js 
+Learning Activities 
+Resources 
+(Equipment, 
+tools, and 
+materials) 
+Evidences of 
+formative 
+assessment 
+Learning 
+Place 
+ 
+Obser
+vation 
+Learning 
+Outcome (LO) 
+Duratio
+n 
+Indicative 
+Content(IC) 
+1-7 LO1 : Develop 
+RESTFUL APIs 
+with Node JS 
+ 
+14hrs IC1.1 : Development 
+environment is 
+properly arranged 
+based on coding 
+architecture 
+methodology 
+-Group Discussion  
+-Brainstorming 
+ 
+-Practical exercise  
+ 
+  
+Internet 
+Laptops 
+Projector 
+Chalks  
+Blackboard 
+Teacher notes  
+ 
+VS Code 
+Browser 
+Nodejs 
+ 
+Written 
+Perfomance 
+Class room 
+Comp Lab 
+ 
+IC1.2 : Server and 
+database 
+connection are 
+properly 
+established 
+according to 
+development 
+environment 
+IC1.3 : RESTFUL APIs 
+are effectively 
+implemented based 
+on backend 
+--- Page 3 ---
+ 
+TERM: II 
+functionalities 
+8-11 LO2 : Secure 
+Backend 
+Application 
+ 
+ 
+10hrs IC2.1 :  Data 
+encryption is 
+correctly applied 
+based on system 
+security 
+-Group discussion  
+-Blainstorming  
+-Group exercises  
+Internet  
+Projector  
+Power point 
+Hand out notes 
+Chalks 
+Blackboard  
+ 
+Laptops 
+VS Code 
+Browser 
+Nodejs 
+ 
+ 
+Written 
+Perfomance 
+Computer 
+lab 
+Classroom 
+ 
+IC2.2 : Third-party 
+libraries are 
+carefully checked 
+based on system 
+security 
+Weeks  
+Competence code and name:  SWDBD401-
+Develop a Backend Application using Node Js 
+Learning Activities 
+Resources 
+(Equipment, 
+tools, and 
+materials) 
+Evidences of 
+formative 
+assessment 
+Learning 
+Place 
+ 
+Obser
+vation 
+Learning 
+Outcome (LO) 
+Duratio
+n 
+Indicative 
+Content(IC) 
+1-4 LO2 : Secure 
+Backend 
+Application 
+10hrs IC2.3 : User 
+Authentication, 
+Authorization and 
+-Group discussion  
+-Blainstorming  
+Internet  
+Projector  
+Power point 
+Written 
+Perfomance 
+Computer 
+lab 
+ 
+--- Page 4 ---
+ 
+ 
+ 
+Accountability (AAA) 
+are carefully 
+applied based on 
+NPM Universal 
+Access Control 
+(UAC) 
+-Group exercises  Hand out notes 
+Chalks 
+Blackboard  
+ 
+VS Code 
+Browser 
+Nodejs 
+ IC2.4:  Environment 
+variables are 
+carefully Secured 
+according to system 
+security 
+5-7 LO3 :  Test 
+Backend 
+Application 
+20hrs IC3.1:  Unit tests are 
+appropriately 
+conducted based on 
+software testing 
+techniques 
+-Group discussion  
+-Blainstorming  
+-Group exercises  
+-Lab Practices 
+Internet  
+Projector  
+Power point 
+Hand out notes 
+Chalks 
+Blackboard  
+ 
+VS Code 
+Browser 
+Nodejs 
+ 
+Written 
+Perfomance 
+Computer 
+lab 
+ 
+IC3.2:  Usability is 
+correctly tested 
+according to 
+expected results 
+IC3.3:  Security is 
+properly tested 
+based on system 
+threats 
+--- Page 5 ---
+TERM: III 
+Weeks  
+Competence code and name:  SWDBD401-
+Develop a Backend Application using Node Js 
+Learning Activities 
+Resources 
+(Equipment, 
+tools, and 
+materials) 
+Evidences of 
+formative 
+assessment 
+Learning 
+Place 
+ 
+Obser
+vation 
+Learning 
+Outcome (LO) 
+Duratio
+n 
+Indicative 
+Content(IC) 
+5-8 LO4 :  
+Manage 
+Backend 
+Application 
+15hrs IC4.1:   Application 
+is appropriately 
+deployed based on 
+FURPS requirements 
+-Group discussion  
+-Blainstorming  
+-Group exercises 
+-Lab practice 
+Internet  
+Projector  
+Power point 
+Hand out notes 
+Chalks 
+Blackboard  
+ 
+VS Code 
+Browser 
+Nodejs 
+ 
+   
+IC4.2:  Backend is 
+effectively 
+maintained 
+according to the 
+system 
+Functionalities 
+IC4.3:  Application 
+documentation is 
+properly generated 
+according to the 
+system backend 
+--- Page 6 ---
+Prepared by: Trainer                                Verified by: DOS                                          Approved by: SM 
+Joseph Marie ASHIMIRWE                             MFASHWANIMANA JMV                                AYINKAMIYE Domithille   
+  
+ 
+9 Integrated Assessment (for specific module) To develop a web 
+application using 
+Node.js and MySQL 
+Consumables 
+Internet  
+Equipments 
+Computers 
+Tools  
+Installed 
+Software 
+editor 
+Flash disk    
+Practical 
+assessement  
+Computer 
+Lab 
+ 

@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 animate-fadeIn py-8 px-4">
+    <!-- Header -->
+    <div class="text-center space-y-4">
+        <div class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 justify-center items-center flex rounded-2xl mx-auto shadow-xl shadow-indigo-200">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+        </div>
+        <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">AI Scheme of Work Generator</h1>
+        <p class="text-gray-500 dark:text-gray-400 font-medium max-w-2xl mx-auto">
+            Select a curriculum module and template. Google Gemini AI will distribute learning content and durations across weeks automatically.
+        </p>
+    </div>
+
+    <!-- Personal Gemini API Key Quick Settings -->
+    <div class="glass-card p-6 border border-violet-100/60 dark:border-violet-900/30">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                        </svg>
+                    </span>
+                    <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Personal Gemini API Key</h3>
+                    <span id="key_status_badge" class="px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full {% if user.gemini_api_key %}bg-emerald-100 text-emerald-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                        {% if user.gemini_api_key %}Active{% else %}Not Configured{% endif %}
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {% if user.gemini_api_key %}
+                        Your personal key is configured and will automatically be used for AI Scheme of Work generation.
+                    {% else %}
+                        Bypass global school quota limits by entering your own key (starts with AIzaSy...).
+                    {% endif %}
+                </p>
+            </div>
+            
+            <div class="flex flex-1 md:flex-initial items-center gap-3">
+                <input type="password" id="gemini_api_key_input" value="{{ user.gemini_api_key|default:'' }}" placeholder="AIzaSy..." 
+                    class="px-4 py-2 text-xs font-bold rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-gray-700 dark:text-gray-300 w-full md:w-64">
+                <button type="button" id="save_api_key_btn" class="px-4 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 transition-all rounded-xl shadow uppercase tracking-wider whitespace-nowrap">
+                    Save Key
+                </button>
+            </div>
+        </div>
+        <div id="api_key_msg" class="hidden mt-3 p-3 rounded-xl text-xs font-bold"></div>
+    </div>
+
+    <!-- Generator Form Card -->
+    <div class="glass-card p-8">
+        <form id="scheme_generator_form" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Trade Select -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Trade <span class="text-red-500">*</span></label>
+                    <select id="trade_select" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-sm font-bold text-gray-700 dark:text-gray-300">
+                        <option value="">-- Select Trade --</option>
+                        {% for t in trades %}
+                            <option value="{{ t.id }}">{{ t.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Template Select -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Template Layout <span class="text-red-500">*</span></label>
+                    <select id="template_select" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-sm font-bold text-gray-700 dark:text-gray-300">
+                        <option value="">-- Choose Template --</option>
+                        {% for temp in templates %}
+                            <option value="{{ temp.id }}" {% if forloop.first %}selected{% endif %}>{{ temp.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Curriculum Select -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Curriculum <span class="text-red-500">*</span></label>
+                    <select id="curriculum_select" required disabled class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 bg-gray-50 text-sm font-bold text-gray-400">
+                        <option value="">-- Select Curriculum --</option>
+                    </select>
+                </div>
+
+                <!-- Module Select -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Module <span class="text-red-500">*</span></label>
+                    <select id="module_select" required disabled class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 bg-gray-50 text-sm font-bold text-gray-400">
+                        <option value="">-- Select Module --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Header Context Block -->
+            <div class="pt-6 border-t border-gray-150">
+                <h3 class="text-sm font-black text-indigo-600 uppercase tracking-widest mb-4">Header Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400">School Year</label>
+                        <input type="text" id="school_year" value="{{ academic_year|default:'2025-2026' }}" required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-sm font-bold text-gray-700">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Term</label>
+                        <select id="term" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-sm font-bold text-gray-700">
+                            <option value="Term I" {% if term == 'Term 1' %}selected{% endif %}>Term I</option>
+                            <option value="Term II" {% if term == 'Term 2' %}selected{% endif %}>Term II</option>
+                            <option value="Term III" {% if term == 'Term 3' %}selected{% endif %}>Term III</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Class Name</label>
+                        <input type="text" id="class_name" placeholder="e.g. L4 SOD" required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-sm font-bold text-gray-700">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Number of Classes</label>
+                        <input type="number" id="num_classes" value="1" min="1" required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-sm font-bold text-gray-700">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Implementation Date</label>
+                        <input type="date" id="date" required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-sm font-bold text-gray-700">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400">Trainer Name</label>
+                        <input type="text" id="trainer_name" value="{{ trainer_name }}" required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all dark:bg-slate-800 dark:border-slate-700 text-sm font-bold text-gray-700">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="error_banner" class="hidden p-4 rounded-xl bg-red-50 text-red-700 border border-red-100 text-xs font-bold"></div>
+
+            <div class="pt-6 border-t border-gray-100 flex justify-end gap-4">
+                <a href="{% url 'scheme_of_work_list' %}"
+                    class="px-6 py-3 rounded-xl font-bold text-gray-500 hover:text-gray-700 transition-all bg-white border border-gray-200 hover:bg-gray-50 uppercase tracking-widest text-xs">
+                    Cancel
+                </a>
+                <button type="submit" id="generate_btn"
+                    class="px-8 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all hover:-translate-y-0.5 flex items-center gap-2 uppercase tracking-widest text-xs">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Generate Scheme with AI
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Beautiful Full-screen Loading Overlay -->
+<div id="loading_overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden flex-col items-center justify-center z-50 animate-fadeIn">
+    <div class="relative w-28 h-28 mb-8">
+        <!-- Floating Outer Ring -->
+        <div class="absolute inset-0 rounded-full border-4 border-t-indigo-500 border-r-transparent border-b-purple-500 border-l-transparent animate-spin"></div>
+        <!-- Pulse Core -->
+        <div class="absolute inset-4 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center animate-pulse shadow-xl shadow-indigo-500/25">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        </div>
+    </div>
+    <h3 class="text-2xl font-black text-white uppercase tracking-wider mb-2 animate-pulse text-center px-4">AI Planification Engine Active</h3>
+    <p class="text-sm font-bold text-indigo-200 max-w-sm text-center leading-relaxed px-4">Analyzing curriculum learning outcomes and weekly content structures. This process may take up to 20 seconds...</p>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Set today's date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+
+        const tradeSelect = document.getElementById("trade_select");
+        const curriculumSelect = document.getElementById("curriculum_select");
+        const moduleSelect = document.getElementById("module_select");
+        const generateBtn = document.getElementById("generate_btn");
+        const form = document.getElementById("scheme_generator_form");
+        const loadingOverlay = document.getElementById("loading_overlay");
+        const errorBanner = document.getElementById("error_banner");
+
+        function resetSelect(selectEl, defaultText) {
+            selectEl.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+            selectEl.disabled = true;
+            selectEl.classList.add("bg-gray-50");
+            selectEl.classList.remove("text-gray-700");
+            selectEl.classList.add("text-gray-400");
+        }
+
+        tradeSelect.addEventListener("change", async (e) => {
+            const tradeId = e.target.value;
+            resetSelect(curriculumSelect, "Select Curriculum");
+            resetSelect(moduleSelect, "Select Module");
+
+            if (tradeId) {
+                const res = await fetch(`/api/curriculums/${tradeId}/`);
+                const data = await res.json();
+                data.forEach(item => {
+                    curriculumSelect.innerHTML += `<option value="${item.id}">${item.title}</option>`;
+                });
+                curriculumSelect.disabled = false;
+                curriculumSelect.classList.remove("bg-gray-50");
+                curriculumSelect.classList.remove("text-gray-400");
+                curriculumSelect.classList.add("text-gray-700");
+            }
+        });
+
+        curriculumSelect.addEventListener("change", async (e) => {
+            const curriculumId = e.target.value;
+            resetSelect(moduleSelect, "Select Module");
+
+            if (curriculumId) {
+                const res = await fetch(`/api/modules/${curriculumId}/`);
+                const data = await res.json();
+                data.forEach(item => {
+                    moduleSelect.innerHTML += `<option value="${item.id}">${item.code} - ${item.title}</option>`;
+                });
+                moduleSelect.disabled = false;
+                moduleSelect.classList.remove("bg-gray-50");
+                moduleSelect.classList.remove("text-gray-400");
+                moduleSelect.classList.add("text-gray-700");
+            }
+        });
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            errorBanner.classList.add("hidden");
+            loadingOverlay.classList.remove("hidden");
+
+            const postData = {
+                module_id: moduleSelect.value,
+                template_id: document.getElementById("template_select").value,
+                school_year: document.getElementById("school_year").value,
+                term: document.getElementById("term").value,
+                class_name: document.getElementById("class_name").value,
+                num_classes: document.getElementById("num_classes").value,
+                date: document.getElementById("date").value,
+                trainer_name: document.getElementById("trainer_name").value
+            };
+
+            try {
+                const res = await fetch("{% url 'generate_scheme_of_work_ai' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                    },
+                    body: JSON.stringify(postData)
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    window.location.href = result.redirect_url;
+                } else {
+                    loadingOverlay.classList.add("hidden");
+                    errorBanner.classList.remove("hidden");
+                    errorBanner.textContent = result.error || "AI Generation failed.";
+                }
+            } catch (err) {
+                loadingOverlay.classList.add("hidden");
+                errorBanner.classList.remove("hidden");
+                errorBanner.textContent = "Network error. Please try again.";
+            }
+        });
+
+        // Save and test Gemini API key
+        const saveApiKeyBtn = document.getElementById("save_api_key_btn");
+        const apiKeyInput = document.getElementById("gemini_api_key_input");
+        const apiKeyMsg = document.getElementById("api_key_msg");
+        const keyStatusBadge = document.getElementById("key_status_badge");
+
+        if (saveApiKeyBtn && apiKeyInput) {
+            saveApiKeyBtn.addEventListener("click", async () => {
+                const keyVal = apiKeyInput.value.trim();
+                saveApiKeyBtn.disabled = true;
+                saveApiKeyBtn.textContent = keyVal ? "Testing & Saving..." : "Clearing Key...";
+                apiKeyMsg.className = "hidden mt-3 p-3 rounded-xl text-xs font-bold";
+                
+                try {
+                    const res = await fetch("{% url 'save_user_gemini_key' %}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                        },
+                        body: JSON.stringify({
+                            gemini_api_key: keyVal,
+                            test_key: true
+                        })
+                    });
+                    const result = await res.json();
+                    
+                    if (result.success) {
+                        apiKeyMsg.classList.remove("hidden");
+                        apiKeyMsg.classList.add("bg-emerald-50", "text-emerald-700");
+                        apiKeyMsg.textContent = result.message;
+                        
+                        if (keyVal) {
+                            keyStatusBadge.className = "px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800";
+                            keyStatusBadge.textContent = "Active";
+                        } else {
+                            keyStatusBadge.className = "px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full bg-amber-100 text-amber-800";
+                            keyStatusBadge.textContent = "Not Configured";
+                        }
+                    } else {
+                        apiKeyMsg.classList.remove("hidden");
+                        apiKeyMsg.classList.add("bg-red-50", "text-red-700");
+                        apiKeyMsg.textContent = result.error || "Failed to verify or save key.";
+                    }
+                } catch (err) {
+                    apiKeyMsg.classList.remove("hidden");
+                    apiKeyMsg.classList.add("bg-red-50", "text-red-700");
+                    apiKeyMsg.textContent = "Error communicating with server.";
+                } finally {
+                    saveApiKeyBtn.disabled = false;
+                    saveApiKeyBtn.textContent = "Save Key";
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
