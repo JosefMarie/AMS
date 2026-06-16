@@ -60,6 +60,7 @@
                 <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full bg-white border-2 border-indigo-500 flex items-center justify-center shadow-md shadow-indigo-100 text-[10px] font-black text-indigo-600">6</div><p class="text-[9px] font-black uppercase tracking-wider text-gray-500 text-center w-16">Attendance</p></div>
                 <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full bg-white border-2 border-indigo-500 flex items-center justify-center shadow-md shadow-indigo-100 text-[10px] font-black text-indigo-600">7</div><p class="text-[9px] font-black uppercase tracking-wider text-gray-500 text-center w-16">Parser</p></div>
                 <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full bg-white border-2 border-indigo-500 flex items-center justify-center shadow-md shadow-indigo-100 text-[10px] font-black text-indigo-600">8</div><p class="text-[9px] font-black uppercase tracking-wider text-gray-500 text-center w-16">AI Key</p></div>
+                <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full bg-white border-2 border-indigo-500 flex items-center justify-center shadow-md shadow-indigo-100 text-[10px] font-black text-indigo-600">9</div><p class="text-[9px] font-black uppercase tracking-wider text-gray-500 text-center w-16">Timetable</p></div>
                 {% endfor %}
             </div>
         </div>
@@ -311,7 +312,7 @@
         </div>
 
         <!-- Card 6: Attendance -->
-        <div class="glass-card overflow-hidden group hover:border-emerald-200 transition-all duration-300 shadow-lg">
+        <div class="glass-card overflow-hidden group hover:border-emerald-200 transition-all duration-300 shadow-lg border-2 border-emerald-100/40">
             <div class="flex items-stretch">
                 <div class="w-20 bg-gradient-to-b from-emerald-600 to-teal-700 flex flex-col items-center justify-center gap-2 flex-shrink-0 py-6">
                     <span class="text-[10px] font-black text-emerald-200 uppercase tracking-widest">Step</span>
@@ -323,17 +324,22 @@
                 <div class="flex-1 p-7">
                     <div class="flex items-center gap-2 mb-1">
                         <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-full">Attendance</span>
+                        <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-full">✨ New Features</span>
                     </div>
-                    <h2 class="text-xl font-black text-gray-900 dark:text-white mb-2">Attendance Tracking</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-4">Take daily or session-based attendance for any of your classes. Records are saved by date and accessible in the class's attendance log. Print-ready attendance sheets are one click away.</p>
+                    <h2 class="text-xl font-black text-gray-900 dark:text-white mb-2">Attendance Tracking & Analytics</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-4">Take daily or session-based attendance. Download formatted Excel sheets (`.xlsx`) with automated summary counts and color-coding, filter history logs by date, monitor daily classroom attendance rates with interactive Chart.js line charts, and get automatic warnings for students below 85% attendance.</p>
                     <div class="flex items-center gap-2 flex-wrap">
                         <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 text-xs font-black text-emerald-700 dark:text-emerald-400">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            Dashboard → Class → Take Attendance
+                            Take Attendance
                         </div>
                         <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 dark:bg-teal-950/20 border border-teal-100 dark:border-teal-900/30 text-xs font-black text-teal-700 dark:text-teal-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                            Print Student List
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Export Excel (.xlsx)
+                        </div>
+                        <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 text-xs font-black text-indigo-700 dark:text-indigo-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            Dashboard Trend Charts & Alerts
                         </div>
                     </div>
                 </div>
@@ -407,6 +413,48 @@
                     <a href="{% url 'edit_profile' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-black hover:from-violet-700 hover:to-indigo-700 transition-all shadow shadow-violet-200">
                         Go to Edit Profile <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                     </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 9: Dynamic Academic Timetable -->
+        <div class="glass-card overflow-hidden group hover:border-indigo-200 transition-all duration-300 shadow-lg border-2 border-indigo-100/60">
+            <div class="flex items-stretch">
+                <div class="w-20 bg-gradient-to-b from-indigo-600 to-blue-700 flex flex-col items-center justify-center gap-2 flex-shrink-0 py-6">
+                    <span class="text-[10px] font-black text-indigo-200 uppercase tracking-widest">Step</span>
+                    <span class="text-3xl font-black text-white">9</span>
+                    <svg class="w-6 h-6 text-indigo-200 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 p-7">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700 rounded-full">Timetable</span>
+                        <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-full">✨ New</span>
+                    </div>
+                    <h2 class="text-xl font-black text-gray-900 dark:text-white mb-2">Dynamic Academic Timetable</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-4">Manage and customize your schedules dynamically. This system transitions between normal learning and exam states, featuring **9 key design components**:</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <div class="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100/40 dark:border-indigo-900/20">
+                            <p class="text-xs font-black text-indigo-850 dark:text-indigo-300 mb-2">🗓️ Core Timing & State Controls</p>
+                            <ul class="space-y-1.5 text-xs text-gray-650 dark:text-gray-400 list-disc list-inside">
+                                <li><strong>Three States:</strong> Toggle between Learning, Assessment, and Final Exam periods.</li>
+                                <li><strong>State Toggles:</strong> Segmented UI button triggers quick state changes.</li>
+                                <li><strong>Date Nav Controls:</strong> Navigate weeks chronologically left and right.</li>
+                                <li><strong>Calendar Date Headers:</strong> Dynamic columns mapping calendar dates.</li>
+                                <li><strong>Session Slot Blocks:</strong> Displays Morning, Lunch, and Afternoon blocks.</li>
+                            </ul>
+                        </div>
+                        <div class="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-950/10 border border-blue-100/40 dark:border-blue-900/20">
+                            <p class="text-xs font-black text-blue-850 dark:text-blue-300 mb-2">⚙️ Settings, Customization & Output</p>
+                            <ul class="space-y-1.5 text-xs text-gray-650 dark:text-gray-400 list-disc list-inside">
+                                <li><strong>Morning Hours Choices:</strong> Toggle session timings between 08:30–11:30 and 09:00–12:00.</li>
+                                <li><strong>Exam Creation Modal:</strong> Schedule and edit exams with custom titles and notes.</li>
+                                <li><strong>Curated Palettes:</strong> 5 specific color choices for Assessment and 5 unique colors for Exams.</li>
+                                <li><strong>Landscape Print:</strong> Scale and fit the grid horizontally to print beautiful timetables.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

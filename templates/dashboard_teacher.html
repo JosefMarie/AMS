@@ -124,6 +124,9 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                        <button onclick="openStudentCardsModal({{ c.id }}, '{{ c.cname|escapejs }}')" title="View Student ID Cards" class="p-2 rounded-xl bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                        </button>
                         <a href="{% url 'interactive_gradebook' c.id %}" title="Interactive Gradebook" class="p-2 rounded-xl bg-purple-50 text-purple-400 hover:bg-purple-600 hover:text-white transition-all">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 2v-6m-8 10H7a2 2 0 002 2h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z" /></svg>
                         </a>
@@ -139,8 +142,108 @@
             </div>
         </div>
 
-        <div
-            class="glass-card p-6 flex flex-col justify-between bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
+        <!-- Sidebar Widget Column -->
+        <div class="lg:col-span-1 space-y-8">
+            
+            <!-- Digital ID Flip Card -->
+            <div class="w-full flex flex-col items-center">
+                <div class="id-card-wrapper w-full max-w-[320px] h-[390px] cursor-pointer" onclick="toggleCardFlip(this)">
+                    <div class="id-card-inner relative w-full h-full text-center transition-transform duration-700 ease-in-out transform-style-3d">
+                        
+                        <!-- Card Front -->
+                        <div class="id-card-front absolute inset-0 w-full h-full rounded-3xl p-6 backface-hidden flex flex-col justify-between overflow-hidden shadow-xl border border-white/20 bg-gradient-to-br from-purple-700 via-indigo-750 to-pink-800 text-white">
+                            <!-- Poly Background Structure -->
+                            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
+                                <div class="absolute -top-10 -right-10 w-48 h-48 bg-white/10" style="clip-path: polygon(100% 0, 0 0, 100% 100%);"></div>
+                                <div class="absolute top-1/4 -left-10 w-40 h-40 bg-white/5" style="clip-path: polygon(0 0, 100% 50%, 0 100%);"></div>
+                                <div class="absolute bottom-0 right-0 w-48 h-48 bg-black/10" style="clip-path: polygon(100% 100%, 0 100%, 100% 0);"></div>
+                                <div class="absolute -bottom-5 -left-5 w-40 h-40 bg-white/10" style="clip-path: polygon(0 100%, 0 0, 100% 100%);"></div>
+                            </div>
+                            
+                            <!-- Glossmorphic overlay -->
+                            <div class="absolute -top-16 -right-16 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+                            <div class="absolute bottom-0 left-0 w-24 h-24 bg-pink-500/20 rounded-full blur-xl"></div>
+                            
+                            <!-- Card Header -->
+                            <div class="flex justify-between items-center pb-3 border-b border-white/15 relative z-10">
+                                <span class="text-[9px] font-black tracking-[0.2em] uppercase opacity-75">Faculty ID Badge</span>
+                                <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-500 text-white">Faculty</span>
+                            </div>
+                            
+                            <!-- Profile Picture Area -->
+                            <div class="my-4 relative z-10">
+                                <div class="w-24 h-24 mx-auto rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden border-2 border-white/30 shadow-md">
+                                    {% if user.student_profile.profile_picture %}
+                                    <img src="{{ user.student_profile.profile_picture.url }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                    <div class="text-4xl font-black text-white/40">{{ user.username|first|upper }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Personal Details -->
+                            <div class="space-y-1 relative z-10">
+                                <h3 class="text-lg font-black leading-tight">{{ user.get_full_name|default:user.username }}</h3>
+                                <p class="text-[10px] font-bold opacity-75 tracking-wider uppercase">👩‍🏫 Faculty Trainer</p>
+                                <p class="text-[8px] font-medium opacity-65 truncate max-w-[250px]">
+                                    {% for t in user.trades.all %}{{ t.name }}{% if not forloop.last %}, {% endif %}{% empty %}All Subjects{% endfor %}
+                                </p>
+                            </div>
+                            
+                            <!-- Card Footer -->
+                            <div class="flex justify-between items-end pt-3 border-t border-white/15 mt-2 relative z-10">
+                                <div class="text-left">
+                                    <p class="text-[7px] font-bold opacity-60 uppercase tracking-widest mb-0.5">Trainer ID</p>
+                                    <p class="text-xs font-black font-mono text-yellow-300">TRN-2026-{{ user.id }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[7px] font-bold opacity-60 uppercase tracking-widest mb-0.5">Institution</p>
+                                    <p class="text-[9px] font-black truncate max-w-[120px]">{{ user.school_name|default:"Centennial TVET" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Card Back -->
+                        <div class="id-card-back absolute inset-0 w-full h-full rounded-3xl p-6 backface-hidden flex flex-col justify-between items-center overflow-hidden shadow-xl border border-white/20 bg-slate-900 text-white transform rotate-y-180">
+                            <!-- Poly Background Structure -->
+                            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
+                                <div class="absolute -top-10 -left-10 w-48 h-48 bg-white/10" style="clip-path: polygon(0 0, 100% 0, 0 100%);"></div>
+                                <div class="absolute top-1/4 -right-10 w-40 h-40 bg-white/5" style="clip-path: polygon(100% 0, 100% 100%, 0 50%);"></div>
+                                <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5" style="clip-path: polygon(0 100%, 100% 100%, 0 0);"></div>
+                                <div class="absolute -bottom-5 -right-5 w-40 h-40 bg-white/10" style="clip-path: polygon(100% 100%, 100% 0, 0 100%);"></div>
+                            </div>
+                            
+                            <!-- Back Header -->
+                            <div class="w-full flex justify-between items-center pb-3 border-b border-white/10 relative z-10">
+                                <span class="text-[9px] font-black tracking-[0.2em] uppercase opacity-75">Verification System</span>
+                                <div class="flex items-center gap-1">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <span class="text-[8px] font-bold text-emerald-400 uppercase">AMS Sec</span>
+                                </div>
+                            </div>
+                            
+                            <!-- QR Code Container -->
+                            <div class="my-4 flex flex-col items-center">
+                                <div class="p-3 bg-white rounded-2xl shadow-lg inline-block">
+                                    <canvas id="trainer-qr-canvas" class="w-32 h-32"></canvas>
+                                </div>
+                                <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-3">Scan to verify credentials</p>
+                            </div>
+                            
+                            <!-- Validation details -->
+                            <div class="w-full text-center space-y-1 pt-2 border-t border-white/10">
+                                <p class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Digital Signature ID</p>
+                                <p class="text-[9px] text-gray-300 font-mono">AMS-{{ user.id }}-TRN</p>
+                                <p class="text-[7px] text-gray-500 font-medium leading-none">Tap again to flip front</p>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Overview (originally styled with bg gradient) -->
+            <div class="glass-card p-6 flex flex-col justify-between bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
             <div>
                 <h3 class="text-2xl font-black mb-1 italic">Quick Overview</h3>
                 <p class="opacity-70 text-xs font-medium uppercase tracking-widest">Active Academic Term</p>
@@ -180,6 +283,167 @@
             </div>
         </div>
     </div>
+</div>
+
+    <!-- ATTENDANCE ANALYTICS SECTION -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 animate-slide-up" style="animation-delay: 0.1s;">
+        <!-- Column 1: Classroom Trend Chart (spans 2 columns on large screens) -->
+        <div class="lg:col-span-2 glass-card p-6 flex flex-col justify-between bg-white dark:bg-slate-900 border border-gray-150 dark:border-slate-800 shadow-xl">
+            <div>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white font-extrabold italic uppercase tracking-tighter">Attendance Rate Trends</h3>
+                        <p class="text-[10px] text-gray-500 font-black tracking-widest uppercase">Daily percentage rates per classroom</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="chartClassroomSelect" class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Classroom:</label>
+                        <select id="chartClassroomSelect" class="rounded-xl border-gray-250 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold p-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none dark:text-white">
+                            {% for c in my_classrooms %}
+                            <option value="{{ c.id }}">{{ c.cname }}</option>
+                            {% empty %}
+                            <option value="">No classrooms available</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="relative w-full h-[280px]">
+                    <canvas id="attendanceTrendChart"></canvas>
+                    <div id="noChartDataMessage" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center text-gray-450 dark:text-gray-400 font-bold bg-white/80 dark:bg-slate-900/80 rounded-2xl">
+                        <svg class="w-12 h-12 text-gray-300 dark:text-slate-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2"/></svg>
+                        <span>No attendance data recorded yet for this classroom.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 2: Critical Attendance Alerts (spans 1 column) -->
+        <div class="glass-card p-6 flex flex-col justify-between border-l-4 border-l-red-500 bg-white dark:bg-slate-900 border border-gray-150 dark:border-slate-800 shadow-xl">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 font-extrabold italic uppercase tracking-tighter text-red-650 flex items-center gap-1.5">
+                    <svg class="w-5 h-5 text-red-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    Critical Alerts (&lt; 85%)
+                </h3>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 font-black tracking-widest uppercase mb-4">Students flagged with low attendance</p>
+                
+                <div class="space-y-4 max-h-[280px] overflow-y-auto pr-1">
+                    {% for student in critical_students %}
+                    <div class="p-3 rounded-2xl bg-red-50/40 dark:bg-red-950/10 border border-red-100/60 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-1.5">
+                            <div>
+                                <p class="text-sm font-black text-gray-900 dark:text-white leading-tight">{{ student.name }}</p>
+                                <p class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase mt-0.5">{{ student.classroom }} · ID: {{ student.username }}</p>
+                            </div>
+                            <span class="text-xs font-black text-red-600 dark:text-red-400 px-2 py-0.5 rounded-lg bg-red-100/60 dark:bg-red-950/30">{{ student.pct }}%</span>
+                        </div>
+                        <div class="mt-2.5">
+                            <!-- Progress bar -->
+                            <div class="w-full h-1.5 bg-red-100 dark:bg-red-950/30 rounded-full overflow-hidden mb-1.5">
+                                <div class="h-full bg-red-500" style="width: {{ student.pct }}%"></div>
+                            </div>
+                            <div class="flex justify-between items-center text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
+                                <span>Absent: <strong class="text-red-550 dark:text-red-400">{{ student.absent_count }}</strong> days</span>
+                                <span>Total: <strong>{{ student.total_count }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-16 text-gray-400 dark:text-gray-500 font-bold italic flex flex-col items-center justify-center">
+                        <svg class="w-12 h-12 text-emerald-100 dark:text-emerald-950/20 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="text-emerald-600 dark:text-emerald-400 text-xs">All students are above 85% attendance!</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rawData = {{ classroom_chart_data_json|safe }};
+            const select = document.getElementById('chartClassroomSelect');
+            const noDataMsg = document.getElementById('noChartDataMessage');
+            const canvas = document.getElementById('attendanceTrendChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let chart = null;
+
+            function renderChart(classId) {
+                if (chart) {
+                    chart.destroy();
+                }
+
+                const classData = rawData[classId];
+                if (!classData || !classData.dates || classData.dates.length === 0) {
+                    noDataMsg.classList.remove('hidden');
+                    return;
+                } else {
+                    noDataMsg.classList.add('hidden');
+                }
+
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: classData.dates,
+                        datasets: [{
+                            label: 'Attendance Rate (%)',
+                            data: classData.rates,
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#4f46e5',
+                            pointHoverRadius: 6,
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Attendance: ${context.parsed.y}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 10, weight: 'bold' }, color: '#9ca3af' }
+                            },
+                            y: {
+                                min: 0,
+                                max: 100,
+                                ticks: { font: { size: 10, weight: 'bold' }, color: '#9ca3af', stepSize: 20 },
+                                grid: { color: 'rgba(243, 244, 246, 0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            if (select) {
+                select.addEventListener('change', function() {
+                    renderChart(this.value);
+                });
+
+                if (select.value) {
+                    renderChart(select.value);
+                } else {
+                    noDataMsg.classList.remove('hidden');
+                }
+            }
+        });
+    </script>
+
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div class="lg:col-span-1 space-y-6 animate-slide-up" style="animation-delay: 0.1s;">
@@ -348,5 +612,1591 @@
             </section>
         </div>
     </div>
+    
+    <!-- TIMETABLE UI -->
+    <div class="mt-12 animate-slide-up" style="animation-delay: 0.4s;" id="timetable-print-section">
+        <section class="glass-card overflow-hidden p-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">
+                <div class="flex-1">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white font-extrabold italic uppercase tracking-tighter">My Timetable</h3>
+                        <!-- State Toggle Selector -->
+                        <div class="inline-flex p-0.5 bg-gray-100 dark:bg-slate-800 rounded-xl print-hide">
+                            <button id="stateBtnLearning" onclick="changeTimetableState('LEARNING')" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-white dark:bg-slate-900 text-indigo-600 shadow-sm">
+                                Learning
+                            </button>
+                            <button id="stateBtnAssessment" onclick="changeTimetableState('ASSESSMENT')" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-gray-500 hover:text-gray-900 dark:hover:text-white">
+                                Assessment
+                            </button>
+                            <button id="stateBtnExam" onclick="changeTimetableState('EXAM')" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-gray-500 hover:text-gray-900 dark:hover:text-white">
+                                Final Exam
+                            </button>
+                        </div>
+                    </div>
+                    <p id="timetable-subtitle" class="text-[10px] text-gray-500 font-black tracking-widest uppercase flex items-center gap-1.5 mt-1 print-hide">
+                        Drag & Drop Weekly Task Organizer • Hold <kbd class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-sans border border-gray-200 dark:border-slate-700 text-[9px] shadow-sm font-bold uppercase select-none">Ctrl</kbd> to copy tasks
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 print-hide">
+                    <!-- Navigation Controls for Dates -->
+                    <div id="examDateNavigation" class="hidden flex items-center gap-2">
+                        <button onclick="navigateDates(-7)" class="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-650 dark:text-gray-300 rounded-xl transition-all shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <span id="dateRangeDisplay" class="text-xs font-black text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 px-3 py-2 rounded-xl">-- to --</span>
+                        <button onclick="navigateDates(7)" class="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-650 dark:text-gray-300 rounded-xl transition-all shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
+                    
+                    <button onclick="window.print()" class="text-xs font-black text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-xl transition-all uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        Print
+                    </button>
+                    <button onclick="openTimetableSettings()" class="text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-xl transition-all uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Settings
+                    </button>
+                </div>
+            </div>
+            <style>
+                .timetable-cell.dragover {
+                    background-color: rgba(99, 102, 241, 0.15) !important;
+                    border: 2px dashed #6366f1 !important;
+                }
+                .task-card {
+                    transition: transform 0.2s, box-shadow 0.2s;
+                }
+                .task-card:hover {
+                    transform: translateY(-2px) scale(1.02);
+                }
+                .today-column {
+                    background-color: rgba(99, 102, 241, 0.04) !important;
+                }
+                .dark .today-column {
+                    background-color: rgba(99, 102, 241, 0.02) !important;
+                }
+                .today-header {
+                    background-color: rgba(99, 102, 241, 0.08) !important;
+                    color: #4f46e5 !important;
+                }
+                .dark .today-header {
+                    background-color: rgba(99, 102, 241, 0.12) !important;
+                    color: #818cf8 !important;
+                }
+                
+                @media print {
+                    @page { size: landscape; margin: 5mm; }
+                    body * {
+                        visibility: hidden;
+                    }
+                    /* Force background colors to print */
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    #timetable-print-section, #timetable-print-section * {
+                        visibility: visible;
+                    }
+                    #timetable-print-section {
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-shadow: none !important;
+                        zoom: 0.8; /* Scale down for Chrome/Edge */
+                        transform: scale(0.85); /* Scale down for Firefox */
+                        transform-origin: top left;
+                        page-break-inside: avoid;
+                    }
+                    table {
+                        width: 100% !important;
+                        table-layout: fixed !important;
+                    }
+                    th, td {
+                        padding: 4px 8px !important; /* Reduce padding */
+                    }
+                    .timetable-cell {
+                        padding: 4px !important;
+                    }
+                    .print-hide {
+                        display: none !important;
+                    }
+                    .task-card {
+                        box-shadow: none !important;
+                        border: 1px solid rgba(0,0,0,0.1) !important;
+                        padding: 6px !important;
+                        min-height: 40px !important;
+                    }
+                    p.font-extrabold.text-sm {
+                        font-size: 0.75rem !important; /* Shrink text slightly */
+                    }
+                }
+            </style>
+            
+            <div class="overflow-x-auto rounded-3xl border border-gray-150 dark:border-slate-800 shadow-xl bg-white/40 dark:bg-slate-900/40 backdrop-blur-md mt-6">
+                <table class="w-full border-collapse text-left">
+                    <thead id="timetable-thead">
+                        <tr class="bg-indigo-600/5 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-100 font-extrabold uppercase text-[11px] tracking-wider border-b border-gray-200/50 dark:border-slate-800">
+                            <th class="px-6 py-4 text-center w-36 font-black border-r border-gray-200/50 dark:border-slate-800">Time</th>
+                            <th class="px-6 py-4 text-center font-black border-r border-gray-200/50 dark:border-slate-800">Monday</th>
+                            <th class="px-6 py-4 text-center font-black border-r border-gray-200/50 dark:border-slate-800">Tuesday</th>
+                            <th class="px-6 py-4 text-center font-black border-r border-gray-200/50 dark:border-slate-800">Wednesday</th>
+                            <th class="px-6 py-4 text-center font-black border-r border-gray-200/50 dark:border-slate-800">Thursday</th>
+                            <th class="px-6 py-4 text-center font-black">Friday</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetable-body" class="divide-y divide-gray-150 dark:divide-slate-800">
+                        <!-- Slots will be rendered here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
 </div>
+
+<!-- Timetable Settings Modal -->
+<div id="timetableSettingsModal" class="fixed inset-0 z-[100] hidden bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl p-6 border border-gray-100 dark:border-slate-800">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Timetable Settings</h3>
+            <button onclick="closeTimetableSettings()" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Start Hour</label>
+                    <input type="time" id="ts-start" class="w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm font-bold dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">End Hour</label>
+                    <input type="time" id="ts-end" class="w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm font-bold dark:text-white">
+                </div>
+            </div>
+            <hr class="my-4 border-gray-100 dark:border-slate-800">
+            <div>
+                <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-2">Break Times (Up to 3)</h4>
+                <div id="ts-breaks-container" class="space-y-3">
+                    <!-- Break rows added dynamically -->
+                </div>
+                <button onclick="addBreakRow()" class="mt-3 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg> Add Break</button>
+            </div>
+            <hr class="my-4 border-gray-100 dark:border-slate-800">
+            <div>
+                <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-2">Exam Morning Session Time</h4>
+                <select id="ts-exam-morning" class="w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm font-bold dark:text-white">
+                    <option value="08:30-11:30">08:30 - 11:30 (3 Hours)</option>
+                    <option value="09:00-12:00">09:00 - 12:00 (3 Hours)</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-8 flex gap-3 justify-end">
+            <button onclick="closeTimetableSettings()" class="px-5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 font-bold hover:bg-gray-50 text-xs uppercase">Cancel</button>
+            <button onclick="saveTimetableSettings()" class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 text-xs uppercase shadow-lg shadow-indigo-200">Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<!-- Task Create/Edit Modal -->
+<div id="taskModal" class="fixed inset-0 z-[100] hidden bg-gray-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl p-6 border border-gray-150 dark:border-slate-800 transform transition-all duration-300 scale-95 opacity-0" id="taskModalContent">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">
+            <h3 class="text-xl font-extrabold text-gray-900 dark:text-white" id="taskModalTitle">Add Timetable Task</h3>
+            <button onclick="closeTaskModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <input type="hidden" id="task-id">
+            <input type="hidden" id="task-day">
+            <input type="hidden" id="task-start">
+            <input type="hidden" id="task-end">
+            
+            <div>
+                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Task Title</label>
+                <input type="text" id="task-title-input" placeholder="e.g. Mathematics Period" class="w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold p-3">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Description / Notes</label>
+                <textarea id="task-desc-input" placeholder="Topics to cover, homework assignments..." rows="3" class="w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold p-3"></textarea>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Card Accent Color</label>
+                <div class="flex gap-3" id="task-colors-container">
+                    <button data-color="#4f46e5" onclick="selectColor(this, '#4f46e5')" class="w-8 h-8 rounded-full bg-[#4f46e5] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
+                    <button data-color="#7c3aed" onclick="selectColor(this, '#7c3aed')" class="w-8 h-8 rounded-full bg-[#7c3aed] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
+                    <button data-color="#059669" onclick="selectColor(this, '#059669')" class="w-8 h-8 rounded-full bg-[#059669] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
+                    <button data-color="#dc2626" onclick="selectColor(this, '#dc2626')" class="w-8 h-8 rounded-full bg-[#dc2626] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
+                    <button data-color="#ea580c" onclick="selectColor(this, '#ea580c')" class="w-8 h-8 rounded-full bg-[#ea580c] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
+                    <button data-color="#2563eb" onclick="selectColor(this, '#2563eb')" class="w-8 h-8 rounded-full bg-[#2563eb] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
+                </div>
+                <input type="hidden" id="task-color-val" value="#4f46e5">
+            </div>
+        </div>
+        
+        <div class="mt-8 flex gap-3 justify-end items-center">
+            <button id="task-delete-btn" onclick="deleteTaskFromModal()" class="px-5 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-650 hover:bg-red-100 text-xs font-extrabold uppercase mr-auto hidden">Delete</button>
+            <button id="task-add-another-btn" onclick="prepareAddAnotherTask()" class="px-5 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100/50 text-xs font-extrabold uppercase mr-auto hidden">Add Another</button>
+            <button onclick="closeTaskModal()" class="px-5 py-2.5 rounded-xl border border-gray-250 bg-white text-gray-750 font-bold hover:bg-gray-50 text-xs uppercase dark:bg-slate-800 dark:border-slate-700 dark:text-gray-200">Cancel</button>
+            <button onclick="saveTaskFromModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold hover:bg-indigo-700 text-xs uppercase shadow-lg shadow-indigo-200 dark:shadow-none" id="task-save-btn">Save Task</button>
+        </div>
+    </div>
+</div>
+
+<!-- Exam Create/Edit Modal -->
+<div id="examModal" class="fixed inset-0 z-[100] hidden bg-gray-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl p-6 border border-gray-150 dark:border-slate-800 transform transition-all duration-300 scale-95 opacity-0" id="examModalContent">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">
+            <div class="flex flex-col">
+                <h3 class="text-xl font-extrabold text-gray-900 dark:text-white" id="examModalTitle">Schedule Exam</h3>
+                <span id="examModalSubtitle" class="text-xs font-semibold text-gray-505 mt-1"></span>
+            </div>
+            <button onclick="closeExamModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <input type="hidden" id="exam-id">
+            <input type="hidden" id="exam-date">
+            <input type="hidden" id="exam-session">
+            <input type="hidden" id="exam-period-type">
+            
+            <div>
+                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Exam / Course Title</label>
+                <input type="text" id="exam-title-input" placeholder="e.g. Web Applications Development Exam" class="w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold p-3">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Description / Notes</label>
+                <textarea id="exam-desc-input" placeholder="Room number, materials allowed, instructions..." rows="3" class="w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold p-3"></textarea>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Card Accent Color</label>
+                <div class="flex gap-3" id="exam-colors-container">
+                    <!-- Dynamic colors populated on open -->
+                </div>
+                <input type="hidden" id="exam-color-val" value="#4f46e5">
+            </div>
+        </div>
+        
+        <div class="mt-8 flex gap-3 justify-end items-center">
+            <button id="exam-delete-btn" onclick="deleteExamFromModal()" class="px-5 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-650 hover:bg-red-100 text-xs font-extrabold uppercase mr-auto hidden">Delete</button>
+            <button onclick="closeExamModal()" class="px-5 py-2.5 rounded-xl border border-gray-250 bg-white text-gray-750 font-bold hover:bg-gray-50 text-xs uppercase dark:bg-slate-800 dark:border-slate-700 dark:text-gray-200">Cancel</button>
+            <button onclick="saveExamFromModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold hover:bg-indigo-700 text-xs uppercase shadow-lg shadow-indigo-200 dark:shadow-none" id="exam-save-btn">Save Exam</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let timetableData = {
+        settings: { start_hour: '08:00', end_hour: '15:00' },
+        breaks: [],
+        tasks: []
+    };
+    
+    let draggedTaskId = null;
+
+    function timeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        let [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function minutesToTime(mins) {
+        let h = Math.floor(mins / 60).toString().padStart(2, '0');
+        let m = (mins % 60).toString().padStart(2, '0');
+        return `${h}:${m}`;
+    }
+
+    function calculateSlots(startHour, endHour, breaks) {
+        let startMin = timeToMinutes(startHour);
+        let endMin = timeToMinutes(endHour);
+        let parsedBreaks = (breaks || []).map(b => ({
+            title: b.title,
+            startMin: timeToMinutes(b.start_time),
+            endMin: timeToMinutes(b.end_time),
+            start_time: b.start_time,
+            end_time: b.end_time
+        })).sort((a, b) => a.startMin - b.startMin);
+
+        let slots = [];
+        let current = startMin;
+        let maxIterations = 100;
+        let iterations = 0;
+        
+        while (current < endMin && iterations < maxIterations) {
+            iterations++;
+            
+            // Check if there is a break active at 'current'
+            let activeBreak = parsedBreaks.find(b => current >= b.startMin && current < b.endMin);
+            if (activeBreak) {
+                slots.push({
+                    type: 'break',
+                    title: activeBreak.title,
+                    start: minutesToTime(activeBreak.startMin),
+                    end: minutesToTime(activeBreak.endMin),
+                    startMin: activeBreak.startMin,
+                    endMin: activeBreak.endMin
+                });
+                current = activeBreak.endMin;
+                continue;
+            }
+            
+            // Check if a break starts within the next 40 minutes
+            let nextBreak = parsedBreaks.find(b => b.startMin > current && b.startMin < current + 40);
+            let periodEnd = current + 40;
+            if (nextBreak) {
+                periodEnd = nextBreak.startMin;
+            }
+            if (periodEnd > endMin) {
+                periodEnd = endMin;
+            }
+            
+            if (periodEnd > current) {
+                slots.push({
+                    type: 'period',
+                    start: minutesToTime(current),
+                    end: minutesToTime(periodEnd),
+                    startMin: current,
+                    endMin: periodEnd
+                });
+            }
+            current = periodEnd;
+        }
+        return slots;
+    }
+
+    let currentStartDate = new Date();
+    // Set currentStartDate to Monday of current week
+    let dayInit = currentStartDate.getDay();
+    let diffInit = currentStartDate.getDate() - dayInit + (dayInit === 0 ? -6 : 1);
+    currentStartDate.setDate(diffInit);
+
+    function navigateDates(daysOffset) {
+        currentStartDate.setDate(currentStartDate.getDate() + daysOffset);
+        renderTimetableGrid();
+    }
+
+    function initTimetable() {
+        fetch('/api/timetable/')
+            .then(res => res.json())
+            .then(data => {
+                if(data.error) {
+                    console.error("Timetable error:", data.error);
+                    return;
+                }
+                
+                timetableData = data;
+                
+                // Populate settings modal values
+                document.getElementById('ts-start').value = data.settings.start_hour;
+                document.getElementById('ts-end').value = data.settings.end_hour;
+                
+                if (document.getElementById('ts-exam-morning')) {
+                    document.getElementById('ts-exam-morning').value = data.settings.exam_morning_slot || '09:00-12:00';
+                }
+                
+                let breaksHtml = '';
+                (data.breaks || []).forEach(b => {
+                    breaksHtml += getBreakRowHtml(b.title, b.start_time, b.end_time);
+                });
+                document.getElementById('ts-breaks-container').innerHTML = breaksHtml;
+                
+                updateStateUI(data.settings.state || 'LEARNING');
+                renderTimetableGrid();
+            });
+    }
+
+    function renderTimetableHeaders() {
+        let thead = document.getElementById('timetable-thead');
+        if (!thead) return;
+        
+        let state = timetableData.settings.state || 'LEARNING';
+        
+        if (state === 'LEARNING') {
+            let today = new Date();
+            let currentDayIndex = today.getDay() - 1; // Mon=0, Tue=1, Wed=2, Thu=3, Fri=4
+            let days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+            
+            let headersHtml = `
+            <tr class="bg-indigo-600/5 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-100 font-extrabold uppercase text-[11px] tracking-wider border-b border-gray-200/50 dark:border-slate-800">
+                <th class="px-6 py-4 text-center w-36 font-black border-r border-gray-200/50 dark:border-slate-800 select-none">Time</th>`;
+                
+            days.forEach((dayName, idx) => {
+                let isToday = (idx === currentDayIndex);
+                let todayClass = isToday ? 'today-header' : '';
+                let borderClass = idx === 4 ? '' : 'border-r border-gray-200/50 dark:border-slate-800';
+                
+                headersHtml += `
+                <th class="px-6 py-4 text-center font-black ${borderClass} ${todayClass} select-none">
+                    <span class="inline-flex items-center gap-1.5 justify-center w-full">
+                        ${dayName}
+                        ${isToday ? `<span class="text-[8px] px-2 py-0.5 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white font-black tracking-widest uppercase shadow-sm">Today</span>` : ''}
+                    </span>
+                </th>`;
+            });
+            
+            headersHtml += `</tr>`;
+            thead.innerHTML = headersHtml;
+        } else {
+            let headersHtml = `
+            <tr class="bg-indigo-600/5 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-100 font-extrabold uppercase text-[11px] tracking-wider border-b border-gray-200/50 dark:border-slate-800">
+                <th class="px-6 py-4 text-center w-36 font-black border-r border-gray-200/50 dark:border-slate-800 select-none">Session</th>`;
+                
+            let tempDate = new Date(currentStartDate);
+            let todayIso = new Date().toISOString().split('T')[0];
+            
+            for (let i = 0; i < 7; i++) {
+                let dateString = tempDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                let dateIso = tempDate.toISOString().split('T')[0];
+                let isToday = (dateIso === todayIso);
+                let todayClass = isToday ? 'today-header' : '';
+                let borderClass = i === 6 ? '' : 'border-r border-gray-200/50 dark:border-slate-800';
+                
+                headersHtml += `
+                <th class="px-6 py-4 text-center font-black ${borderClass} ${todayClass} select-none" data-date="${dateIso}">
+                    <span class="inline-flex flex-col items-center justify-center w-full">
+                        <span>${dateString}</span>
+                        ${isToday ? `<span class="text-[7px] px-1.5 py-0.5 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white font-black tracking-widest uppercase shadow-sm mt-1">Today</span>` : ''}
+                    </span>
+                </th>`;
+                
+                tempDate.setDate(tempDate.getDate() + 1);
+            }
+            
+            headersHtml += `</tr>`;
+            thead.innerHTML = headersHtml;
+            
+            // Update Date Range Display
+            let endDate = new Date(currentStartDate);
+            endDate.setDate(endDate.getDate() + 6);
+            let startStr = currentStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            let endStr = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            let disp = document.getElementById('dateRangeDisplay');
+            if (disp) disp.textContent = `${startStr} - ${endStr}`;
+        }
+    }
+
+    function renderTimetableGrid() {
+        renderTimetableHeaders();
+        
+        let tbody = document.getElementById('timetable-body');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        let state = timetableData.settings.state || 'LEARNING';
+        
+        if (state === 'LEARNING') {
+            let slots = calculateSlots(timetableData.settings.start_hour, timetableData.settings.end_hour, timetableData.breaks);
+            let today = new Date();
+            let currentDayIndex = today.getDay() - 1; // Mon=0, Tue=1, Wed=2, Thu=3, Fri=4
+            
+            slots.forEach(slot => {
+                if (slot.type === 'break') {
+                    tbody.innerHTML += `
+                    <tr class="bg-amber-500/5 dark:bg-amber-500/2 border-y border-amber-500/10">
+                        <td class="px-6 py-4 text-center font-bold text-xs text-amber-600 dark:text-amber-400 bg-amber-500/5 dark:bg-amber-500/2 select-none border-r border-gray-200/50 dark:border-slate-800">
+                            ${slot.start} - ${slot.end}
+                        </td>
+                        <td colspan="5" class="px-6 py-4 text-center text-xs font-black tracking-widest text-amber-700 dark:text-amber-400 select-none uppercase">
+                            <span class="inline-flex items-center gap-2">
+                                <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                                </svg>
+                                ${slot.title} (Break)
+                            </span>
+                        </td>
+                    </tr>`;
+                } else {
+                    let rowHtml = `
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                        <td class="px-6 py-5 text-center font-bold text-xs text-gray-500 dark:text-gray-400 bg-gray-50/50 dark:bg-slate-900/50 border-r border-gray-200/50 dark:border-slate-800 select-none">
+                            <span class="block">${slot.start}</span>
+                            <span class="block text-[10px] opacity-60 font-medium mt-0.5">${slot.end}</span>
+                        </td>`;
+                        
+                    for (let day = 0; day < 5; day++) {
+                        let isToday = (day === currentDayIndex);
+                        let todayCellClass = isToday ? 'today-column' : '';
+                        
+                        let cellTasks = (timetableData.tasks || []).filter(t => {
+                            if (t.day_of_week !== day) return false;
+                            let tStart = timeToMinutes(t.start_time);
+                            let tEnd = timeToMinutes(t.end_time);
+                            return (tStart < slot.endMin && tEnd > slot.startMin);
+                        });
+                        
+                        let containerClass = cellTasks.length > 1 ? "relative w-full" : "relative w-full min-h-[50px] flex flex-col justify-center gap-2";
+                        let containerHeightStyle = cellTasks.length > 1 ? `style="min-height: ${(cellTasks.length - 1) * 28 + 68}px;"` : '';
+                        
+                        let tasksHtml = cellTasks.map((t, idx) => {
+                            let stackStyle = '';
+                            if (cellTasks.length > 1) {
+                                stackStyle = `position: absolute; top: ${idx * 28}px; left: 0; right: 0; z-index: ${idx + 1}; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);`;
+                            }
+                            return renderTaskCard(t, stackStyle);
+                        }).join('');
+                        
+                        rowHtml += `
+                        <td class="p-3 border-r border-gray-200/50 dark:border-slate-800/80 timetable-cell relative transition-all duration-200 min-h-[90px] w-1/5 align-top ${todayCellClass}"
+                            data-day="${day}"
+                            data-start="${slot.start}"
+                            data-end="${slot.end}"
+                            ondragover="handleDragOver(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event)"
+                            onclick="handleCellClick(event, ${day}, '${slot.start}', '${slot.end}')">
+                            <div class="${containerClass}" ${containerHeightStyle}>
+                                ${tasksHtml}
+                                ${cellTasks.length === 0 ? `
+                                <div class="opacity-0 hover:opacity-100 transition-opacity duration-150 absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <span class="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                    </span>
+                                </div>` : ''}
+                            </div>
+                        </td>`;
+                    }
+                    
+                    rowHtml += `</tr>`;
+                    tbody.innerHTML += rowHtml;
+                }
+            });
+        } else {
+            // Render Assessment or Final Exam state
+            let morningSlot = timetableData.settings.exam_morning_slot || '09:00-12:00';
+            let [mStart, mEnd] = morningSlot.split('-');
+            
+            // 1. Morning Row
+            let rowMorning = `
+            <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                <td class="px-6 py-5 text-center font-bold text-xs text-gray-500 dark:text-gray-400 bg-gray-50/50 dark:bg-slate-900/50 border-r border-gray-200/50 dark:border-slate-800 select-none">
+                    <span class="block text-indigo-600 dark:text-indigo-400 font-extrabold uppercase text-[10px]">Morning</span>
+                    <span class="block mt-1">${mStart}</span>
+                    <span class="block text-[10px] opacity-60 font-medium mt-0.5">${mEnd}</span>
+                </td>`;
+                
+            // 2. Lunch Row
+            let rowLunch = `
+            <tr class="bg-amber-500/5 dark:bg-amber-500/2 border-y border-amber-500/10">
+                <td class="px-6 py-4 text-center font-bold text-xs text-amber-600 dark:text-amber-400 bg-amber-500/5 dark:bg-amber-500/2 select-none border-r border-gray-200/50 dark:border-slate-800">
+                    ${mEnd} - 14:00
+                </td>
+                <td colspan="7" class="px-6 py-4 text-center text-xs font-black tracking-widest text-amber-700 dark:text-amber-400 select-none uppercase">
+                    <span class="inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                        </svg>
+                        Lunch Break
+                    </span>
+                </td>
+            </tr>`;
+            
+            // 3. Afternoon Row
+            let rowAfternoon = `
+            <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                <td class="px-6 py-5 text-center font-bold text-xs text-gray-500 dark:text-gray-400 bg-gray-50/50 dark:bg-slate-900/50 border-r border-gray-200/50 dark:border-slate-800 select-none">
+                    <span class="block text-indigo-600 dark:text-indigo-400 font-extrabold uppercase text-[10px]">Afternoon</span>
+                    <span class="block mt-1">14:00</span>
+                    <span class="block text-[10px] opacity-60 font-medium mt-0.5">17:00</span>
+                </td>`;
+                
+            let todayIso = new Date().toISOString().split('T')[0];
+            let tempDate = new Date(currentStartDate);
+            
+            for (let i = 0; i < 7; i++) {
+                let dateIso = tempDate.toISOString().split('T')[0];
+                let isToday = (dateIso === todayIso);
+                let todayCellClass = isToday ? 'today-column' : '';
+                let borderClass = i === 6 ? '' : 'border-r border-gray-200/50 dark:border-slate-800/80';
+                
+                let morningExams = (timetableData.exams || []).filter(e => e.date === dateIso && e.session === 'MORNING');
+                let afternoonExams = (timetableData.exams || []).filter(e => e.date === dateIso && e.session === 'AFTERNOON');
+                
+                let mExamsHtml = morningExams.map(e => renderExamCard(e)).join('');
+                let aExamsHtml = afternoonExams.map(e => renderExamCard(e)).join('');
+                
+                rowMorning += `
+                <td class="p-3 ${borderClass} timetable-cell relative transition-all duration-200 min-h-[90px] w-[12%] align-top ${todayCellClass}"
+                    data-date="${dateIso}"
+                    data-session="MORNING"
+                    onclick="handleExamCellClick(event, '${dateIso}', 'MORNING')">
+                    <div class="relative w-full min-h-[50px] flex flex-col justify-center gap-2">
+                        ${mExamsHtml}
+                        ${morningExams.length === 0 ? `
+                        <div class="opacity-0 hover:opacity-100 transition-opacity duration-150 absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span class="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                            </span>
+                        </div>` : ''}
+                    </div>
+                </td>`;
+                
+                rowAfternoon += `
+                <td class="p-3 ${borderClass} timetable-cell relative transition-all duration-200 min-h-[90px] w-[12%] align-top ${todayCellClass}"
+                    data-date="${dateIso}"
+                    data-session="AFTERNOON"
+                    onclick="handleExamCellClick(event, '${dateIso}', 'AFTERNOON')">
+                    <div class="relative w-full min-h-[50px] flex flex-col justify-center gap-2">
+                        ${aExamsHtml}
+                        ${afternoonExams.length === 0 ? `
+                        <div class="opacity-0 hover:opacity-100 transition-opacity duration-150 absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span class="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                            </span>
+                        </div>` : ''}
+                    </div>
+                </td>`;
+                
+                tempDate.setDate(tempDate.getDate() + 1);
+            }
+            
+            rowMorning += '</tr>';
+            rowAfternoon += '</tr>';
+            
+            tbody.innerHTML = rowMorning + rowLunch + rowAfternoon;
+        }
+    }
+
+    function renderTaskCard(task, extraStyle = '') {
+        let descHtml = task.description ? `<p class="font-normal text-[10px] text-white/80 mt-1 line-clamp-1">${task.description}</p>` : '';
+        return `
+        <div class="task-card p-3 rounded-2xl text-white font-extrabold text-xs shadow-md transition-all duration-200 hover:scale-102 hover:shadow-lg cursor-grab active:cursor-grabbing relative group flex flex-col justify-between min-h-[64px]"
+             style="background: ${task.color || '#4f46e5'}; border-color: rgba(255,255,255,0.15); ${extraStyle}"
+             draggable="true"
+             ondragstart="handleDragStart(event, ${task.id})"
+             onclick="handleTaskClick(event, ${task.id})">
+             <div>
+                 <p class="font-extrabold text-sm text-white line-clamp-2 pr-4">${task.title}</p>
+                 ${descHtml}
+             </div>
+             <div class="flex items-center justify-between mt-2 pt-1 border-t border-white/10 text-[9px] text-white/70 font-semibold">
+                 <span>${task.start_time} - ${task.end_time}</span>
+                 <button onclick="handleDeleteTaskBtn(event, ${task.id})" class="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 hover:bg-black/30 rounded-lg p-1 text-white absolute top-2 right-2 print-hide">
+                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                 </button>
+             </div>
+        </div>
+        `;
+    }
+
+    function getBreakRowHtml(title, start, end) {
+        return `
+        <div class="flex items-center gap-2 break-row">
+            <input type="text" value="${title}" placeholder="Break Name" class="flex-1 rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm font-bold break-title">
+            <input type="time" value="${start}" class="w-32 rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm font-bold break-start">
+            <input type="time" value="${end}" class="w-32 rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm font-bold break-end">
+            <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 p-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+        </div>`;
+    }
+
+    function addBreakRow() {
+        let container = document.getElementById('ts-breaks-container');
+        if(container.children.length >= 3) {
+            alert('Maximum 3 break times allowed.');
+            return;
+        }
+        container.insertAdjacentHTML('beforeend', getBreakRowHtml('Break', '10:40', '11:00'));
+    }
+
+    function openTimetableSettings() {
+        document.getElementById('timetableSettingsModal').classList.remove('hidden');
+    }
+
+    function closeTimetableSettings() {
+        document.getElementById('timetableSettingsModal').classList.add('hidden');
+    }
+
+    function saveTimetableSettings() {
+        let breaks = [];
+        document.querySelectorAll('.break-row').forEach(row => {
+            let title = row.querySelector('.break-title').value.trim() || 'Break';
+            let start = row.querySelector('.break-start').value;
+            let end = row.querySelector('.break-end').value;
+            if (start && end) {
+                breaks.push({
+                    title: title,
+                    start_time: start,
+                    end_time: end
+                });
+            }
+        });
+        
+        let payload = {
+            start_hour: document.getElementById('ts-start').value,
+            end_hour: document.getElementById('ts-end').value,
+            breaks: breaks
+        };
+        
+        fetch('/api/timetable/save-settings/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify(payload)
+        }).then(r => r.json()).then(res => {
+            if(res.success) {
+                let examMorningSelect = document.getElementById('ts-exam-morning');
+                if (examMorningSelect) {
+                    fetch('/api/timetable/save-state/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                        body: JSON.stringify({ exam_morning_slot: examMorningSelect.value })
+                    }).then(r => r.json()).then(stateRes => {
+                        closeTimetableSettings();
+                        window.showToast("Settings saved successfully", "success");
+                        initTimetable();
+                    }).catch(err => {
+                        closeTimetableSettings();
+                        window.showToast("Settings saved successfully", "success");
+                        initTimetable();
+                    });
+                } else {
+                    closeTimetableSettings();
+                    window.showToast("Settings saved successfully", "success");
+                    initTimetable();
+                }
+            } else {
+                alert('Error: ' + res.error);
+            }
+        });
+    }
+
+    // Drag and Drop
+    function handleDragStart(event, taskId) {
+        draggedTaskId = taskId;
+        event.dataTransfer.setData('text/plain', taskId.toString());
+        event.dataTransfer.effectAllowed = 'copyMove';
+    }
+
+    function handleDragOver(event) {
+        event.preventDefault();
+        let cell = event.currentTarget;
+        if (!cell.classList.contains('dragover')) {
+            cell.classList.add('dragover');
+        }
+        if (event.ctrlKey || event.metaKey) {
+            event.dataTransfer.dropEffect = 'copy';
+        } else {
+            event.dataTransfer.dropEffect = 'move';
+        }
+    }
+
+    function handleDragLeave(event) {
+        let cell = event.currentTarget;
+        cell.classList.remove('dragover');
+    }
+
+    function handleDrop(event) {
+        event.preventDefault();
+        let cell = event.currentTarget;
+        cell.classList.remove('dragover');
+        
+        let taskId = event.dataTransfer.getData('text/plain') || draggedTaskId;
+        if (!taskId) return;
+        
+        let day = parseInt(cell.getAttribute('data-day'));
+        let startTime = cell.getAttribute('data-start');
+        let endTime = cell.getAttribute('data-end');
+        
+        let task = timetableData.tasks.find(t => t.id == taskId);
+        if (!task) return;
+        
+        let isCopy = event.ctrlKey || event.metaKey;
+        
+        if (isCopy) {
+            let tempId = Date.now();
+            let copiedTask = {
+                id: tempId,
+                title: task.title,
+                description: task.description || '',
+                day_of_week: day,
+                start_time: startTime,
+                end_time: endTime,
+                color: task.color
+            };
+            
+            // Optimistic UI update
+            timetableData.tasks.push(copiedTask);
+            renderTimetableGrid();
+            
+            fetch('/api/timetable/save-task/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({
+                    title: task.title,
+                    description: task.description || '',
+                    day_of_week: day,
+                    start_time: startTime,
+                    end_time: endTime,
+                    color: task.color
+                })
+            }).then(r => r.json()).then(res => {
+                if (res.success) {
+                    copiedTask.id = res.id;
+                    renderTimetableGrid();
+                    window.showToast("Task copied successfully", "success");
+                } else {
+                    timetableData.tasks = timetableData.tasks.filter(t => t.id !== tempId);
+                    renderTimetableGrid();
+                    window.showToast("Failed to copy task: " + res.error, "error");
+                }
+            }).catch(err => {
+                timetableData.tasks = timetableData.tasks.filter(t => t.id !== tempId);
+                renderTimetableGrid();
+                window.showToast("Network error copying task", "error");
+            });
+        } else {
+            let oldDay = task.day_of_week;
+            let oldStart = task.start_time;
+            let oldEnd = task.end_time;
+            
+            // Optimistic UI update
+            task.day_of_week = day;
+            task.start_time = startTime;
+            task.end_time = endTime;
+            renderTimetableGrid();
+            
+            fetch('/api/timetable/save-task/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({
+                    id: taskId,
+                    title: task.title,
+                    description: task.description || '',
+                    day_of_week: day,
+                    start_time: startTime,
+                    end_time: endTime,
+                    color: task.color
+                })
+            }).then(r => r.json()).then(res => {
+                if (!res.success) {
+                    task.day_of_week = oldDay;
+                    task.start_time = oldStart;
+                    task.end_time = oldEnd;
+                    renderTimetableGrid();
+                    window.showToast("Failed to move task: " + res.error, "error");
+                } else {
+                    window.showToast("Task moved successfully", "success");
+                }
+            }).catch(err => {
+                task.day_of_week = oldDay;
+                task.start_time = oldStart;
+                task.end_time = oldEnd;
+                renderTimetableGrid();
+                window.showToast("Network error moving task", "error");
+            });
+        }
+    }
+
+    // Modal Operations
+    function openTaskModal() {
+        let modal = document.getElementById('taskModal');
+        let content = document.getElementById('taskModalContent');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function closeTaskModal() {
+        let modal = document.getElementById('taskModal');
+        let content = document.getElementById('taskModalContent');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+
+    function selectColor(btn, hex) {
+        document.querySelectorAll('.select-color-btn').forEach(b => {
+            b.classList.remove('ring-4', 'ring-indigo-500/50', 'scale-110');
+        });
+        btn.classList.add('ring-4', 'ring-indigo-500/50', 'scale-110');
+        document.getElementById('task-color-val').value = hex;
+    }
+
+    function handleCellClick(event, day, start, end) {
+        if (event.target.closest('.task-card')) return;
+        
+        document.getElementById('task-id').value = '';
+        document.getElementById('task-day').value = day;
+        document.getElementById('task-start').value = start;
+        document.getElementById('task-end').value = end;
+        
+        document.getElementById('task-title-input').value = '';
+        document.getElementById('task-desc-input').value = '';
+        
+        document.getElementById('taskModalTitle').innerText = 'Add Timetable Task';
+        document.getElementById('task-delete-btn').classList.add('hidden');
+        document.getElementById('task-add-another-btn').classList.add('hidden');
+        
+        let defaultBtn = document.querySelector('.select-color-btn');
+        if (defaultBtn) {
+            selectColor(defaultBtn, '#4f46e5');
+        }
+        
+        openTaskModal();
+    }
+
+    function handleTaskClick(event, taskId) {
+        event.stopPropagation();
+        
+        let task = timetableData.tasks.find(t => t.id == taskId);
+        if (!task) return;
+        
+        document.getElementById('task-id').value = task.id;
+        document.getElementById('task-day').value = task.day_of_week;
+        document.getElementById('task-start').value = task.start_time;
+        document.getElementById('task-end').value = task.end_time;
+        
+        document.getElementById('task-title-input').value = task.title;
+        document.getElementById('task-desc-input').value = task.description || '';
+        
+        document.getElementById('taskModalTitle').innerText = 'Edit Timetable Task';
+        document.getElementById('task-delete-btn').classList.remove('hidden');
+        document.getElementById('task-add-another-btn').classList.remove('hidden');
+        
+        let colorHex = task.color || '#4f46e5';
+        let colorBtn = Array.from(document.querySelectorAll('.select-color-btn')).find(b => b.getAttribute('data-color') === colorHex);
+        if (colorBtn) {
+            selectColor(colorBtn, colorHex);
+        } else {
+            let defaultBtn = document.querySelector('.select-color-btn');
+            if (defaultBtn) selectColor(defaultBtn, '#4f46e5');
+        }
+        
+        openTaskModal();
+    }
+
+    function prepareAddAnotherTask() {
+        document.getElementById('task-id').value = '';
+        document.getElementById('task-title-input').value = '';
+        document.getElementById('task-desc-input').value = '';
+        
+        document.getElementById('taskModalTitle').innerText = 'Add Secondary Task';
+        document.getElementById('task-delete-btn').classList.add('hidden');
+        document.getElementById('task-add-another-btn').classList.add('hidden');
+        
+        let defaultBtn = document.querySelector('.select-color-btn');
+        if (defaultBtn) {
+            selectColor(defaultBtn, '#4f46e5');
+        }
+    }
+
+    function saveTaskFromModal() {
+        let id = document.getElementById('task-id').value;
+        let title = document.getElementById('task-title-input').value.trim();
+        let description = document.getElementById('task-desc-input').value.trim();
+        let color = document.getElementById('task-color-val').value;
+        let day = parseInt(document.getElementById('task-day').value);
+        let start = document.getElementById('task-start').value;
+        let end = document.getElementById('task-end').value;
+        
+        if (!title) {
+            alert("Please enter a task title.");
+            return;
+        }
+        
+        let payload = {
+            title: title,
+            description: description,
+            color: color,
+            day_of_week: day,
+            start_time: start,
+            end_time: end
+        };
+        if (id) {
+            payload.id = parseInt(id);
+        }
+        
+        fetch('/api/timetable/save-task/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify(payload)
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                closeTaskModal();
+                window.showToast("Task saved successfully", "success");
+                initTimetable();
+            } else {
+                alert("Error saving task: " + res.error);
+            }
+        });
+    }
+
+    function deleteTaskFromModal() {
+        let id = document.getElementById('task-id').value;
+        if (!id) return;
+        
+        if (confirm("Are you sure you want to delete this task?")) {
+            fetch(`/api/timetable/delete-task/${id}/`, {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'}
+            }).then(r => r.json()).then(res => {
+                if (res.success) {
+                    closeTaskModal();
+                    window.showToast("Task deleted successfully", "success");
+                    timetableData.tasks = timetableData.tasks.filter(t => t.id != id);
+                    renderTimetableGrid();
+                } else {
+                    alert("Error deleting task: " + res.error);
+                }
+            });
+        }
+    }
+
+    function handleDeleteTaskBtn(event, id) {
+        event.stopPropagation();
+        if (confirm("Are you sure you want to delete this task?")) {
+            fetch(`/api/timetable/delete-task/${id}/`, {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'}
+            }).then(r => r.json()).then(res => {
+                if (res.success) {
+                    window.showToast("Task deleted successfully", "success");
+                    timetableData.tasks = timetableData.tasks.filter(t => t.id != id);
+                    renderTimetableGrid();
+                } else {
+                    alert("Error deleting task: " + res.error);
+                }
+            });
+        }
+    }
+
+    function changeTimetableState(state) {
+        fetch('/api/timetable/save-state/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ state: state })
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                timetableData.settings.state = state;
+                updateStateUI(state);
+                initTimetable();
+                window.showToast("Operational state updated to " + state, "success");
+            } else {
+                alert("Error shifting state: " + res.error);
+            }
+        }).catch(err => {
+            console.error("Network error saving state:", err);
+        });
+    }
+
+    function updateStateUI(state) {
+        let btnLearning = document.getElementById('stateBtnLearning');
+        let btnAssessment = document.getElementById('stateBtnAssessment');
+        let btnExam = document.getElementById('stateBtnExam');
+        let examNav = document.getElementById('examDateNavigation');
+        let subtitle = document.getElementById('timetable-subtitle');
+
+        let activeClasses = ['bg-white', 'dark:bg-slate-900', 'text-indigo-600', 'shadow-sm'];
+        let inactiveClasses = ['text-gray-500', 'hover:text-gray-900', 'dark:hover:text-white'];
+
+        [btnLearning, btnAssessment, btnExam].forEach(btn => {
+            if (btn) {
+                activeClasses.forEach(c => btn.classList.remove(c));
+                inactiveClasses.forEach(c => btn.classList.add(c));
+            }
+        });
+
+        let activeBtn = null;
+        if (state === 'LEARNING') {
+            activeBtn = btnLearning;
+            if (examNav) examNav.classList.add('hidden');
+            if (subtitle) subtitle.classList.remove('hidden');
+        } else if (state === 'ASSESSMENT') {
+            activeBtn = btnAssessment;
+            if (examNav) examNav.classList.remove('hidden');
+            if (subtitle) subtitle.classList.add('hidden');
+        } else if (state === 'EXAM') {
+            activeBtn = btnExam;
+            if (examNav) examNav.classList.remove('hidden');
+            if (subtitle) subtitle.classList.add('hidden');
+        }
+
+        if (activeBtn) {
+            inactiveClasses.forEach(c => activeBtn.classList.remove(c));
+            activeClasses.forEach(c => activeBtn.classList.add(c));
+        }
+    }
+
+    function renderExamCard(exam) {
+        let descHtml = exam.description ? `<p class="font-normal text-[10px] text-white/80 mt-1 line-clamp-1">${exam.description}</p>` : '';
+        return `
+        <div class="exam-card p-3 rounded-2xl text-white font-extrabold text-xs shadow-md transition-all duration-200 hover:scale-102 hover:shadow-lg cursor-pointer relative group flex flex-col justify-between min-h-[64px]"
+             style="background: ${exam.color || '#4f46e5'}; border-color: rgba(255,255,255,0.15);"
+             onclick="handleExamClick(event, ${exam.id})">
+             <div>
+                 <p class="font-extrabold text-sm text-white line-clamp-2 pr-4">${exam.title}</p>
+                 ${descHtml}
+             </div>
+             <div class="flex items-center justify-between mt-2 pt-1 border-t border-white/10 text-[9px] text-white/70 font-semibold">
+                 <span>Exam Session</span>
+                 <button onclick="handleDeleteExamBtn(event, ${exam.id})" class="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 hover:bg-black/30 rounded-lg p-1 text-white absolute top-2 right-2 print-hide">
+                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                 </button>
+             </div>
+        </div>
+        `;
+    }
+
+    function openExamModal() {
+        let modal = document.getElementById('examModal');
+        let content = document.getElementById('examModalContent');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function closeExamModal() {
+        let modal = document.getElementById('examModal');
+        let content = document.getElementById('examModalContent');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+
+    const ASSESSMENT_COLORS = [
+        { hex: '#059669', name: 'Emerald' },
+        { hex: '#0d9488', name: 'Teal' },
+        { hex: '#0284c7', name: 'Sky Blue' },
+        { hex: '#4f46e5', name: 'Indigo' },
+        { hex: '#d97706', name: 'Amber' }
+    ];
+
+    const EXAM_COLORS = [
+        { hex: '#dc2626', name: 'Crimson' },
+        { hex: '#1d4ed8', name: 'Dark Blue' },
+        { hex: '#7c3aed', name: 'Violet' },
+        { hex: '#c026d3', name: 'Fuchsia' },
+        { hex: '#e11d48', name: 'Rose' }
+    ];
+
+    function populateExamColorPicker(state) {
+        let colors = (state === 'ASSESSMENT') ? ASSESSMENT_COLORS : EXAM_COLORS;
+        let container = document.getElementById('exam-colors-container');
+        if (!container) return;
+        
+        container.innerHTML = colors.map(c => `
+            <button data-color="${c.hex}" 
+                    type="button"
+                    onclick="selectExamColor(this, '${c.hex}')" 
+                    title="${c.name}"
+                    class="w-8 h-8 rounded-full border-2 border-transparent transition-all relative select-exam-color-btn focus:outline-none" 
+                    style="background-color: ${c.hex};">
+            </button>
+        `).join('');
+    }
+
+    function selectExamColor(btn, hex) {
+        document.querySelectorAll('.select-exam-color-btn').forEach(b => {
+            b.classList.remove('ring-4', 'ring-indigo-500/50', 'scale-110');
+        });
+        btn.classList.add('ring-4', 'ring-indigo-500/50', 'scale-110');
+        document.getElementById('exam-color-val').value = hex;
+    }
+
+    function handleExamCellClick(event, date, session) {
+        if (event.target.closest('.exam-card')) return;
+        
+        let state = timetableData.settings.state || 'ASSESSMENT';
+        
+        document.getElementById('exam-id').value = '';
+        document.getElementById('exam-date').value = date;
+        document.getElementById('exam-session').value = session;
+        document.getElementById('exam-period-type').value = state;
+        
+        document.getElementById('exam-title-input').value = '';
+        document.getElementById('exam-desc-input').value = '';
+        
+        let formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('examModalTitle').innerText = 'Schedule Course/Module Exam';
+        document.getElementById('examModalSubtitle').innerText = `${formattedDate} | ${session === 'MORNING' ? 'Morning Session' : 'Afternoon Session'}`;
+        document.getElementById('exam-delete-btn').classList.add('hidden');
+        
+        populateExamColorPicker(state);
+        
+        let colors = (state === 'ASSESSMENT') ? ASSESSMENT_COLORS : EXAM_COLORS;
+        let defaultBtn = document.querySelector(`.select-exam-color-btn[data-color="${colors[0].hex}"]`);
+        if (defaultBtn) {
+            selectExamColor(defaultBtn, colors[0].hex);
+        } else {
+            document.getElementById('exam-color-val').value = colors[0].hex;
+        }
+        
+        openExamModal();
+    }
+
+    function handleExamClick(event, examId) {
+        event.stopPropagation();
+        
+        let exam = timetableData.exams.find(e => e.id == examId);
+        if (!exam) return;
+        
+        let state = timetableData.settings.state || 'ASSESSMENT';
+        
+        document.getElementById('exam-id').value = exam.id;
+        document.getElementById('exam-date').value = exam.date;
+        document.getElementById('exam-session').value = exam.session;
+        document.getElementById('exam-period-type').value = state;
+        
+        document.getElementById('exam-title-input').value = exam.title;
+        document.getElementById('exam-desc-input').value = exam.description || '';
+        
+        let formattedDate = new Date(exam.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('examModalTitle').innerText = 'Edit Course/Module Exam';
+        document.getElementById('examModalSubtitle').innerText = `${formattedDate} | ${exam.session === 'MORNING' ? 'Morning Session' : 'Afternoon Session'}`;
+        document.getElementById('exam-delete-btn').classList.remove('hidden');
+        
+        populateExamColorPicker(state);
+        
+        let colorHex = exam.color || ((state === 'ASSESSMENT') ? ASSESSMENT_COLORS[0].hex : EXAM_COLORS[0].hex);
+        let colorBtn = document.querySelector(`.select-exam-color-btn[data-color="${colorHex}"]`);
+        if (colorBtn) {
+            selectExamColor(colorBtn, colorHex);
+        } else {
+            let defaultBtn = document.querySelector(`.select-exam-color-btn`);
+            if (defaultBtn) selectExamColor(defaultBtn, colorHex);
+        }
+        
+        openExamModal();
+    }
+
+    function saveExamFromModal() {
+        let id = document.getElementById('exam-id').value;
+        let title = document.getElementById('exam-title-input').value.trim();
+        let description = document.getElementById('exam-desc-input').value.trim();
+        let color = document.getElementById('exam-color-val').value;
+        let date = document.getElementById('exam-date').value;
+        let session = document.getElementById('exam-session').value;
+        let period_type = document.getElementById('exam-period-type').value;
+        
+        if (!title) {
+            alert("Please enter an exam title.");
+            return;
+        }
+        
+        let payload = {
+            date: date,
+            session: session,
+            period_type: period_type,
+            title: title,
+            description: description,
+            color: color
+        };
+        if (id) {
+            payload.id = parseInt(id);
+        }
+        
+        fetch('/api/timetable/save-exam/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify(payload)
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                closeExamModal();
+                window.showToast("Exam saved successfully", "success");
+                initTimetable();
+            } else {
+                alert("Error saving exam: " + res.error);
+            }
+        }).catch(err => {
+            console.error("Network error saving exam:", err);
+        });
+    }
+
+    function deleteExamFromModal() {
+        let id = document.getElementById('exam-id').value;
+        if (!id) return;
+        
+        if (confirm("Are you sure you want to delete this exam?")) {
+            fetch(`/api/timetable/delete-exam/${id}/`, {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'}
+            }).then(r => r.json()).then(res => {
+                if (res.success) {
+                    closeExamModal();
+                    window.showToast("Exam deleted successfully", "success");
+                    timetableData.exams = timetableData.exams.filter(e => e.id != id);
+                    renderTimetableGrid();
+                } else {
+                    alert("Error deleting exam: " + res.error);
+                }
+            }).catch(err => {
+                console.error("Network error deleting exam:", err);
+            });
+        }
+    }
+
+    function handleDeleteExamBtn(event, id) {
+        event.stopPropagation();
+        if (confirm("Are you sure you want to delete this exam?")) {
+            fetch(`/api/timetable/delete-exam/${id}/`, {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'}
+            }).then(r => r.json()).then(res => {
+                if (res.success) {
+                    window.showToast("Exam deleted successfully", "success");
+                    timetableData.exams = timetableData.exams.filter(e => e.id != id);
+                    renderTimetableGrid();
+                } else {
+                    alert("Error deleting exam: " + res.error);
+                }
+            }).catch(err => {
+                console.error("Network error deleting exam:", err);
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initTimetable();
+    });
+</script>
+
+<style>
+    /* Digital ID Card 3D Flip Styles */
+    .id-card-wrapper {
+        perspective: 1000px;
+    }
+    .id-card-inner {
+        transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-style: preserve-3d;
+        height: 390px;
+    }
+    .id-card-inner.flipped {
+        transform: rotateY(180deg);
+    }
+    .id-card-front, .id-card-back {
+        backface-visibility: hidden;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .id-card-back {
+        transform: rotateY(180deg);
+    }
+    .transform-style-3d {
+        transform-style: preserve-3d;
+    }
+    .backface-hidden {
+        backface-visibility: hidden;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var qriousScript = document.createElement('script');
+        qriousScript.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+        qriousScript.onload = function() {
+            var qrValue = window.location.origin + "/verify-id/{{ user.username }}/";
+            new QRious({
+                element: document.getElementById('trainer-qr-canvas'),
+                value: qrValue,
+                size: 200,
+                backgroundAlpha: 0,
+                foreground: '#0f172a'
+            });
+        };
+        document.head.appendChild(qriousScript);
+    });
+
+    function toggleCardFlip(cardWrapper) {
+        var cardInner = cardWrapper.querySelector('.id-card-inner');
+        cardInner.classList.toggle('flipped');
+    }
+</script>
+<!-- Student Cards Modal -->
+<div id="studentCardsModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center backdrop-blur-sm bg-gray-900/40 p-4 sm:p-6 transition-opacity opacity-0" style="transition: opacity 0.3s ease;">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-6xl h-[85vh] flex flex-col shadow-2xl border border-gray-100 dark:border-slate-800 transform scale-95 transition-transform" id="studentCardsModalContent" style="transition: transform 0.3s ease;">
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50 rounded-t-3xl">
+            <div>
+                <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                    <span id="studentCardsModalTitle">Classroom ID Cards</span>
+                </h3>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Digital IDs for enrolled students</p>
+            </div>
+            <button onclick="closeStudentCardsModal()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        
+        <!-- Body / Grid -->
+        <div class="p-6 overflow-y-auto flex-1 bg-gray-50 dark:bg-slate-900" id="studentCardsGridContainer">
+            <div id="studentCardsLoading" class="flex flex-col items-center justify-center h-full space-y-4">
+                <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                <p class="text-sm font-bold text-gray-500 animate-pulse">Loading student digital IDs...</p>
+            </div>
+            <div id="studentCardsGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-12">
+                <!-- Cards injected via JS -->
+            </div>
+            <div id="studentCardsEmpty" class="hidden flex flex-col items-center justify-center h-full text-center">
+                <div class="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+                </div>
+                <p class="text-gray-500 font-bold">No students found in this classroom.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openStudentCardsModal(classroomId, classroomName) {
+        document.getElementById('studentCardsModalTitle').textContent = classroomName + ' - Digital IDs';
+        const modal = document.getElementById('studentCardsModal');
+        const modalContent = document.getElementById('studentCardsModalContent');
+        
+        modal.classList.remove('hidden');
+        // trigger reflow
+        void modal.offsetWidth;
+        modal.classList.remove('opacity-0');
+        modalContent.classList.remove('scale-95');
+        
+        document.getElementById('studentCardsLoading').classList.remove('hidden');
+        document.getElementById('studentCardsGrid').classList.add('hidden');
+        document.getElementById('studentCardsEmpty').classList.add('hidden');
+        document.getElementById('studentCardsGrid').innerHTML = '';
+
+        fetch(`/api/classroom/${classroomId}/student-cards/`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('studentCardsLoading').classList.add('hidden');
+                
+                if (!data.success || !data.students || data.students.length === 0) {
+                    document.getElementById('studentCardsEmpty').classList.remove('hidden');
+                    return;
+                }
+                
+                const grid = document.getElementById('studentCardsGrid');
+                grid.classList.remove('hidden');
+                
+                data.students.forEach(student => {
+                    // Small card layout matching the theme
+                    let qrUrl = window.location.origin + "/verify-id/" + student.username + "/";
+                    let schoolName = data.school_name || 'Centennial';
+                    
+                    let cardHtml = `
+                    <div class="id-card-wrapper w-full h-[300px] cursor-pointer group" onclick="toggleCardFlip(this)">
+                        <div class="id-card-inner relative w-full h-full text-center transition-transform duration-700 ease-in-out transform-style-3d">
+                            
+                            <!-- Front -->
+                            <div class="id-card-front absolute inset-0 w-full h-full rounded-3xl p-5 backface-hidden flex flex-col justify-between overflow-hidden shadow-lg border border-white/20 bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-700 text-white group-hover:shadow-xl transition-shadow">
+                                <!-- Poly Background Structure -->
+                                <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
+                                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10" style="clip-path: polygon(100% 0, 0 0, 100% 100%);"></div>
+                                    <div class="absolute top-1/4 -left-10 w-32 h-32 bg-white/5" style="clip-path: polygon(0 0, 100% 50%, 0 100%);"></div>
+                                    <div class="absolute bottom-0 right-0 w-40 h-40 bg-black/10" style="clip-path: polygon(100% 100%, 0 100%, 100% 0);"></div>
+                                    <div class="absolute -bottom-5 -left-5 w-32 h-32 bg-white/10" style="clip-path: polygon(0 100%, 0 0, 100% 100%);"></div>
+                                </div>
+                                <div class="absolute -top-10 -right-10 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                                
+                                <div class="flex justify-between items-center pb-2 border-b border-white/15 relative z-10">
+                                    <span class="text-[8px] font-black tracking-[0.2em] uppercase opacity-75">Student ID</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider bg-amber-500 text-white">Lvl ${student.level}</span>
+                                </div>
+                                
+                                <div class="my-3 relative z-10">
+                                    <div class="w-20 h-20 mx-auto rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden border-2 border-white/30 shadow-md">
+                                        ${student.profile_picture ? '<img src="' + student.profile_picture + '" class="w-full h-full object-cover">' : '<div class="text-3xl font-black text-white/40">' + student.username.charAt(0).toUpperCase() + '</div>'}
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-1 relative z-10 flex-1 flex flex-col justify-center">
+                                    <h3 class="text-base font-black leading-tight line-clamp-1">${student.full_name}</h3>
+                                    <p class="text-[9px] font-bold opacity-75 tracking-wider uppercase">👨‍🎓 Student &bull; ${student.classroom_name}</p>
+                                </div>
+                                
+                                <div class="flex justify-between items-end pt-2 border-t border-white/15 mt-2 relative z-10">
+                                    <div class="text-left">
+                                        <p class="text-[6px] font-bold opacity-60 uppercase tracking-widest mb-0.5">ID No.</p>
+                                        <p class="text-[10px] font-black font-mono text-cyan-200">${student.username}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[6px] font-bold opacity-60 uppercase tracking-widest mb-0.5">Inst</p>
+                                        <p class="text-[8px] font-black truncate max-w-[80px]" title="${schoolName}">${schoolName}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Back -->
+                            <div class="id-card-back absolute inset-0 w-full h-full rounded-3xl p-5 backface-hidden flex flex-col justify-between items-center overflow-hidden shadow-lg border border-white/20 bg-slate-900 text-white transform rotate-y-180">
+                                <!-- Poly Background Structure -->
+                                <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
+                                    <div class="absolute -top-10 -left-10 w-48 h-48 bg-white/10" style="clip-path: polygon(0 0, 100% 0, 0 100%);"></div>
+                                    <div class="absolute top-1/4 -right-10 w-40 h-40 bg-white/5" style="clip-path: polygon(100% 0, 100% 100%, 0 50%);"></div>
+                                    <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5" style="clip-path: polygon(0 100%, 100% 100%, 0 0);"></div>
+                                    <div class="absolute -bottom-5 -right-5 w-40 h-40 bg-white/10" style="clip-path: polygon(100% 100%, 100% 0, 0 100%);"></div>
+                                </div>
+                                <div class="w-full flex justify-between items-center pb-2 border-b border-white/10 relative z-10">
+                                    <span class="text-[8px] font-black tracking-[0.2em] uppercase opacity-75">Verification</span>
+                                    <div class="flex items-center gap-1">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="my-3 flex flex-col items-center flex-1 justify-center">
+                                    <div class="p-2 bg-white rounded-xl shadow-lg inline-block">
+                                        <canvas class="student-qr-canvas w-24 h-24" data-url="${qrUrl}"></canvas>
+                                    </div>
+                                    <p class="text-[7px] font-bold text-gray-400 uppercase tracking-widest mt-2">Scan to verify</p>
+                                </div>
+                                
+                                <div class="w-full text-center space-y-1 pt-2 border-t border-white/10">
+                                    <p class="text-[7px] text-gray-500 font-medium leading-none">Tap to flip</p>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    `;
+                    grid.insertAdjacentHTML('beforeend', cardHtml);
+                });
+
+                // render QRs
+                document.querySelectorAll('.student-qr-canvas').forEach(canvas => {
+                    new QRious({
+                        element: canvas,
+                        value: canvas.getAttribute('data-url'),
+                        size: 150,
+                        backgroundAlpha: 0,
+                        foreground: '#0f172a'
+                    });
+                });
+            })
+            .catch(err => {
+                console.error("Error fetching student cards:", err);
+                document.getElementById('studentCardsLoading').classList.add('hidden');
+                document.getElementById('studentCardsEmpty').classList.remove('hidden');
+                document.getElementById('studentCardsEmpty').querySelector('p').textContent = "Failed to load student IDs.";
+            });
+    }
+
+    function closeStudentCardsModal() {
+        const modal = document.getElementById('studentCardsModal');
+        const modalContent = document.getElementById('studentCardsModalContent');
+        modal.classList.add('opacity-0');
+        modalContent.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+</script>
 {% endblock %}

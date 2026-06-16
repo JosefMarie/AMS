@@ -152,78 +152,294 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
-        <!-- Announcements Feed -->
+        <!-- Left Side: Attendance Gauge & News Feed -->
         <div class="lg:col-span-1 space-y-6">
-            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2 mb-4">
-                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                </svg>
-                Classroom News
-            </h3>
-            <div class="space-y-4">
-                {% if user.student_profile.level == 'Graduated' %}
-                <div class="glass-card p-6 text-center border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50">
-                    <div class="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center mx-auto mb-3">
-                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
-                        </svg>
+            <!-- Digital ID Flip Card -->
+            <div class="w-full flex flex-col items-center mb-6">
+                <div class="id-card-wrapper w-full max-w-[280px] h-[380px] cursor-pointer" onclick="toggleCardFlip(this)">
+                    <div class="id-card-inner relative w-full h-full text-center transition-transform duration-700 ease-in-out transform-style-3d">
+                        
+                        <!-- Card Front -->
+                        <div class="id-card-front absolute inset-0 w-full h-full rounded-3xl p-6 backface-hidden flex flex-col justify-between overflow-hidden shadow-xl border border-white/20 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-850 text-white">
+                            <!-- Poly Background Structure -->
+                            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
+                                <div class="absolute -top-10 -right-10 w-48 h-48 bg-white/10" style="clip-path: polygon(100% 0, 0 0, 100% 100%);"></div>
+                                <div class="absolute top-1/4 -left-10 w-40 h-40 bg-white/5" style="clip-path: polygon(0 0, 100% 50%, 0 100%);"></div>
+                                <div class="absolute bottom-0 right-0 w-48 h-48 bg-black/10" style="clip-path: polygon(100% 100%, 0 100%, 100% 0);"></div>
+                                <div class="absolute -bottom-5 -left-5 w-40 h-40 bg-white/10" style="clip-path: polygon(0 100%, 0 0, 100% 100%);"></div>
+                            </div>
+                            
+                            <!-- Glossmorphic overlay -->
+                            <div class="absolute -top-16 -right-16 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+                            <div class="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/20 rounded-full blur-xl"></div>
+                            
+                            <!-- Card Header -->
+                            <div class="flex justify-between items-center pb-3 border-b border-white/15 relative z-10">
+                                <span class="text-[9px] font-black tracking-[0.2em] uppercase opacity-75">Student ID Badge</span>
+                                <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-500 text-white">Active</span>
+                            </div>
+                            
+                            <!-- Profile Picture Area -->
+                            <div class="my-4 relative z-10">
+                                <div class="w-24 h-24 mx-auto rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden border-2 border-white/30 shadow-md">
+                                    {% if user.student_profile.profile_picture %}
+                                    <img src="{{ user.student_profile.profile_picture.url }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                    <div class="text-4xl font-black text-white/40">{{ user.username|first|upper }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Personal Details -->
+                            <div class="space-y-1 relative z-10">
+                                <h3 class="text-lg font-black leading-tight">{{ user.get_full_name|default:user.username }}</h3>
+                                <p class="text-[10px] font-bold opacity-75 tracking-wider uppercase">Level: {{ user.student_profile.level|default:"Active Student" }}</p>
+                                <p class="text-[9px] font-medium opacity-65">{{ user.student_profile.classroom.name|default:"General Course" }}</p>
+                            </div>
+                            
+                            <!-- Card Footer -->
+                            <div class="flex justify-between items-end pt-3 border-t border-white/15 mt-2 relative z-10">
+                                <div class="text-left">
+                                    <p class="text-[7px] font-bold opacity-60 uppercase tracking-widest mb-0.5">Registration ID</p>
+                                    <p class="text-xs font-black font-mono text-yellow-300">{{ sid }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[7px] font-bold opacity-60 uppercase tracking-widest mb-0.5">Institution</p>
+                                    <p class="text-[9px] font-black truncate max-w-[100px]">{{ user.student_profile.classroom.teacher.school_name|default:user.school_name|default:"Centennial TVET" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Card Back -->
+                        <div class="id-card-back absolute inset-0 w-full h-full rounded-3xl p-6 backface-hidden flex flex-col justify-between items-center overflow-hidden shadow-xl border border-white/20 bg-slate-900 text-white transform rotate-y-180">
+                            <!-- Poly Background Structure -->
+                            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
+                                <div class="absolute -top-10 -left-10 w-48 h-48 bg-white/10" style="clip-path: polygon(0 0, 100% 0, 0 100%);"></div>
+                                <div class="absolute top-1/4 -right-10 w-40 h-40 bg-white/5" style="clip-path: polygon(100% 0, 100% 100%, 0 50%);"></div>
+                                <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5" style="clip-path: polygon(0 100%, 100% 100%, 0 0);"></div>
+                                <div class="absolute -bottom-5 -right-5 w-40 h-40 bg-white/10" style="clip-path: polygon(100% 100%, 100% 0, 0 100%);"></div>
+                            </div>
+                            
+                            <!-- Back Header -->
+                            <div class="w-full flex justify-between items-center pb-3 border-b border-white/10 relative z-10">
+                                <span class="text-[9px] font-black tracking-[0.2em] uppercase opacity-75">Verification System</span>
+                                <div class="flex items-center gap-1">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <span class="text-[8px] font-bold text-emerald-400 uppercase">AMS Sec</span>
+                                </div>
+                            </div>
+                            
+                            <!-- QR Code Container -->
+                            <div class="my-4 flex flex-col items-center">
+                                <div class="p-3 bg-white rounded-2xl shadow-lg inline-block">
+                                    <canvas id="student-qr-canvas" class="w-32 h-32"></canvas>
+                                </div>
+                                <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-3">Scan to verify credentials</p>
+                            </div>
+                            
+                            <!-- Validation details -->
+                            <div class="w-full text-center space-y-1 pt-2 border-t border-white/10">
+                                <p class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Digital Signature ID</p>
+                                <p class="text-[9px] text-gray-300 font-mono">AMS-{{ user.id }}-{{ sid }}</p>
+                                <p class="text-[7px] text-gray-500 font-medium leading-none">Tap again to flip front</p>
+                            </div>
+                        </div>
+                        
                     </div>
-                    <p class="text-xs font-black text-indigo-600 uppercase tracking-widest mb-1">Alumni Status</p>
-                    <p class="text-[11px] text-gray-500 font-medium">You have graduated and your classroom chapter is complete. Your achievements and records live on below.</p>
                 </div>
-                {% elif announcements %}
-                <!-- beautify ignore:start -->
-                {% for announcement in announcements %}<div class="glass-card p-4 border-l-4 border-indigo-600 animate-slide-up hover:shadow-md transition-all">
-                    <div class="flex justify-between items-start mb-1">
-                        <h4 class="text-xs font-black text-gray-900 uppercase tracking-tighter">{{ announcement.title }}</h4>
-                        <span class="text-[9px] font-bold text-gray-400 capitalize">{{ announcement.created_at|timesince }} ago</span>
+            </div>
+
+            <!-- Attendance Gauge Card -->
+            <div class="glass-card p-6 flex flex-col items-center justify-center text-center bg-white dark:bg-slate-900 border border-gray-150 dark:border-slate-800 shadow-xl">
+                <div class="relative w-32 h-32 mb-4">
+                    <svg class="w-full h-full transform -rotate-90">
+                        <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-100 dark:text-slate-800" />
+                        <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent" class="text-indigo-600" stroke-dasharray="364.4" stroke-dashoffset="{{ att_offset }}" />
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center text-2xl font-black text-gray-900 dark:text-white">{{ att_pct }}%</div>
+                </div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">My Attendance</h3>
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mt-0.5">Overall Attendance Rate</p>
+                <div class="grid grid-cols-3 gap-2 w-full mt-4 pt-4 border-t border-gray-150 dark:border-slate-800">
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-emerald-600">P</p>
+                        <p class="text-base font-black text-gray-900 dark:text-white">{{ present_att }}</p>
                     </div>
-                    <p class="text-[11px] text-gray-600 leading-relaxed line-clamp-3">{{ announcement.content }}</p>
-                </div>{% endfor %}
-                <!-- beautify ignore:end -->
-                {% else %}
-                <div class="glass-card p-6 text-center border-dashed border-2 border-gray-100 bg-transparent">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No recent news</p>
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-amber-600">L</p>
+                        <p class="text-base font-black text-gray-900 dark:text-white">{{ late_att }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-rose-500">A</p>
+                        <p class="text-base font-black text-gray-900 dark:text-white">{{ absent_att }}</p>
+                    </div>
                 </div>
-                {% endif %}
+            </div>
+
+            <!-- News Feed -->
+            <div class="space-y-6">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                    Classroom News
+                </h3>
+                <div class="space-y-4">
+                    {% if user.student_profile.level == 'Graduated' %}
+                    <div class="glass-card p-6 text-center border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 dark:border-slate-800">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
+                            </svg>
+                        </div>
+                        <p class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Alumni Status</p>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-450 font-medium">You have graduated and your classroom chapter is complete. Your achievements and records live on below.</p>
+                    </div>
+                    {% elif announcements %}
+                    {% for announcement in announcements %}
+                    <div class="glass-card p-4 border-l-4 border-indigo-600 animate-slide-up hover:shadow-md transition-all bg-white dark:bg-slate-900 border-t border-r border-b border-gray-150 dark:border-slate-800">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ announcement.title }}</h4>
+                            <span class="text-[9px] font-bold text-gray-400 capitalize">{{ announcement.created_at|timesince }} ago</span>
+                        </div>
+                        <p class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">{{ announcement.content }}</p>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="glass-card p-6 text-center border-dashed border-2 border-gray-100 dark:border-slate-800 bg-transparent">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No recent news</p>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
-        <!-- Progress Table -->
-        <div class="lg:col-span-3">
-            <div class="px-8 py-6 border-b border-gray-100 bg-white/50 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gray-900">Academic Progress</h3><span
-                    class="text-xs font-bold text-indigo-600 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 uppercase tracking-tighter">Live
-                    Updates</span>
+        <!-- Progress Table & Attendance Log Tabs -->
+        <div class="lg:col-span-3 glass-card overflow-hidden bg-white dark:bg-slate-900 border border-gray-150 dark:border-slate-800 shadow-xl flex flex-col justify-between">
+            <div class="px-8 py-4 border-b border-gray-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="flex gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl">
+                    <button id="tabMarksBtn" onclick="switchStudentTab('marks')" class="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all bg-white dark:bg-slate-900 text-indigo-650 dark:text-indigo-400 shadow-sm">
+                        Marks & Progress
+                    </button>
+                    <button id="tabAttendanceBtn" onclick="switchStudentTab('attendance')" class="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all text-gray-500 hover:text-gray-900 dark:hover:text-white">
+                        Attendance Logs
+                    </button>
+                </div>
+                <span id="tabBadge" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30 uppercase tracking-tighter">
+                    Live Updates
+                </span>
             </div>
-            <div class="overflow-x-auto">
+
+            <!-- TAB 1: MARKS & PROGRESS -->
+            <div id="tabMarksContent" class="overflow-x-auto">
                 <table class="w-full text-left">
                     <thead>
-                        <tr class="bg-gray-50/50">
-                            <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Module /
-                                Assessment</th>
-                            <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Date</th>
-                            <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
-                                Score</th>
-                            <th class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">
-                                Status</th>
+                        <tr class="bg-gray-50/50 dark:bg-slate-800/30">
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Module / Assessment</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Date</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest text-center">Score</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest text-right">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50 animate-stagger-children">
-                        <!-- beautify ignore:start -->
-                {% for m in marks %}<tr class="hover:bg-white/80 transition-all group">
-                    <td class="px-8 py-5"><p class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{{ m.assessment.title }}</p><p class="text-[10px] text-gray-400 font-medium uppercase mt-1">{{ m.m_name }}</p></td>
-                    <td class="px-8 py-5 text-sm text-gray-500 font-medium">{{ m.date_recorded|date:"M d, Y" }}</td>
-                    <td class="px-8 py-5 text-center"><div class="inline-flex items-baseline gap-1"><span class="text-base font-black text-gray-900">{{ m.score }}</span><span class="text-xs text-gray-400 font-bold">/ {{ m.m_max }}</span></div></td>
-                    <td class="px-8 py-5 text-right"><span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg {{ m.status_class }}">{{ m.status_label }}</span></td>
-                </tr>{% empty %}<tr><td colspan="4" class="px-8 py-16 text-center text-gray-400 font-bold">No academic records found yet.</td></tr>{% endfor %}
-                <!-- beautify ignore:end -->
+                    <tbody class="divide-y divide-gray-50 dark:divide-slate-800 animate-stagger-children">
+                        {% for m in marks %}
+                        <tr class="hover:bg-white/80 dark:hover:bg-slate-800/20 transition-all group">
+                            <td class="px-8 py-5">
+                                <p class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors">{{ m.assessment.title }}</p>
+                                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase mt-1">{{ m.m_name }}</p>
+                            </td>
+                            <td class="px-8 py-5 text-sm text-gray-500 dark:text-gray-400 font-medium">{{ m.date_recorded|date:"M d, Y" }}</td>
+                            <td class="px-8 py-5 text-center">
+                                <div class="inline-flex items-baseline gap-1">
+                                    <span class="text-base font-black text-gray-900 dark:text-white">{{ m.score }}</span>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500 font-bold">/ {{ m.m_max }}</span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5 text-right">
+                                <span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg {{ m.status_class }}">{{ m.status_label }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-8 py-16 text-center text-gray-400 font-bold">No academic records found yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 2: ATTENDANCE LOGS -->
+            <div id="tabAttendanceContent" class="overflow-x-auto hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50/50 dark:bg-slate-800/30">
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Date</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Classroom / Term</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest">Recorded By</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest text-right">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
+                        {% for log in attendance_logs %}
+                        <tr class="hover:bg-white/80 dark:hover:bg-slate-800/20 transition-all group">
+                            <td class="px-8 py-5 text-sm font-bold text-gray-900 dark:text-white">
+                                {{ log.date|date:"F d, Y" }}
+                            </td>
+                            <td class="px-8 py-5">
+                                <p class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ log.classroom.name|default:"General" }}</p>
+                                <p class="text-[10px] text-gray-400 dark:text-gray-550 font-bold uppercase mt-1">{{ log.term }}</p>
+                            </td>
+                            <td class="px-8 py-5 text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                {{ log.teacher.get_full_name|default:log.teacher.username }}
+                            </td>
+                            <td class="px-8 py-5 text-right">
+                                {% if log.status == 'PRESENT' %}
+                                <span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400">Present</span>
+                                {% elif log.status == 'ABSENT' %}
+                                <span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400">Absent</span>
+                                {% else %}
+                                <span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30 dark:text-amber-400">Late</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-8 py-16 text-center text-gray-400 font-bold">No attendance logs found yet.</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    <script>
+        function switchStudentTab(tab) {
+            const marksBtn = document.getElementById('tabMarksBtn');
+            const attBtn = document.getElementById('tabAttendanceBtn');
+            const marksContent = document.getElementById('tabMarksContent');
+            const attContent = document.getElementById('tabAttendanceContent');
+            const tabBadge = document.getElementById('tabBadge');
+
+            const activeClass = 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm';
+            const inactiveClass = 'text-gray-500 hover:text-gray-900 dark:hover:text-white';
+
+            if (tab === 'marks') {
+                marksBtn.className = `px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${activeClass}`;
+                attBtn.className = `px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${inactiveClass}`;
+                marksContent.classList.remove('hidden');
+                attContent.classList.add('hidden');
+                tabBadge.textContent = 'Live Updates';
+            } else {
+                marksBtn.className = `px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${inactiveClass}`;
+                attBtn.className = `px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${activeClass}`;
+                marksContent.classList.add('hidden');
+                attContent.classList.remove('hidden');
+                tabBadge.textContent = 'Attendance History';
+            }
+        }
+    </script>
 
     <!-- 📚 Classroom Session Plans & Differentiated Summaries -->
     <div class="glass-card p-8 border border-slate-100 dark:border-slate-800 shadow-xl mb-8">
@@ -342,5 +558,58 @@
     .hover-lift-card:hover .icon-report {
         animation: report-fade 0.8s infinite ease-in-out;
     }
+
+    /* Digital ID Card 3D Flip Styles */
+    .id-card-wrapper {
+        perspective: 1000px;
+    }
+    .id-card-inner {
+        transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-style: preserve-3d;
+        height: 380px;
+    }
+    .id-card-inner.flipped {
+        transform: rotateY(180deg);
+    }
+    .id-card-front, .id-card-back {
+        backface-visibility: hidden;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .id-card-back {
+        transform: rotateY(180deg);
+    }
+    .transform-style-3d {
+        transform-style: preserve-3d;
+    }
+    .backface-hidden {
+        backface-visibility: hidden;
+    }
 </style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var qriousScript = document.createElement('script');
+        qriousScript.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+        qriousScript.onload = function() {
+            var qrValue = window.location.origin + "/verify-id/{{ user.username }}/";
+            new QRious({
+                element: document.getElementById('student-qr-canvas'),
+                value: qrValue,
+                size: 200,
+                backgroundAlpha: 0,
+                foreground: '#0f172a'
+            });
+        };
+        document.head.appendChild(qriousScript);
+    });
+
+    function toggleCardFlip(cardWrapper) {
+        var cardInner = cardWrapper.querySelector('.id-card-inner');
+        cardInner.classList.toggle('flipped');
+    }
+</script>
 {% endblock %}

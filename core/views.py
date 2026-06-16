@@ -48,6 +48,8 @@ def dashboard(request):
     from .models import Classroom, Module, StudentProfile, StudentMark, SessionPlan, Attendance
     from django.db.models import Avg, Q
     user = request.user
+    if user.is_authenticated:
+        StudentProfile.objects.get_or_create(user=user)
     context = {}
     active_year, active_term = _get_active_timeline(request)
     
@@ -229,8 +231,103 @@ def dashboard(request):
             receiver=user, status='PENDING'
         ).select_related('requester', 'classroom')
 
+        # Calculate critical students (attendance < 85%)
+        from django.db.models import Count
+        student_profiles = StudentProfile.objects.filter(
+            Q(classroom__teacher=user) | Q(classroom__co_teachers=user)
+        ).select_related('user', 'classroom').distinct()
+        
+        student_att_counts = Attendance.objects.filter(
+            classroom__in=classrooms,
+            academic_year=active_year
+        )
+        if active_term != 'Term 3':
+            student_att_counts = student_att_counts.filter(term=active_term)
+            
+        student_att_counts = student_att_counts.values('student_id').annotate(
+            total=Count('id'),
+            present_or_late=Count('id', filter=Q(status__in=['PRESENT', 'LATE']))
+        )
+        
+        student_pct_map = {
+            item['student_id']: (
+                round(item['present_or_late'] / item['total'] * 100, 1),
+                item['total'],
+                item['total'] - item['present_or_late']
+            )
+            for item in student_att_counts if item['total'] > 0
+        }
+        
+        critical_students = []
+        for profile in student_profiles:
+            s_user = profile.user
+            stats = student_pct_map.get(s_user.id)
+            if stats:
+                pct, total, absent = stats
+                if pct < 85.0:
+                    critical_students.append({
+                        'id': s_user.id,
+                        'name': s_user.get_full_name() or s_user.username,
+                        'username': s_user.username,
+                        'classroom': profile.classroom.name if profile.classroom else 'N/A',
+                        'pct': pct,
+                        'absent_count': absent,
+                        'total_count': total,
+                    })
+        
+        critical_students.sort(key=lambda x: x['pct'])
+        context['critical_students'] = critical_students[:10]
+
+        # Calculate classroom daily attendance trends for Chart.js
+        daily_att = Attendance.objects.filter(
+            classroom__in=classrooms,
+            academic_year=active_year
+        )
+        if active_term != 'Term 3':
+            daily_att = daily_att.filter(term=active_term)
+            
+        daily_att = daily_att.values('classroom_id', 'date').annotate(
+            total=Count('id'),
+            present_or_late=Count('id', filter=Q(status__in=['PRESENT', 'LATE']))
+        ).order_by('date')
+        
+        classroom_chart_data = {}
+        for item in daily_att:
+            c_id = item['classroom_id']
+            if c_id not in classroom_chart_data:
+                classroom_chart_data[c_id] = {'dates': [], 'rates': []}
+            rate = round(item['present_or_late'] / item['total'] * 100, 1) if item['total'] > 0 else 0
+            classroom_chart_data[c_id]['dates'].append(item['date'].strftime('%Y-%m-%d'))
+            classroom_chart_data[c_id]['rates'].append(rate)
+            
+        context['classroom_chart_data_json'] = json.dumps(classroom_chart_data)
+
         return render(request, 'dashboard_teacher.html', context)
     elif user.role == CustomUser.Role.STUDENT:
+        # Get overall student attendance statistics
+        att_qs = Attendance.objects.filter(student=user, academic_year=active_year)
+        if active_term != 'Term 3':
+            att_qs = att_qs.filter(term=active_term)
+        
+        total_att = att_qs.count()
+        present_att = att_qs.filter(status='PRESENT').count()
+        absent_att = att_qs.filter(status='ABSENT').count()
+        late_att = att_qs.filter(status='LATE').count()
+        
+        attendance_pct = round((present_att + late_att) / total_att * 100, 1) if total_att > 0 else 100.0
+        attendance_offset = 364.4 - (364.4 * attendance_pct / 100)
+        
+        context['att_pct'] = attendance_pct
+        context['att_offset'] = attendance_offset
+        context['total_att'] = total_att
+        context['present_att'] = present_att
+        context['absent_att'] = absent_att
+        context['late_att'] = late_att
+        
+        # Detailed logs list
+        attendance_logs = att_qs.select_related('classroom', 'teacher').order_by('-date')
+        context['attendance_logs'] = attendance_logs
+        
         marks_qs = StudentMark.objects.filter(student=user, assessment__academic_year=active_year)
         if active_term != 'Term 3':
             marks_qs = marks_qs.filter(assessment__term=active_term)
@@ -3084,4 +3181,298 @@ def scheme_of_work_pdf_view(request, scheme_id):
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="Scheme_of_Work_{scheme.module_code}.pdf"'
     return response
+
+# --- TIMETABLE API VIEWS ---
+
+@login_required
+def timetable_api(request):
+    import json
+    from django.http import JsonResponse
+    from .models import TimetableTask, TeacherTimetableSettings, TeacherBreakTime, CustomUser, ExamSchedule
+    
+    if request.user.role != CustomUser.Role.TEACHER:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+        
+    settings, created = TeacherTimetableSettings.objects.get_or_create(teacher=request.user)
+    breaks = TeacherBreakTime.objects.filter(teacher=request.user)
+    tasks = TimetableTask.objects.filter(teacher=request.user)
+    
+    settings_data = {
+        "start_hour": settings.start_hour.strftime("%H:%M"),
+        "end_hour": settings.end_hour.strftime("%H:%M"),
+        "state": settings.state,
+        "exam_morning_slot": settings.exam_morning_slot
+    }
+    
+    breaks_data = [
+        {
+            "id": b.id,
+            "title": b.title,
+            "start_time": b.start_time.strftime("%H:%M"),
+            "end_time": b.end_time.strftime("%H:%M")
+        } for b in breaks
+    ]
+    
+    tasks_data = [
+        {
+            "id": t.id,
+            "title": t.title,
+            "description": t.description,
+            "day_of_week": t.day_of_week,
+            "start_time": t.start_time.strftime("%H:%M"),
+            "end_time": t.end_time.strftime("%H:%M"),
+            "color": t.color
+        } for t in tasks
+    ]
+    
+    # Query exams if active state is assessment or final exams
+    exams_data = []
+    if settings.state in ['ASSESSMENT', 'EXAM']:
+        exams = ExamSchedule.objects.filter(teacher=request.user, period_type=settings.state)
+        exams_data = [
+            {
+                "id": e.id,
+                "date": e.date.strftime("%Y-%m-%d"),
+                "session": e.session,
+                "title": e.title,
+                "description": e.description,
+                "color": e.color
+            } for e in exams
+        ]
+    
+    return JsonResponse({
+        "settings": settings_data,
+        "breaks": breaks_data,
+        "tasks": tasks_data,
+        "exams": exams_data
+    })
+
+@login_required
+def save_timetable_task_api(request):
+    import json
+    from django.http import JsonResponse
+    from .models import TimetableTask, CustomUser
+    
+    if request.method != "POST" or request.user.role != CustomUser.Role.TEACHER:
+        return JsonResponse({"error": "Unauthorized or invalid method"}, status=403)
+        
+    try:
+        data = json.loads(request.body)
+        task_id = data.get("id")
+        title = data.get("title", "New Task")
+        description = data.get("description", "")
+        day_of_week = int(data.get("day_of_week", 0))
+        start_time = data.get("start_time")
+        end_time = data.get("end_time")
+        color = data.get("color", "#4f46e5")
+        
+        if task_id:
+            task = TimetableTask.objects.get(id=task_id, teacher=request.user)
+            task.title = title
+            task.description = description
+            task.day_of_week = day_of_week
+            task.start_time = start_time
+            task.end_time = end_time
+            task.color = color
+            task.save()
+        else:
+            task = TimetableTask.objects.create(
+                teacher=request.user,
+                title=title,
+                description=description,
+                day_of_week=day_of_week,
+                start_time=start_time,
+                end_time=end_time,
+                color=color
+            )
+            
+        return JsonResponse({"success": True, "id": task.id})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+@login_required
+def delete_timetable_task_api(request, task_id):
+    from django.http import JsonResponse
+    from .models import TimetableTask, CustomUser
+    if request.method == "POST" and request.user.role == CustomUser.Role.TEACHER:
+        TimetableTask.objects.filter(id=task_id, teacher=request.user).delete()
+        return JsonResponse({"success": True})
+    return JsonResponse({"error": "Unauthorized"}, status=403)
+
+@login_required
+def save_timetable_settings_api(request):
+    import json
+    from django.http import JsonResponse
+    from .models import TeacherTimetableSettings, TeacherBreakTime, CustomUser
+    
+    if request.method != "POST" or request.user.role != CustomUser.Role.TEACHER:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+        
+    try:
+        data = json.loads(request.body)
+        settings, created = TeacherTimetableSettings.objects.get_or_create(teacher=request.user)
+        if "start_hour" in data:
+            settings.start_hour = data["start_hour"]
+        if "end_hour" in data:
+            settings.end_hour = data["end_hour"]
+        settings.save()
+        
+        if "breaks" in data:
+            TeacherBreakTime.objects.filter(teacher=request.user).delete()
+            for b in data["breaks"]:
+                if b.get("start_time") and b.get("end_time"):
+                    TeacherBreakTime.objects.create(
+                        teacher=request.user,
+                        title=b.get("title", "Break"),
+                        start_time=b["start_time"],
+                        end_time=b["end_time"]
+                    )
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+@login_required
+def save_timetable_state_api(request):
+    import json
+    from django.http import JsonResponse
+    from .models import TeacherTimetableSettings, CustomUser
+    
+    if request.method != "POST" or request.user.role != CustomUser.Role.TEACHER:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+        
+    try:
+        data = json.loads(request.body)
+        settings, created = TeacherTimetableSettings.objects.get_or_create(teacher=request.user)
+        if "state" in data:
+            settings.state = data["state"]
+        if "exam_morning_slot" in data:
+            settings.exam_morning_slot = data["exam_morning_slot"]
+        settings.save()
+        return JsonResponse({"success": True, "state": settings.state, "exam_morning_slot": settings.exam_morning_slot})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+@login_required
+def save_timetable_exam_api(request):
+    import json
+    from django.http import JsonResponse
+    from .models import ExamSchedule, CustomUser
+    from datetime import datetime
+    
+    if request.method != "POST" or request.user.role != CustomUser.Role.TEACHER:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+        
+    try:
+        data = json.loads(request.body)
+        exam_id = data.get("id")
+        date_str = data.get("date")
+        session = data.get("session")
+        period_type = data.get("period_type")
+        title = data.get("title", "New Exam")
+        description = data.get("description", "")
+        color = data.get("color", "#4f46e5")
+        
+        if not date_str or not session or not period_type:
+            return JsonResponse({"error": "Missing required fields"}, status=400)
+            
+        date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        
+        if exam_id:
+            exam = ExamSchedule.objects.get(id=exam_id, teacher=request.user)
+            exam.date = date
+            exam.session = session
+            exam.period_type = period_type
+            exam.title = title
+            exam.description = description
+            exam.color = color
+            exam.save()
+        else:
+            exam = ExamSchedule.objects.create(
+                teacher=request.user,
+                date=date,
+                session=session,
+                period_type=period_type,
+                title=title,
+                description=description,
+                color=color
+            )
+        return JsonResponse({"success": True, "id": exam.id})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+@login_required
+def delete_timetable_exam_api(request, exam_id):
+    from django.http import JsonResponse
+    from .models import ExamSchedule, CustomUser
+    if request.method == "POST" and request.user.role == CustomUser.Role.TEACHER:
+        ExamSchedule.objects.filter(id=exam_id, teacher=request.user).delete()
+        return JsonResponse({"success": True})
+    return JsonResponse({"error": "Unauthorized"}, status=403)
+
+def verify_id_view(request, username):
+    from django.shortcuts import get_object_or_404, render
+    from .models import CustomUser, StudentProfile, Classroom
+    import datetime
+    
+    user = get_object_or_404(CustomUser, username=username)
+    profile, _ = StudentProfile.objects.get_or_create(user=user)
+    
+    context = {
+        'verified_user': user,
+        'profile': profile,
+        'verification_time': datetime.datetime.now(),
+    }
+    
+    if user.role == CustomUser.Role.STUDENT:
+        context['role_title'] = "Student"
+        context['class_name'] = profile.classroom.name if profile.classroom else "General Course"
+        context['id_number'] = profile.student_id or f"STU-2026-{user.id}"
+        # Dynamically resolve institution name from student classroom's teacher
+        context['institution_name'] = (
+            profile.classroom.teacher.school_name 
+            if profile.classroom and profile.classroom.teacher and profile.classroom.teacher.school_name 
+            else (user.school_name or "Centennial TVET Academy")
+        )
+    elif user.role == CustomUser.Role.TEACHER:
+        context['role_title'] = "Trainer"
+        context['id_number'] = f"TRN-2026-{user.id}"
+        trades_list = [t.name for t in user.trades.all()]
+        context['trades_str'] = ", ".join(trades_list) if trades_list else "All Subjects"
+        classrooms = Classroom.objects.filter(teacher=user)
+        context['classroom_names'] = ", ".join([c.name for c in classrooms]) if classrooms.exists() else "No Active Classrooms"
+        context['institution_name'] = user.school_name or "Centennial TVET Academy"
+    else:
+        context['role_title'] = "Admin"
+        context['id_number'] = f"ADM-2026-{user.id}"
+        context['institution_name'] = user.school_name or "Centennial TVET Academy"
+        
+    return render(request, 'verify_id.html', context)
+
+@login_required
+def classroom_student_cards_api(request, class_id):
+    from django.http import JsonResponse
+    from django.shortcuts import get_object_or_404
+    from .models import Classroom, StudentProfile
+    
+    classroom = get_object_or_404(Classroom, id=class_id)
+    # Check permissions (must be classroom owner or co-teacher)
+    if classroom.teacher != request.user and not classroom.co_teachers.filter(id=request.user.id).exists():
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+        
+    students = StudentProfile.objects.filter(classroom=classroom).select_related('user')
+    data = []
+    for s in students:
+        # Resolve dynamic school name
+        school_name = classroom.teacher.school_name or s.user.school_name or "Centennial TVET Academy"
+        data.append({
+            'username': s.user.username,
+            'full_name': s.user.get_full_name() or s.user.username,
+            'student_id': s.student_id or f"STU-2026-{s.user.id}",
+            'level': s.level or "Active Student",
+            'profile_picture': s.profile_picture.url if s.profile_picture else None,
+            'school_name': school_name,
+            'classroom_name': classroom.name,
+            'user_id': s.user.id
+        })
+    return JsonResponse({"success": True, "students": data, "school_name": classroom.teacher.school_name})
 

@@ -414,3 +414,64 @@ class SchemeOfWorkWeek(models.Model):
     def __str__(self):
         return f"{self.scheme.module_code} - Week {self.week_number}"
 
+# --- TIMETABLE MODELS ---
+
+class TeacherTimetableSettings(models.Model):
+    teacher = models.OneToOneField(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': CustomUser.Role.TEACHER}, related_name='timetable_settings')
+    start_hour = models.TimeField(default=datetime.time(8, 0))
+    end_hour = models.TimeField(default=datetime.time(17, 0))
+    state = models.CharField(
+        max_length=20,
+        choices=[('LEARNING', 'Learning Period'), ('ASSESSMENT', 'Assessment Period'), ('EXAM', 'Final Exam Period')],
+        default='LEARNING'
+    )
+    exam_morning_slot = models.CharField(
+        max_length=20,
+        choices=[('08:30-11:30', '08:30 - 11:30'), ('09:00-12:00', '09:00 - 12:00')],
+        default='09:00-12:00'
+    )
+    
+    def __str__(self):
+        return f"{self.teacher.username}'s Timetable Settings"
+
+class TeacherBreakTime(models.Model):
+    teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': CustomUser.Role.TEACHER}, related_name='break_times')
+    title = models.CharField(max_length=100, default="Break")
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    def __str__(self):
+        return f"{self.title} ({self.start_time} - {self.end_time})"
+
+class TimetableTask(models.Model):
+    teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': CustomUser.Role.TEACHER}, related_name='timetable_tasks')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    day_of_week = models.IntegerField(help_text="0=Monday, 1=Tuesday, ..., 4=Friday")
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    color = models.CharField(max_length=20, default="#4f46e5")
+
+    def __str__(self):
+        return f"{self.title} on Day {self.day_of_week}"
+
+class ExamSchedule(models.Model):
+    class SessionType(models.TextChoices):
+        MORNING = 'MORNING', _('Morning Session')
+        AFTERNOON = 'AFTERNOON', _('Afternoon Session')
+
+    class PeriodType(models.TextChoices):
+        ASSESSMENT = 'ASSESSMENT', _('Assessment Period')
+        EXAM = 'EXAM', _('Final Exam Period')
+
+    teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': CustomUser.Role.TEACHER})
+    date = models.DateField()
+    session = models.CharField(max_length=20, choices=SessionType.choices)
+    period_type = models.CharField(max_length=20, choices=PeriodType.choices)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    color = models.CharField(max_length=20, default="#4f46e5")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.period_type} - {self.date} ({self.session}): {self.title}"

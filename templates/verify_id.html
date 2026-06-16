@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto py-12 px-6 animate-fadeIn">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase tracking-widest mb-3">
+            <svg class="w-4 h-4 text-emerald-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Verified Identity
+        </span>
+        <h1 class="text-3xl font-black text-gray-900 dark:text-white leading-tight">Identity Verification</h1>
+        <p class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-1">Official Academy Management System Portal</p>
+    </div>
+
+    <!-- Verification Card -->
+    <div class="glass-card p-8 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/40 dark:border-slate-800 shadow-2xl relative overflow-hidden text-center rounded-3xl">
+        <!-- Accent Gradients -->
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl"></div>
+
+        <!-- Verification Watermark -->
+        <div class="absolute inset-0 flex items-center justify-center opacity-[0.02] dark:opacity-[0.04] pointer-events-none select-none">
+            <svg class="w-96 h-96 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+        </div>
+
+        <!-- Profile Pic & Check -->
+        <div class="relative inline-block mb-6">
+            <div class="w-32 h-32 mx-auto rounded-3xl bg-indigo-50 dark:bg-slate-800 flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-850 shadow-xl">
+                {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" class="w-full h-full object-cover">
+                {% else %}
+                <div class="text-5xl font-black text-indigo-300 dark:text-slate-600">{{ verified_user.username|first|upper }}</div>
+                {% endif %}
+            </div>
+            <!-- Checkmark float badge -->
+            <span class="absolute -bottom-2 -right-2 p-2 bg-emerald-500 text-white rounded-2xl shadow-lg border-4 border-white dark:border-slate-900">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+            </span>
+        </div>
+
+        <!-- Member info -->
+        <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-1 leading-none">{{ verified_user.get_full_name|default:verified_user.username }}</h2>
+        <p class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mb-4">@{{ verified_user.username }}</p>
+
+        <!-- Role Badge -->
+        <div class="mb-6">
+            {% if verified_user.role == 'STUDENT' %}
+            <span class="px-5 py-2.5 rounded-2xl text-xs font-black bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20 uppercase tracking-widest inline-block">
+                🎓 Active Student
+            </span>
+            {% elif verified_user.role == 'TEACHER' %}
+            <span class="px-5 py-2.5 rounded-2xl text-xs font-black bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/20 uppercase tracking-widest inline-block">
+                👩‍🏫 Faculty Trainer
+            </span>
+            {% else %}
+            <span class="px-5 py-2.5 rounded-2xl text-xs font-black bg-gradient-to-r from-gray-700 to-gray-900 text-white shadow-lg uppercase tracking-widest inline-block">
+                🛠️ Admin Officer
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Verification details grid -->
+        <div class="grid grid-cols-2 gap-4 max-w-md mx-auto text-left bg-gray-50/50 dark:bg-slate-800/30 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 mb-6 relative z-10">
+            <div>
+                <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">Registration ID</p>
+                <p class="text-sm font-black text-gray-900 dark:text-white font-mono">{{ id_number }}</p>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">School / Academy</p>
+                <p class="text-sm font-black text-gray-900 dark:text-white">{{ institution_name }}</p>
+            </div>
+            
+            {% if verified_user.role == 'STUDENT' %}
+            <div class="col-span-2 border-t border-gray-100 dark:border-slate-800/80 pt-3 mt-1">
+                <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">Assigned Class</p>
+                <p class="text-sm font-black text-gray-900 dark:text-white">{{ class_name }}</p>
+            </div>
+            {% elif verified_user.role == 'TEACHER' %}
+            <div class="col-span-2 border-t border-gray-100 dark:border-slate-800/80 pt-3 mt-1">
+                <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">Qualified Trades</p>
+                <p class="text-sm font-black text-gray-900 dark:text-white">{{ trades_str }}</p>
+            </div>
+            <div class="col-span-2 border-t border-gray-100 dark:border-slate-800/80 pt-3">
+                <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">Facilitated Classrooms</p>
+                <p class="text-sm font-black text-gray-900 dark:text-white">{{ classroom_names }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="col-span-2 border-t border-gray-100 dark:border-slate-800/80 pt-3">
+                <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">Current Bio</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium italic">"{{ profile.bio|default:"No public biography provided yet." }}"</p>
+            </div>
+        </div>
+
+        <!-- Success Checkbox List -->
+        <div class="space-y-2.5 max-w-xs mx-auto text-left mb-6 font-medium">
+            <div class="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-450">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                <span>Academic Record Match Verified</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-450">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                <span>Active System Account Credentials</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-450">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                <span>Official Signature Status Valid</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="pt-6 border-t border-gray-100 dark:border-slate-800 text-center text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+            Verified on {{ verification_time|date:"Y-m-d H:i:s" }}
+        </div>
+    </div>
+</div>
+{% endblock %}
