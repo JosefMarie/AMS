@@ -111,6 +111,7 @@ class SessionPlan(models.Model):
     teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': CustomUser.Role.TEACHER})
     trainer_name = models.CharField(max_length=100, blank=True)
     template_type = models.CharField(max_length=20, choices=TemplateType.choices, default=TemplateType.THEORY)
+    session_date = models.DateField(null=True, blank=True, help_text="Date for the session plan")
     
     # Common Fields
     sector = models.CharField(max_length=100)

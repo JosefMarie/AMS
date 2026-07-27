@@ -532,7 +532,14 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
             model='gemini-2.5-flash',
             contents=prompt
         )
-        result_text = response.text.replace('```json', '').replace('```', '').strip()
+        import re
+        result_text = response.text.strip()
+        match = re.search(r'\{.*\}', result_text, re.DOTALL)
+        if match:
+            result_text = match.group(0)
+        else:
+            result_text = result_text.replace('```json', '').replace('```', '').strip()
+            
         return json.loads(result_text)
         
     except Exception as e:

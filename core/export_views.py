@@ -37,10 +37,10 @@ def export_attendance_excel(request):
     # Get unique dates
     dates = list(attendances.values_list('date', flat=True).distinct().order_by('date'))
 
-    # Build attendance map: (student.id, date) -> status
+    # Build attendance map: (student_id, date) -> status
     attendance_map = {}
     for att in attendances:
-        attendance_map[(att.student.id, att.date)] = att.status
+        attendance_map[(att.student_id, att.date)] = att.status
 
     # Create Excel workbook
     wb = openpyxl.Workbook()

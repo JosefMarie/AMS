@@ -26,11 +26,10 @@ def parse_curriculum_pdf(curriculum, user=None):
 
     # Upload to Gemini File API
     print(f"Uploading {pdf_path} to Gemini...")
-    with open(pdf_path, 'rb') as f:
-        uploaded_file = client.files.upload(
-            file=f,
-            config=types.UploadFileConfig(mime_type="application/pdf")
-        )
+    uploaded_file = client.files.upload(
+        file=pdf_path,
+        config=types.UploadFileConfig(mime_type="application/pdf")
+    )
 
     # Wait for processing if needed
     while uploaded_file.state and uploaded_file.state.name == 'PROCESSING':
@@ -127,13 +126,18 @@ def parse_curriculum_pdf(curriculum, user=None):
             pass
 
     response_text = response.text.strip()
-    # Remove markdown formatting if the AI ignores instructions
-    if response_text.startswith("```json"):
-        response_text = response_text[7:]
-    if response_text.startswith("```"):
-        response_text = response_text[3:]
-    if response_text.endswith("```"):
-        response_text = response_text[:-3]
+    import re
+    match = re.search(r'\{.*\}', response_text, re.DOTALL)
+    if match:
+        response_text = match.group(0)
+    else:
+        # Fallback manual stripping
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
 
     try:
         data = json.loads(response_text)

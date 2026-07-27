@@ -788,6 +788,8 @@ def edit_session_plan_view(request, session_id):
         session.trade = request.POST.get('trade', '')
         session.level = request.POST.get('level', '')
         session.class_name = request.POST.get('class_name', '')
+        session_date_str = request.POST.get('session_date', '')
+        session.session_date = session_date_str if session_date_str else None
         session.num_students = int(request.POST.get('num_students', 0) or 0)
         session.academic_year = request.POST.get('academic_year', '')
         session.term = request.POST.get('term', '')
@@ -866,12 +868,12 @@ def session_plans_list_view(request):
     if q:
         sessions_qs = sessions_qs.filter(topic__icontains=q)
         
-    sessions = sessions_qs.order_by('-created_at')
+    sessions = sessions_qs.order_by('level', 'module', '-created_at')
     
     for s in sessions:
         s.stype = s.template_type
         s.stopic = s.topic
-        s.sdate = s.created_at.strftime("%b %d, %Y")
+        s.sdate = s.session_date.strftime("%b %d, %Y") if s.session_date else s.created_at.strftime("%b %d, %Y")
         s.s_teacher = s.teacher.get_full_name() or s.teacher.username
         
     return render(request, 'session_plans_list.html', {
@@ -2578,9 +2580,6 @@ def upload_curriculum_view(request):
                 messages.success(request, f"Successfully uploaded and extracted {modules_created} modules from the syllabus!")
             except Exception as e:
                 import traceback
-                print(f"--- AI EXTRACTION ERROR ---")
-                traceback.print_exc()
-                print(f"---------------------------")
                 # Write to file so I can read it
                 with open("extraction_error.log", "w") as f:
                     f.write(traceback.format_exc())

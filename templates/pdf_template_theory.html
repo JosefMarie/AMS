@@ -82,7 +82,7 @@
             <th>Level:</th>
             <td>{{ session.level }}</td>
             <th>Date:</th>
-            <td>{{ session.created_at|date:"d/m/Y" }}</td>
+            <td>{% if session.session_date %}{{ session.session_date|date:"d/m/Y" }}{% else %}{{ session.created_at|date:"d/m/Y" }}{% endif %}</td>
         </tr>
         <tr>
             <th colspan="2">Trainer’s name: {{ session.trainer_name|default:user.get_full_name }}</th>

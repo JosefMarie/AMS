@@ -54,6 +54,11 @@
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
                 </div>
                 <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">📅 Session Date</label>
+                    <input type="date" name="session_date" value="{{ session.session_date|date:'Y-m-d' }}"
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:[color-scheme:dark]">
+                </div>
+                <div>
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Number of Trainees</label>
                     <input type="number" name="num_students" value="{{ session.num_students }}"
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all dark:bg-slate-800 dark:border-slate-700">
@@ -367,17 +372,17 @@
     };
 
     // Pre-populate Quill content safely
-    editors.objectives.root.innerHTML = `{{ session.objectives|safe|linebreaksbr }}`;
-    editors.hse.root.innerHTML = `{{ session.hse_considerations|safe|linebreaksbr }}`;
-    editors.cross.root.innerHTML = `{{ session.cross_cutting_issues|safe|linebreaksbr }}`;
-    editors.sen.root.innerHTML = `{{ session.special_needs_support|safe|linebreaksbr }}`;
-    editors.resources.root.innerHTML = `{{ session.resources|safe|linebreaksbr }}`;
-    editors.reflection.root.innerHTML = `{{ session.reflection|safe|linebreaksbr }}`;
-    editors.references.root.innerHTML = `{{ session.references|safe|linebreaksbr }}`;
-    editors.summary.root.innerHTML = `{{ session.student_summary|safe }}`;
-    editors.slow.root.innerHTML = `{{ session.slow_learners_strategy|safe }}`;
-    editors.advanced.root.innerHTML = `{{ session.advanced_learners_strategy|safe }}`;
-    editors.inclusivity.root.innerHTML = `{{ session.inclusivity_strategy|safe }}`;
+    editors.objectives.root.innerHTML = "{{ session.objectives|linebreaksbr|escapejs }}";
+    editors.hse.root.innerHTML = "{{ session.hse_considerations|linebreaksbr|escapejs }}";
+    editors.cross.root.innerHTML = "{{ session.cross_cutting_issues|linebreaksbr|escapejs }}";
+    editors.sen.root.innerHTML = "{{ session.special_needs_support|linebreaksbr|escapejs }}";
+    editors.resources.root.innerHTML = "{{ session.resources|linebreaksbr|escapejs }}";
+    editors.reflection.root.innerHTML = "{{ session.reflection|linebreaksbr|escapejs }}";
+    editors.references.root.innerHTML = "{{ session.references|linebreaksbr|escapejs }}";
+    editors.summary.root.innerHTML = "{{ session.student_summary|escapejs }}";
+    editors.slow.root.innerHTML = "{{ session.slow_learners_strategy|escapejs }}";
+    editors.advanced.root.innerHTML = "{{ session.advanced_learners_strategy|escapejs }}";
+    editors.inclusivity.root.innerHTML = "{{ session.inclusivity_strategy|escapejs }}";
 
     // Sync Quill contents to hidden fields on submit
     document.getElementById('editor-form').addEventListener('submit', function() {
