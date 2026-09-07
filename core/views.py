@@ -22,8 +22,19 @@ def _get_active_timeline(request):
     from .models import AcademicYear, SystemSetting
     settings = SystemSetting.get_settings()
     
-    session_year_id = request.session.get('view_year_id')
-    session_term = request.session.get('view_term')
+    session_year_id = request.session.get('view_year_id') or request.COOKIES.get('ams_view_year_id')
+    session_term = request.session.get('view_term') or request.COOKIES.get('ams_view_term')
+    
+    if session_year_id and not request.session.get('view_year_id'):
+        try:
+            request.session['view_year_id'] = int(session_year_id)
+            request.session.modified = True
+        except (ValueError, TypeError):
+            pass
+
+    if session_term and not request.session.get('view_term'):
+        request.session['view_term'] = str(session_term)
+        request.session.modified = True
     
     active_year = None
     if session_year_id:
@@ -45,13 +56,15 @@ def home(request):
 
 @login_required
 def dashboard(request):
-    from .models import Classroom, Module, StudentProfile, StudentMark, SessionPlan, Attendance
+    from .models import Classroom, Module, StudentProfile, StudentMark, SessionPlan, Attendance, SystemSetting
     from django.db.models import Avg, Q
     user = request.user
     if user.is_authenticated:
         StudentProfile.objects.get_or_create(user=user)
     context = {}
+    settings = SystemSetting.get_settings()
     active_year, active_term = _get_active_timeline(request)
+    context['settings'] = settings
     
     if user.role == CustomUser.Role.ADMIN:
         context['student_count'] = StudentProfile.objects.count()
@@ -146,11 +159,20 @@ def dashboard(request):
     elif user.role == CustomUser.Role.TEACHER:
         from django.utils import timezone
         today = timezone.localdate()
-        sessions = SessionPlan.objects.filter(
-            teacher=user,
-            created_at__date=today,
-            term=active_term
-        ).order_by('-created_at')
+        is_historical = (active_year and settings.current_academic_year and active_year.id != settings.current_academic_year.id)
+        if is_historical:
+            sessions = SessionPlan.objects.filter(
+                teacher=user,
+                term=active_term
+            ).order_by('-created_at')[:10]
+            if not sessions.exists():
+                sessions = SessionPlan.objects.filter(teacher=user).order_by('-created_at')[:10]
+        else:
+            sessions = SessionPlan.objects.filter(
+                teacher=user,
+                created_at__date=today,
+                term=active_term
+            ).order_by('-created_at')
         for s in sessions:
             s.stype = s.template_type
             s.stopic = s.topic
@@ -163,7 +185,15 @@ def dashboard(request):
         total_students = 0
         for c in classrooms:
             c.cname = c.name
-            c.scount = c.students.count()
+            if is_historical:
+                hist_student_ids = set(
+                    Attendance.objects.filter(classroom=c, academic_year=active_year).values_list('student_id', flat=True)
+                ) | set(
+                    StudentMark.objects.filter(assessment__module__classroom=c, assessment__academic_year=active_year).values_list('student_id', flat=True)
+                )
+                c.scount = len(hist_student_ids) if hist_student_ids else c.students.count()
+            else:
+                c.scount = c.students.count()
             c.mcount = c.modules.count()
             c.is_owner = (c.teacher == user)
             total_students += c.scount
@@ -183,9 +213,22 @@ def dashboard(request):
         context['avg_attendance'] = round((present_att / total_att * 100), 1) if total_att > 0 else 0
 
         # Gender Breakdown for Overview
-        teacher_students = StudentProfile.objects.filter(
-            Q(classroom__teacher=user) | Q(classroom__co_teachers=user)
-        ).distinct().order_by('user__first_name', 'user__last_name')
+        if is_historical:
+            hist_students_all = set(
+                Attendance.objects.filter(classroom__in=classrooms, academic_year=active_year).values_list('student_id', flat=True)
+            ) | set(
+                StudentMark.objects.filter(assessment__module__classroom__in=classrooms, assessment__academic_year=active_year).values_list('student_id', flat=True)
+            )
+            if hist_students_all:
+                teacher_students = StudentProfile.objects.filter(user_id__in=hist_students_all).distinct()
+            else:
+                teacher_students = StudentProfile.objects.filter(
+                    Q(classroom__teacher=user) | Q(classroom__co_teachers=user)
+                ).distinct().order_by('user__first_name', 'user__last_name')
+        else:
+            teacher_students = StudentProfile.objects.filter(
+                Q(classroom__teacher=user) | Q(classroom__co_teachers=user)
+            ).distinct().order_by('user__first_name', 'user__last_name')
         context['total_boys'] = teacher_students.filter(sex='Male').count()
         context['total_girls'] = teacher_students.filter(sex='Female').count()
 
@@ -300,7 +343,67 @@ def dashboard(request):
             classroom_chart_data[c_id]['dates'].append(item['date'].strftime('%Y-%m-%d'))
             classroom_chart_data[c_id]['rates'].append(rate)
             
-        context['classroom_chart_data_json'] = json.dumps(classroom_chart_data)
+        # Check classroom progression and promotion status for the active academic year
+        # ONLY display promotion status if we are on the current academic year, NOT when viewing past archives!
+        pending_promotion_classrooms = []
+        completed_promotion_classrooms = []
+
+        if not is_historical:
+            for cls in classrooms:
+                c_name = cls.name or ''
+                c_upper = c_name.upper()
+                c_lvl = "Level 3"
+                if "LEVEL 5" in c_upper or " L5" in c_upper or c_upper.startswith("L5") or "-L5" in c_upper or "5" in c_upper:
+                    c_lvl = "Level 5"
+                elif "LEVEL 4" in c_upper or " L4" in c_upper or c_upper.startswith("L4") or "-L4" in c_upper or "4" in c_upper:
+                    c_lvl = "Level 4"
+
+                enrolled_students = cls.students.exclude(level='Graduated')
+                student_count = enrolled_students.count()
+
+                # Check if any students in this class have a level mismatch (e.g. L3 student in L4 class, or L4 student in L5 class)
+                has_mismatched_students = False
+                for s in enrolled_students:
+                    s_lvl = (s.level or "").upper()
+                    if c_lvl == "Level 5" and ("4" in s_lvl or "3" in s_lvl):
+                        has_mismatched_students = True
+                        break
+                    elif c_lvl == "Level 4" and "3" in s_lvl:
+                        has_mismatched_students = True
+                        break
+
+                # Check if promotions have been logged for this classroom
+                has_recent_promotion_log = AuditLog.objects.filter(
+                    Q(action="Classroom Promotions Finalized") | Q(action__in=["Student Promoted", "Student Graduated", "Student Repeated Year"]),
+                    details__icontains=cls.name
+                ).exists()
+
+                # If students are already at the matching level, or class is empty, it's completed
+                is_pending = False
+                if has_mismatched_students:
+                    is_pending = True
+                elif student_count > 0 and not has_recent_promotion_log and active_term == 'Term 3':
+                    is_pending = True
+
+                cls_info = {
+                    'id': cls.id,
+                    'name': cls.name,
+                    'level': c_lvl,
+                    'count': student_count,
+                    'is_l5': c_lvl == "Level 5",
+                    'is_l4': c_lvl == "Level 4",
+                    'is_l3': c_lvl == "Level 3",
+                    'is_empty': student_count == 0,
+                }
+
+                if is_pending:
+                    pending_promotion_classrooms.append(cls_info)
+                else:
+                    completed_promotion_classrooms.append(cls_info)
+
+        context['pending_promotion_classrooms'] = pending_promotion_classrooms
+        context['completed_promotion_classrooms'] = completed_promotion_classrooms
+        context['all_promotions_completed'] = (not is_historical) and (len(pending_promotion_classrooms) == 0 and len(completed_promotion_classrooms) > 0)
 
         return render(request, 'dashboard_teacher.html', context)
     elif user.role == CustomUser.Role.STUDENT:
@@ -1020,8 +1123,23 @@ def perform_attendance_view(request, class_id):
     attendance_records = Attendance.objects.filter(classroom=classroom, date=date_str, academic_year=active_year)
     attendance_dict = {record.student_id: record.status for record in attendance_records}
 
+    settings = SystemSetting.get_settings()
+    is_historical = bool(active_year and settings.current_academic_year and active_year.id != settings.current_academic_year.id)
+
     # Pre-calculate student info
-    profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
+    if is_historical:
+        hist_student_ids = set(
+            Attendance.objects.filter(classroom=classroom, academic_year=active_year).values_list('student_id', flat=True)
+        ) | set(
+            StudentMark.objects.filter(assessment__module__classroom=classroom, assessment__academic_year=active_year).values_list('student_id', flat=True)
+        )
+        if hist_student_ids:
+            profiles = StudentProfile.objects.filter(user_id__in=hist_student_ids).select_related('user').order_by('user__first_name', 'user__last_name')
+        else:
+            profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
+    else:
+        profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
+        
     students_data = []
     for p in profiles:
         students_data.append({
@@ -1047,8 +1165,25 @@ def manage_class_view(request, class_id):
         return redirect('dashboard')
     # Only show modules owned by the current teacher
     modules = classroom.modules.filter(teacher=request.user)
+    
+    active_year, active_term = _get_active_timeline(request)
+    settings = SystemSetting.get_settings()
+    is_historical = bool(active_year and settings.current_academic_year and active_year.id != settings.current_academic_year.id)
+    
     # Pre-calculate student data to avoid template logic breakage
-    profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
+    if is_historical:
+        hist_student_ids = set(
+            Attendance.objects.filter(classroom=classroom, academic_year=active_year).values_list('student_id', flat=True)
+        ) | set(
+            StudentMark.objects.filter(assessment__module__classroom=classroom, assessment__academic_year=active_year).values_list('student_id', flat=True)
+        )
+        if hist_student_ids:
+            profiles = StudentProfile.objects.filter(user_id__in=hist_student_ids).select_related('user').order_by('user__first_name', 'user__last_name')
+        else:
+            profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
+    else:
+        profiles = classroom.students.all().select_related('user').order_by('user__first_name', 'user__last_name')
+        
     students_list = []
     for p in profiles:
         students_list.append({
@@ -1061,7 +1196,6 @@ def manage_class_view(request, class_id):
         })
     
     # Fetch all assessments for this teacher's modules
-    active_year, active_term = _get_active_timeline(request)
     assessments = Assessment.objects.filter(module__classroom=classroom, academic_year=active_year, module__teacher=request.user).select_related('module').order_by('-created_at')
     if active_term != 'Term 3':
         assessments = assessments.filter(term=active_term)
@@ -1302,7 +1436,8 @@ def delete_session_view(request, session_id):
 @login_required
 def add_student_view(request, class_id):
     from .models import Classroom, StudentProfile
-    classroom = get_object_or_404(Classroom, id=class_id, teacher=request.user)
+    from django.db.models import Q
+    classroom = get_object_or_404(Classroom, Q(teacher=request.user) | Q(co_teachers=request.user), id=class_id)
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -1329,7 +1464,8 @@ def add_student_view(request, class_id):
         profile = StudentProfile.objects.create(
             user=student,
             classroom=classroom,
-            sex=sex
+            sex=sex,
+            level=classroom.name
         )
         
         AuditLog.objects.create(
@@ -1342,6 +1478,107 @@ def add_student_view(request, class_id):
         return redirect('manage_class', class_id=class_id)
     
     return render(request, 'add_student.html', {'classroom': classroom})
+
+
+@login_required
+def bulk_add_students_api(request, class_id):
+    from django.http import JsonResponse
+    from django.db import transaction
+    from django.db.models import Q
+    import json, re, random
+    from .models import Classroom, StudentProfile, AuditLog, CustomUser
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST method required.'}, status=405)
+        
+    classroom = Classroom.objects.filter(Q(teacher=request.user) | Q(co_teachers=request.user), id=class_id).first()
+    if not classroom:
+        return JsonResponse({'success': False, 'error': 'Classroom not found or permission denied.'}, status=403)
+        
+    try:
+        body = json.loads(request.body.decode('utf-8'))
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Invalid JSON payload: {str(e)}'}, status=400)
+        
+    students_data = body.get('students', [])
+    if not students_data or not isinstance(students_data, list):
+        return JsonResponse({'success': False, 'error': 'No students provided in batch payload.'}, status=400)
+        
+    created_students = []
+    skipped_count = 0
+    
+    try:
+        with transaction.atomic():
+            for item in students_data:
+                first_name = (item.get('first_name') or '').strip()
+                last_name = (item.get('last_name') or '').strip()
+                sex = (item.get('sex') or 'Male').strip()
+                if sex not in ['Male', 'Female']:
+                    sex = 'Male'
+                    
+                if not first_name and not last_name:
+                    skipped_count += 1
+                    continue
+                    
+                # Candidate username
+                custom_username = (item.get('username') or '').strip()
+                if custom_username:
+                    base_username = re.sub(r'[^a-zA-Z0-9._-]', '', custom_username.lower())
+                else:
+                    raw_name = f"{first_name}.{last_name}".lower() if (first_name and last_name) else (first_name or last_name).lower()
+                    base_username = re.sub(r'[^a-zA-Z0-9._-]', '', raw_name)
+                    
+                if not base_username:
+                    base_username = f"student_{classroom.id}_{random.randint(100, 999)}"
+                    
+                # Ensure username uniqueness
+                candidate = base_username
+                counter = 1
+                while CustomUser.objects.filter(username=candidate).exists():
+                    candidate = f"{base_username}{counter}"
+                    counter += 1
+                    
+                # Create user with default student password
+                user = CustomUser.objects.create_user(
+                    username=candidate,
+                    first_name=first_name,
+                    last_name=last_name,
+                    role=CustomUser.Role.STUDENT,
+                    password='student123'
+                )
+                
+                # Create StudentProfile
+                profile = StudentProfile.objects.create(
+                    user=user,
+                    classroom=classroom,
+                    sex=sex,
+                    level=classroom.name
+                )
+                
+                created_students.append({
+                    'id': user.id,
+                    'username': candidate,
+                    'full_name': user.get_full_name() or candidate,
+                    'student_id': profile.student_id or f"STU-2026-{user.id}",
+                    'sex': sex
+                })
+                
+            if created_students:
+                AuditLog.objects.create(
+                    user=request.user,
+                    action="Bulk Added Students",
+                    details=f"Batch registered {len(created_students)} students to classroom '{classroom.name}'."
+                )
+    except Exception as err:
+        return JsonResponse({'success': False, 'error': f"Failed to save batch: {str(err)}"}, status=500)
+        
+    return JsonResponse({
+        'success': True,
+        'created_count': len(created_students),
+        'skipped_count': skipped_count,
+        'students': created_students,
+        'message': f"Successfully created and registered {len(created_students)} student(s) into {classroom.name}!"
+    })
 
 @login_required
 def add_module_view(request, class_id):
@@ -1579,19 +1816,36 @@ def edit_student_view(request, student_id):
     student = get_object_or_404(CustomUser, id=student_id, role=CustomUser.Role.STUDENT)
     profile = get_object_or_404(StudentProfile, user=student)
     
-    # Security: Ensure teacher owns this classroom
-    if profile.classroom.teacher != request.user:
+    # Security: Ensure teacher owns this classroom, is a co-teacher, or is admin
+    is_authorized = (
+        profile.classroom.teacher == request.user or 
+        profile.classroom.co_teachers.filter(id=request.user.id).exists() or 
+        request.user.role == CustomUser.Role.ADMIN
+    )
+    if not is_authorized:
         messages.error(request, "You do not have permission to edit this student.")
         return redirect('dashboard')
     
     if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'reset_password':
+            student.set_password('student123')
+            student.save(update_fields=['password'])
+            AuditLog.objects.create(
+                user=request.user,
+                action="Reset Student Password",
+                details=f"Password for student {student.username} was reset to default ('student123') by {request.user.username}."
+            )
+            messages.success(request, f"Password for {student.get_full_name() or student.username} has been reset to default: 'student123'")
+            return redirect('manage_class', class_id=profile.classroom.id)
+
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
         username = request.POST.get('username')
         sex = request.POST.get('sex')
         
         # Check if username is taken by someone else
-        if CustomUser.objects.filter(username=username).exclude(id=student.id).exists():
+        if CustomUser.objects.filter(username__iexact=username).exclude(id=student.id).exists():
             messages.error(request, f"Username '{username}' is already taken.")
         else:
             student.first_name = first_name
@@ -1823,16 +2077,36 @@ def interactive_gradebook(request, class_id):
     if request.user.role != CustomUser.Role.TEACHER:
         return redirect('dashboard')
     
-    from .models import Classroom, StudentProfile, Module, StudentMark
+    from .models import Classroom, StudentProfile, Module, StudentMark, Attendance, SystemSetting
     classroom = get_object_or_404(Classroom, id=class_id)
     if classroom.teacher != request.user and request.user not in classroom.co_teachers.all():
         return redirect('dashboard')
-    students = StudentProfile.objects.filter(classroom=classroom).order_by('user__first_name', 'user__last_name')
+        
+    active_year, active_term = _get_active_timeline(request)
+    settings = SystemSetting.get_settings()
+    is_historical = bool(active_year and settings.current_academic_year and active_year.id != settings.current_academic_year.id)
+
+    if is_historical:
+        hist_student_ids = set(
+            Attendance.objects.filter(classroom=classroom, academic_year=active_year).values_list('student_id', flat=True)
+        ) | set(
+            StudentMark.objects.filter(assessment__module__classroom=classroom, assessment__academic_year=active_year).values_list('student_id', flat=True)
+        )
+        if hist_student_ids:
+            students = StudentProfile.objects.filter(user_id__in=hist_student_ids).order_by('user__first_name', 'user__last_name')
+        else:
+            students = StudentProfile.objects.filter(classroom=classroom).order_by('user__first_name', 'user__last_name')
+    else:
+        students = StudentProfile.objects.filter(classroom=classroom).order_by('user__first_name', 'user__last_name')
+        
     # Teachers (both primary and co-teachers) only see their own modules in the gradebook
     modules = Module.objects.filter(classroom=classroom, teacher=request.user)
     
     # Pre-fetch marks for performance
-    marks = StudentMark.objects.filter(student__student_profile__in=students, assessment__module__in=modules)
+    marks_qs = StudentMark.objects.filter(student__student_profile__in=students, assessment__module__in=modules)
+    if active_year:
+        marks_qs = marks_qs.filter(assessment__academic_year=active_year)
+    marks = list(marks_qs)
     
     # Build a matrix: student_id -> {module_id -> score}
     score_matrix = {}
@@ -1985,25 +2259,66 @@ def bulk_grade_import(request):
 
 @login_required
 def edit_profile(request):
+    import re
     from .forms import StudentProfileForm
-    from .models import StudentProfile
+    from .models import StudentProfile, AuditLog, Notification, CustomUser
     profile, created = StudentProfile.objects.get_or_create(user=request.user)
     
     if request.method == 'POST':
         form = StudentProfileForm(request.POST, request.FILES, instance=profile)
+        new_username = request.POST.get('username', '').strip()
         new_email = request.POST.get('email', '').strip()
         new_key = request.POST.get('gemini_api_key', '').strip()
+
+        username_error = None
+        if new_username and new_username != request.user.username:
+            if not re.match(r'^[a-zA-Z0-9._-]{3,30}$', new_username):
+                username_error = "Username must be between 3 and 30 characters and can only contain letters, numbers, dots (.), underscores (_), and hyphens (-)."
+            elif CustomUser.objects.filter(username__iexact=new_username).exclude(id=request.user.id).exists():
+                username_error = f"The username '{new_username}' is already taken. Please choose another username."
+
+        if username_error:
+            messages.error(request, username_error)
+            return render(request, 'edit_profile.html', {
+                'form': form,
+                'submitted_username': new_username,
+                'username_error': username_error
+            })
+
         if form.is_valid():
             form.save()
+            updated_fields = []
+
+            # Save username if changed
+            if new_username and new_username != request.user.username:
+                old_username = request.user.username
+                request.user.username = new_username
+                updated_fields.append('username')
+                AuditLog.objects.create(
+                    user=request.user,
+                    action="Changed Username",
+                    details=f"User updated login username from '@{old_username}' to '@{new_username}'"
+                )
+                Notification.objects.create(
+                    user=request.user,
+                    message=f"Your login username was successfully updated to @{new_username}. Remember to use it on your next sign-in.",
+                    notification_type=Notification.NotificationType.INFO
+                )
+
             # Save email on the user account
             if new_email != request.user.email:
                 request.user.email = new_email
-                request.user.save(update_fields=['email'])
+                updated_fields.append('email')
+
             # Save Gemini API key on the user account (Strategy D)
             if new_key != request.user.gemini_api_key:
                 request.user.gemini_api_key = new_key
-                request.user.save(update_fields=['gemini_api_key'])
-            messages.success(request, "Profile updated successfully!")
+                updated_fields.append('gemini_api_key')
+
+            if updated_fields:
+                request.user.save(update_fields=updated_fields)
+
+            messages.success(request, f"Profile updated successfully! Your login username is @{request.user.username}.")
             return redirect('dashboard')
     else:
         form = StudentProfileForm(instance=profile)
@@ -2329,15 +2644,76 @@ def manage_user_emails(request):
     })
 
 @login_required
+def admin_reset_user_password(request, user_id):
+    from django.http import JsonResponse
+    from .models import CustomUser, AuditLog, Notification
+    
+    if request.user.role != CustomUser.Role.ADMIN:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Unauthorized access.'}, status=403)
+        messages.error(request, "Unauthorized access. Only administrators can reset user passwords.")
+        return redirect('dashboard')
+        
+    if request.method != 'POST':
+        return redirect('manage_user_emails')
+        
+    target_user = get_object_or_404(CustomUser, id=user_id)
+    
+    # Determine default password
+    if target_user.role == CustomUser.Role.STUDENT:
+        default_pwd = 'student123'
+    elif target_user.role == CustomUser.Role.TEACHER:
+        default_pwd = 'teacher123'
+    else:
+        default_pwd = 'ams2026'
+        
+    target_user.set_password(default_pwd)
+    target_user.save(update_fields=['password'])
+    
+    AuditLog.objects.create(
+        user=request.user,
+        action="Admin Reset Password",
+        details=f"Admin {request.user.username} reset password of user '{target_user.username}' ({target_user.role}) to default ('{default_pwd}')."
+    )
+    
+    Notification.objects.create(
+        user=target_user,
+        message=f"Your account password has been reset to default ({default_pwd}) by the administrator.",
+        notification_type=Notification.NotificationType.INFO
+    )
+    
+    msg = f"Password for {target_user.get_full_name() or target_user.username} (@{target_user.username}) was successfully reset to default: '{default_pwd}'"
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+        return JsonResponse({
+            'success': True,
+            'message': msg,
+            'default_password': default_pwd,
+            'user_id': target_user.id,
+            'username': target_user.username
+        })
+        
+    messages.success(request, msg)
+    referer = request.META.get('HTTP_REFERER')
+    if referer and '/login' not in referer:
+        return redirect(referer)
+    return redirect('manage_user_emails')
+
+
+@login_required
 def promote_students_view(request, class_id):
     from .models import Classroom, StudentProfile, AuditLog, Notification, SystemSetting
     from django.shortcuts import get_object_or_404
     from django.contrib import messages
+    from django.db.models import Q
 
     classroom = get_object_or_404(Classroom, pk=class_id)
     
-    # Authorize: Only Classroom Trainer or Admin
-    if request.user.role != CustomUser.Role.ADMIN and classroom.teacher != request.user:
+    # Authorize: Classroom Trainer, Co-Teacher, or Admin
+    is_owner = classroom.teacher == request.user
+    is_co_teacher = classroom.co_teachers.filter(id=request.user.id).exists()
+    is_admin = request.user.role == CustomUser.Role.ADMIN
+    if not (is_owner or is_co_teacher or is_admin):
         messages.error(request, "You are not authorized to manage promotions for this classroom.")
         return redirect('dashboard')
 
@@ -2347,26 +2723,37 @@ def promote_students_view(request, class_id):
 
     # Determine current level of the classroom/students
     current_level = None
-    if classroom.name:
-        for lvl in ["Level 3", "Level 4", "Level 5"]:
-            if lvl.lower() in classroom.name.lower():
-                current_level = lvl
-                break
+    name_upper = (classroom.name or "").upper()
+    if "LEVEL 5" in name_upper or " L5" in name_upper or name_upper.startswith("L5") or "-L5" in name_upper or " 5" in name_upper:
+        current_level = "Level 5"
+    elif "LEVEL 4" in name_upper or " L4" in name_upper or name_upper.startswith("L4") or "-L4" in name_upper or " 4" in name_upper:
+        current_level = "Level 4"
+    elif "LEVEL 3" in name_upper or " L3" in name_upper or name_upper.startswith("L3") or "-L3" in name_upper or " 3" in name_upper:
+        current_level = "Level 3"
     
     if not current_level and students.exists():
         for s in students:
             if s.level:
-                current_level = s.level
-                break
-            if s.student_id and s.student_id.startswith('L'):
-                code = s.student_id.split('-')[0]
-                if code == 'L3':
-                    current_level = "Level 3"
-                elif code == 'L4':
-                    current_level = "Level 4"
-                elif code == 'L5':
+                s_lvl = s.level.upper()
+                if "5" in s_lvl:
                     current_level = "Level 5"
-                if current_level:
+                    break
+                elif "4" in s_lvl:
+                    current_level = "Level 4"
+                    break
+                elif "3" in s_lvl:
+                    current_level = "Level 3"
+                    break
+            if s.student_id:
+                sid_up = s.student_id.upper()
+                if sid_up.startswith('L5'):
+                    current_level = "Level 5"
+                    break
+                elif sid_up.startswith('L4'):
+                    current_level = "Level 4"
+                    break
+                elif sid_up.startswith('L3'):
+                    current_level = "Level 3"
                     break
 
     if not current_level:
@@ -2380,17 +2767,45 @@ def promote_students_view(request, class_id):
     else:
         next_level = "Graduated"
 
-    # Query next level classrooms and current level classrooms
-    next_classrooms = Classroom.objects.filter(name__icontains=next_level).order_by('name')
-    same_classrooms = Classroom.objects.filter(name__icontains=current_level).order_by('name')
+    # Query next level classrooms and current level classrooms with flexible matching
+    if next_level == "Level 4":
+        next_classrooms = Classroom.objects.filter(
+            Q(name__icontains="Level 4") | Q(name__icontains="L4") | Q(name__icontains="4")
+        ).exclude(pk=classroom.pk).order_by('name')
+    elif next_level == "Level 5":
+        next_classrooms = Classroom.objects.filter(
+            Q(name__icontains="Level 5") | Q(name__icontains="L5") | Q(name__icontains="5")
+        ).exclude(pk=classroom.pk).order_by('name')
+    else:
+        next_classrooms = Classroom.objects.none()
+
+    if current_level == "Level 3":
+        same_classrooms = Classroom.objects.filter(
+            Q(name__icontains="Level 3") | Q(name__icontains="L3") | Q(name__icontains="3")
+        ).order_by('name')
+    elif current_level == "Level 4":
+        same_classrooms = Classroom.objects.filter(
+            Q(name__icontains="Level 4") | Q(name__icontains="L4") | Q(name__icontains="4")
+        ).order_by('name')
+    else:
+        same_classrooms = Classroom.objects.filter(
+            Q(name__icontains="Level 5") | Q(name__icontains="L5") | Q(name__icontains="5")
+        ).order_by('name')
+
     all_classrooms = Classroom.objects.all().order_by('name')
 
     if request.method == 'POST':
         promoted_count = 0
         repeated_count = 0
         
-        student_ids = request.POST.getlist('student_ids')
-        for sid in student_ids:
+        # Collect candidate student IDs from checkboxes OR any student with an action submitted
+        submitted_ids = set(request.POST.getlist('student_ids'))
+        for s in students:
+            action_val = request.POST.get(f'action_{s.id}')
+            if action_val and action_val in ['promote', 'repeat']:
+                submitted_ids.add(str(s.id))
+
+        for sid in submitted_ids:
             try:
                 student = StudentProfile.objects.get(pk=sid, classroom=classroom)
                 action = request.POST.get(f'action_{sid}')
@@ -2401,24 +2816,24 @@ def promote_students_view(request, class_id):
                     
                     from .notifications import send_promotion_email
                     if next_level == 'Graduated':
-                        student.classroom = None
-                        student.save()
-                        
-                        # Audit Log & Notification
-                        AuditLog.objects.create(
-                            user=request.user,
-                            action="Student Graduated",
-                            details=f"Graduated student {student.user.get_full_name()} (ID: {student.student_id}) after Level 5 completion."
-                        )
-                        Notification.objects.create(
-                            user=student.user,
-                            message=f"Congratulations! You have completed Level 5 and officially graduated from the academy!",
-                            notification_type='success'
-                        )
-                        send_promotion_email(student, 'promote', old_level, next_level)
+                       student.classroom = None
+                       student.save()
+                       
+                       # Audit Log & Notification
+                       AuditLog.objects.create(
+                           user=request.user,
+                           action="Student Graduated",
+                           details=f"Graduated student {student.user.get_full_name() or student.user.username} (ID: {student.student_id}) after Level 5 completion."
+                       )
+                       Notification.objects.create(
+                           user=student.user,
+                           message=f"Congratulations! You have completed Level 5 and officially graduated from the academy!",
+                           notification_type='success'
+                       )
+                       send_promotion_email(student, 'promote', old_level, next_level)
                     else:
                         target_class_id = request.POST.get(f'classroom_{sid}')
-                        target_class = get_object_or_404(Classroom, pk=target_class_id) if target_class_id else None
+                        target_class = Classroom.objects.filter(pk=target_class_id).first() if target_class_id else None
                         student.classroom = target_class
                         student.save()
                         
@@ -2426,11 +2841,11 @@ def promote_students_view(request, class_id):
                         AuditLog.objects.create(
                             user=request.user,
                             action="Student Promoted",
-                            details=f"Promoted student {student.user.get_full_name()} (ID: {student.student_id}) from {old_level} to {next_level} in {class_detail}."
+                            details=f"Promoted student {student.user.get_full_name() or student.user.username} (ID: {student.student_id}) from {old_level} to {next_level} in {class_detail}."
                         )
                         Notification.objects.create(
                             user=student.user,
-                            message=f"Congratulations! You have been promoted from {old_level} to {next_level} by your trainer, {request.user.get_full_name()}!",
+                            message=f"Congratulations! You have been promoted from {old_level} to {next_level} by your trainer, {request.user.get_full_name() or request.user.username}!",
                             notification_type='success'
                         )
                         send_promotion_email(student, 'promote', old_level, next_level, target_class.name if target_class else None)
@@ -2440,14 +2855,14 @@ def promote_students_view(request, class_id):
                     if not student.level:
                         student.level = current_level
                     target_class_id = request.POST.get(f'classroom_{sid}')
-                    target_class = get_object_or_404(Classroom, pk=target_class_id) if target_class_id else classroom
+                    target_class = Classroom.objects.filter(pk=target_class_id).first() if target_class_id else classroom
                     student.classroom = target_class
                     student.save()
                     
                     AuditLog.objects.create(
                         user=request.user,
                         action="Student Repeated Year",
-                        details=f"Registered student {student.user.get_full_name()} (ID: {student.student_id}) to repeat {student.level} in classroom {target_class.name}."
+                        details=f"Registered student {student.user.get_full_name() or student.user.username} (ID: {student.student_id}) to repeat {student.level} in classroom {target_class.name}."
                     )
                     Notification.objects.create(
                         user=student.user,
@@ -2462,12 +2877,51 @@ def promote_students_view(request, class_id):
                 pass
 
         if promoted_count or repeated_count:
-            msg = f"Successfully processed actions: {promoted_count} promoted, {repeated_count} registered to repeat."
+            # Log classroom promotion completion milestone
+            AuditLog.objects.create(
+                user=request.user,
+                action="Classroom Promotions Finalized",
+                details=f"Classroom {classroom.id} ({classroom.name}) promotions finalized for Academic Year {settings.current_academic_year.name if settings.current_academic_year else 'active'}: {promoted_count} promoted/graduated, {repeated_count} repeated."
+            )
+
+            # Notify co-trainers / classroom owner so either one knows promotions were executed
+            other_trainers = set()
+            if classroom.teacher and classroom.teacher != request.user:
+                other_trainers.add(classroom.teacher)
+            for ct in classroom.co_teachers.all():
+                if ct != request.user:
+                    other_trainers.add(ct)
+            for tr in other_trainers:
+                Notification.objects.create(
+                    user=tr,
+                    message=f"{request.user.get_full_name() or request.user.username} finalized promotions for {classroom.name}: {promoted_count} promoted/graduated, {repeated_count} repeated.",
+                    notification_type='info'
+                )
+
+            msg = f"Successfully processed actions: {promoted_count} promoted/graduated, {repeated_count} registered to repeat."
             messages.success(request, msg)
         else:
             messages.info(request, "No student actions were processed.")
             
         return redirect('manage_class', class_id=classroom.id)
+
+    # Check if promotions for this classroom are already finalized (switches UI to Adjustment / Correction Mode)
+    has_mismatched = False
+    for s in students:
+        s_lvl = (s.level or "").upper()
+        if current_level == "Level 5" and ("4" in s_lvl or "3" in s_lvl):
+            has_mismatched = True
+            break
+        elif current_level == "Level 4" and "3" in s_lvl:
+            has_mismatched = True
+            break
+
+    has_recent_promo_log = AuditLog.objects.filter(
+        Q(action="Classroom Promotions Finalized") | Q(action__in=["Student Promoted", "Student Graduated", "Student Repeated Year"]),
+        details__icontains=classroom.name
+    ).exists()
+
+    is_finalized = (not has_mismatched and has_recent_promo_log) or (not has_mismatched and current_term != 'Term 3' and students.count() > 0)
 
     return render(request, 'promote_students.html', {
         'classroom': classroom,
@@ -2478,31 +2932,102 @@ def promote_students_view(request, class_id):
         'next_classrooms': next_classrooms,
         'same_classrooms': same_classrooms,
         'all_classrooms': all_classrooms,
+        'is_finalized': is_finalized,
     })
 
 
 @login_required
 def timeline_select_view(request):
-    if request.method == 'POST':
-        year_id = request.POST.get('academic_year_id')
-        term = request.POST.get('term')
+    year_id = request.POST.get('academic_year_id') or request.GET.get('academic_year_id') or request.GET.get('year')
+    term = request.POST.get('term') or request.GET.get('term')
+    
+    clean_year_id = None
+    clean_term = None
+    
+    if year_id:
+        if year_id == 'default':
+            if 'view_year_id' in request.session:
+                del request.session['view_year_id']
+            clean_year_id = 'default'
+        else:
+            try:
+                val = int(year_id)
+                request.session['view_year_id'] = val
+                clean_year_id = str(val)
+            except (ValueError, TypeError):
+                pass
+            
+    if term:
+        if term == 'default':
+            if 'view_term' in request.session:
+                del request.session['view_term']
+            clean_term = 'default'
+        else:
+            clean_term = str(term)
+            request.session['view_term'] = clean_term
+            
+    request.session.modified = True
+            
+    referer = request.META.get('HTTP_REFERER')
+    if referer and '/timeline/select' not in referer:
+        response = redirect(referer)
+    else:
+        response = redirect('dashboard')
         
-        if year_id:
-            if year_id == 'default':
-                if 'view_year_id' in request.session:
-                    del request.session['view_year_id']
-            else:
-                request.session['view_year_id'] = int(year_id)
-                
-        if term:
-            if term == 'default':
-                if 'view_term' in request.session:
-                    del request.session['view_term']
-            else:
-                request.session['view_term'] = term
-                
-    referer = request.META.get('HTTP_REFERER', 'dashboard')
-    return redirect(referer)
+    # Persist in long-lived cookies as a failsafe
+    if clean_year_id:
+        if clean_year_id == 'default':
+            response.delete_cookie('ams_view_year_id')
+        else:
+            response.set_cookie('ams_view_year_id', clean_year_id, max_age=365*24*3600, samesite='Lax')
+            
+    if clean_term:
+        if clean_term == 'default':
+            response.delete_cookie('ams_view_term')
+        else:
+            response.set_cookie('ams_view_term', clean_term, max_age=365*24*3600, samesite='Lax')
+            
+    return response
+
+
+@login_required
+def activate_academic_year_view(request, year_id):
+    from .models import AcademicYear, SystemSetting, AuditLog
+    from django.contrib import messages
+    from django.shortcuts import get_object_or_404
+    
+    if request.user.role != CustomUser.Role.ADMIN:
+        messages.error(request, "Only administrators can change the active academic year.")
+        return redirect('dashboard')
+        
+    if request.method == 'POST':
+        ay = get_object_or_404(AcademicYear, pk=year_id)
+        ay.is_active = True
+        ay.save()
+        
+        settings = SystemSetting.get_settings()
+        settings.current_academic_year = ay
+        settings.save()
+        
+        # Clear any session view override so all users immediately see the new active year
+        if 'view_year_id' in request.session:
+            del request.session['view_year_id']
+        request.session.modified = True
+        
+        AuditLog.objects.create(
+            user=request.user,
+            action="Activated Academic Year",
+            details=f"Switched system-wide active academic year to '{ay.name}'."
+        )
+        
+        messages.success(request, f"Academic Year '{ay.name}' is now active across the entire system!")
+        
+        res = redirect('admin_settings')
+        res.delete_cookie('ams_view_year_id')
+        res.delete_cookie('ams_view_term')
+        return res
+        
+    return redirect('admin_settings')
 
 
 @login_required
@@ -2522,7 +3047,7 @@ def create_academic_year_view(request):
             
         # Check if already exists
         if AcademicYear.objects.filter(name=name).exists():
-            messages.error(request, f"Academic year '{name}' already exists.")
+            messages.info(request, f"Academic year '{name}' already exists. You can activate it from the Academic Years Overview below.")
             return redirect('admin_settings')
             
         try:
@@ -2535,6 +3060,13 @@ def create_academic_year_view(request):
             settings.current_term = 'Term 1'
             settings.save()
             
+            # Clear session overrides
+            if 'view_year_id' in request.session:
+                del request.session['view_year_id']
+            if 'view_term' in request.session:
+                del request.session['view_term']
+            request.session.modified = True
+            
             AuditLog.objects.create(
                 user=request.user,
                 action="Academic Year Created",
@@ -2542,6 +3074,10 @@ def create_academic_year_view(request):
             )
             
             messages.success(request, f"Successfully created and activated Academic Year '{name}'! All dashboards are now set to Term 1.")
+            res = redirect('admin_settings')
+            res.delete_cookie('ams_view_year_id')
+            res.delete_cookie('ams_view_term')
+            return res
         except Exception as e:
             messages.error(request, f"Failed to create academic year: {e}")
             
@@ -3451,14 +3987,29 @@ def verify_id_view(request, username):
 def classroom_student_cards_api(request, class_id):
     from django.http import JsonResponse
     from django.shortcuts import get_object_or_404
-    from .models import Classroom, StudentProfile
+    from .models import Classroom, StudentProfile, Attendance, StudentMark, SystemSetting
     
     classroom = get_object_or_404(Classroom, id=class_id)
     # Check permissions (must be classroom owner or co-teacher)
     if classroom.teacher != request.user and not classroom.co_teachers.filter(id=request.user.id).exists():
         return JsonResponse({"error": "Unauthorized"}, status=403)
         
-    students = StudentProfile.objects.filter(classroom=classroom).select_related('user')
+    active_year, active_term = _get_active_timeline(request)
+    settings = SystemSetting.get_settings()
+    is_historical = bool(active_year and settings.current_academic_year and active_year.id != settings.current_academic_year.id)
+
+    if is_historical:
+        hist_student_ids = set(
+            Attendance.objects.filter(classroom=classroom, academic_year=active_year).values_list('student_id', flat=True)
+        ) | set(
+            StudentMark.objects.filter(assessment__module__classroom=classroom, assessment__academic_year=active_year).values_list('student_id', flat=True)
+        )
+        if hist_student_ids:
+            students = StudentProfile.objects.filter(user_id__in=hist_student_ids).select_related('user')
+        else:
+            students = StudentProfile.objects.filter(classroom=classroom).select_related('user')
+    else:
+        students = StudentProfile.objects.filter(classroom=classroom).select_related('user')
     data = []
     for s in students:
         # Resolve dynamic school name

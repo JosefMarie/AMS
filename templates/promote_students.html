@@ -41,6 +41,68 @@
         </div>
     </div>
 
+    <!-- Cascading Academic Progression Stepper -->
+    <div class="glass-card p-6 border border-white/50 shadow-lg bg-gradient-to-r from-slate-50/80 via-indigo-50/40 to-purple-50/40 mb-8">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+                <span class="text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full bg-indigo-600 text-white shadow-sm">Cascading Promotion Lifecycle</span>
+                <h3 class="text-base font-black text-gray-900 mt-2">Recommended Academic Progression Order</h3>
+            </div>
+            <span class="text-xs font-bold text-gray-500">Classroom: <strong class="text-indigo-700 font-black">{{ classroom.name }}</strong> (Detected: {{ current_level }})</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Stage 1 -->
+            <div class="p-4 rounded-2xl border transition-all {% if current_level == 'Level 5' %}bg-amber-50 border-amber-300 shadow-md ring-2 ring-amber-400/50{% else %}bg-white/60 border-gray-150 opacity-75{% endif %}">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-wider {% if current_level == 'Level 5' %}text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md{% else %}text-gray-400{% endif %}">Stage 1</span>
+                    <span class="text-lg">🎓</span>
+                </div>
+                <h4 class="text-xs font-black text-gray-900 uppercase tracking-tight">Level 5 Graduates</h4>
+                <p class="text-[11px] text-gray-600 mt-1 leading-snug">Senior students graduate and leave the class, freeing Level 5 space.</p>
+                {% if current_level == 'Level 5' %}
+                <span class="inline-block mt-2 text-[9px] font-black uppercase tracking-widest bg-amber-600 text-white px-2 py-0.5 rounded-full animate-pulse">Active Class Target</span>
+                {% endif %}
+            </div>
+
+            <!-- Stage 2 -->
+            <div class="p-4 rounded-2xl border transition-all {% if current_level == 'Level 4' %}bg-indigo-50 border-indigo-300 shadow-md ring-2 ring-indigo-400/50{% else %}bg-white/60 border-gray-150 opacity-75{% endif %}">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-wider {% if current_level == 'Level 4' %}text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-md{% else %}text-gray-400{% endif %}">Stage 2</span>
+                    <span class="text-lg">🚀</span>
+                </div>
+                <h4 class="text-xs font-black text-gray-900 uppercase tracking-tight">L4 → Level 5</h4>
+                <p class="text-[11px] text-gray-600 mt-1 leading-snug">Level 4 advances into vacated Level 5 class, freeing Level 4.</p>
+                {% if current_level == 'Level 4' %}
+                <span class="inline-block mt-2 text-[9px] font-black uppercase tracking-widest bg-indigo-600 text-white px-2 py-0.5 rounded-full animate-pulse">Active Class Target</span>
+                {% endif %}
+            </div>
+
+            <!-- Stage 3 -->
+            <div class="p-4 rounded-2xl border transition-all {% if current_level == 'Level 3' %}bg-emerald-50 border-emerald-300 shadow-md ring-2 ring-emerald-400/50{% else %}bg-white/60 border-gray-150 opacity-75{% endif %}">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-wider {% if current_level == 'Level 3' %}text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md{% else %}text-gray-400{% endif %}">Stage 3</span>
+                    <span class="text-lg">📈</span>
+                </div>
+                <h4 class="text-xs font-black text-gray-900 uppercase tracking-tight">L3 → Level 4</h4>
+                <p class="text-[11px] text-gray-600 mt-1 leading-snug">Level 3 advances into vacated Level 4 class, freeing Level 3.</p>
+                {% if current_level == 'Level 3' %}
+                <span class="inline-block mt-2 text-[9px] font-black uppercase tracking-widest bg-emerald-600 text-white px-2 py-0.5 rounded-full animate-pulse">Active Class Target</span>
+                {% endif %}
+            </div>
+
+            <!-- Stage 4 -->
+            <div class="p-4 rounded-2xl border bg-white/60 border-gray-150 opacity-75">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-wider text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">Stage 4</span>
+                    <span class="text-lg">✨</span>
+                </div>
+                <h4 class="text-xs font-black text-gray-900 uppercase tracking-tight">Fresh L3 Intake</h4>
+                <p class="text-[11px] text-gray-600 mt-1 leading-snug">Level 3 is completely clean and ready for new student enrollments.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Alert banner if not Term 3 -->
     {% if current_term != 'Term 3' %}
     <div class="mb-8 p-5 bg-amber-50/50 rounded-3xl border border-amber-100/50 backdrop-blur-md flex items-start gap-4">
@@ -56,63 +118,83 @@
     </div>
     {% endif %}
 
+    <!-- Finalized / Correction Mode Notice -->
+    {% if is_finalized %}
+    <div class="mb-8 p-6 rounded-3xl bg-emerald-50/90 border border-emerald-200 shadow-md backdrop-blur-md flex items-start gap-4 animate-fadeIn">
+        <div class="p-3 bg-emerald-100 text-emerald-700 rounded-2xl flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <div>
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <span class="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-sm">All Set — Promotions Finalized</span>
+                <span class="text-xs font-bold text-emerald-800">Correction & Adjustment Mode</span>
+            </div>
+            <h4 class="text-sm font-black text-emerald-950">Classroom Progression Completed for {{ active_view_year.name|default:"Active Year" }}</h4>
+            <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
+                Students in this classroom are already enrolled in <strong>{{ current_level }}</strong>. To safeguard against accidental re-promotions, bulk progression has been completed. 
+                <strong>If you made a mistake on an individual student</strong> (e.g., student was supposed to repeat instead of promote, or vice-versa), you can select that specific student below and save corrections.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
     <form method="POST" id="promotionForm">
         {% csrf_token %}
 
-        <!-- Wizard Bulk Actions Panel -->
+        <!-- Quick 1-Click Batch Controls & Wizard -->
         <div class="glass-card p-8 border border-white/50 shadow-xl bg-gradient-to-br from-indigo-50/20 to-purple-50/20 mb-8">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="p-2 bg-indigo-600 rounded-xl text-white">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-black text-gray-900 uppercase tracking-tighter">Bulk Action Wizard</h3>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Apply settings to all checked students instantly</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                <div>
-                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">1. Select Action</label>
-                    <select id="bulkAction" class="glass-input w-full">
-                        <option value="none">-- Select Bulk Action --</option>
-                        <option value="promote">Promote to {{ next_level }}</option>
-                        <option value="repeat">Repeat {{ current_level }}</option>
-                    </select>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-indigo-600 rounded-xl text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-gray-900 uppercase tracking-tighter">Fast Promotion & Wizard</h3>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Select action for all students with 1-click or customize below</p>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">2. Destination Classroom</label>
-                    <select id="bulkClassroom" class="glass-input w-full">
-                        <option value="">-- Choose Classroom --</option>
-                        {% if next_level == 'Graduated' %}
-                        <option value="graduate_flag">Graduated Status (No Class)</option>
-                        {% else %}
-                            <optgroup label="Next Level Classes ({{ next_level }})">
-                                {% for cls in next_classrooms %}
-                                <option value="{{ cls.id }}" data-type="promote">{{ cls.name }}</option>
-                                {% endfor %}
-                            </optgroup>
-                        {% endif %}
-                        <optgroup label="Same Level Classes ({{ current_level }})">
-                            {% for cls in same_classrooms %}
-                            <option value="{{ cls.id }}" data-type="repeat">{{ cls.name }}</option>
-                            {% endfor %}
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div>
-                    <button type="button" onclick="applyBulkAction()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-2xl shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
+                <!-- 1-Click Fast Actions -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="promoteAllStudents()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow-md transition-all flex items-center gap-1.5 uppercase tracking-wider">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                         </svg>
-                        Apply to Selected
+                        Promote All to {{ next_level }}
+                    </button>
+                    <button type="button" onclick="repeatAllStudents()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold rounded-xl shadow-md transition-all flex items-center gap-1.5 uppercase tracking-wider">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Repeat All ({{ current_level }})
+                    </button>
+                    <button type="button" onclick="resetAllStudents()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-xl transition-all uppercase tracking-wider">
+                        Reset
                     </button>
                 </div>
             </div>
+
+            <!-- Custom Destination Selector for Next Level -->
+            {% if next_level != 'Graduated' %}
+            <div class="p-4 rounded-2xl bg-white/70 border border-gray-150 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div>
+                    <label class="block text-[11px] font-black text-indigo-900 uppercase tracking-wider mb-1">Default Destination Classroom for Promoted Students:</label>
+                    <p class="text-[10px] text-gray-500 font-medium">When promoting all students, assign them to this {{ next_level }} classroom:</p>
+                </div>
+                <div>
+                    <select id="defaultTargetClassroom" onchange="syncDefaultTargetClassroom()" class="glass-input w-full text-xs font-bold">
+                        <option value="">-- Choose Target Classroom --</option>
+                        {% for cls in next_classrooms %}
+                        <option value="{{ cls.id }}" {% if forloop.first %}selected{% endif %}>{{ cls.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Student Progression Table -->
@@ -127,7 +209,7 @@
                     <thead>
                         <tr class="bg-gray-50/50 border-b border-gray-50">
                             <th class="w-12 px-8 py-4">
-                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="w-4.5 h-4.5 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="w-4.5 h-4.5 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer" title="Select / Deselect All">
                             </th>
                             <th class="px-4 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Student info</th>
                             <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Active level</th>
@@ -226,8 +308,8 @@
                 Cancel & Return
             </a>
             
-            <button type="submit" class="px-10 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-2xl shadow-xl shadow-indigo-100 hover:shadow-indigo-200 transition-all transform hover:-translate-y-1 active:scale-95 uppercase tracking-widest flex items-center gap-2">
-                Commit Operations
+            <button type="submit" class="px-10 py-3.5 {% if is_finalized %}bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100 hover:shadow-emerald-200{% else %}bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100 hover:shadow-indigo-200{% endif %} text-white text-xs font-black rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 uppercase tracking-widest flex items-center gap-2">
+                {% if is_finalized %}Save Corrections & Adjustments{% else %}Commit Operations{% endif %}
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -272,7 +354,7 @@
         }
     }
 
-    // Handles individual action change triggers
+    // Handles individual action change triggers and auto-syncs the row checkbox
     function onActionChange(sid) {
         const radios = document.getElementsByName(`action_${sid}`);
         let selectedAction = 'none';
@@ -283,6 +365,19 @@
             }
         }
 
+        const cb = document.querySelector(`.student-select-checkbox[value="${sid}"]`);
+        if (selectedAction === 'promote' || selectedAction === 'repeat') {
+            if (cb) {
+                cb.checked = true;
+                updateRowHighlight(cb);
+            }
+        } else {
+            if (cb) {
+                cb.checked = false;
+                updateRowHighlight(cb);
+            }
+        }
+
         const container = document.getElementById(`classroom_container_${sid}`);
         const select = document.getElementById(`classroom_select_${sid}`);
         const gradBadge = document.getElementById(`grad_badge_${sid}`);
@@ -290,11 +385,11 @@
         const sameGroup = select ? select.querySelector('.same-level-group') : null;
 
         if (selectedAction === 'none') {
-            container.classList.add('opacity-40', 'pointer-events-none');
+            if (container) container.classList.add('opacity-40', 'pointer-events-none');
             if (gradBadge) gradBadge.classList.add('hidden');
             if (select) select.classList.remove('hidden');
         } else if (selectedAction === 'promote') {
-            container.classList.remove('opacity-40', 'pointer-events-none');
+            if (container) container.classList.remove('opacity-40', 'pointer-events-none');
             
             if ("{{ next_level }}" === "Graduated") {
                 if (gradBadge) gradBadge.classList.remove('hidden');
@@ -304,14 +399,18 @@
                     select.classList.remove('hidden');
                     if (nextGroup) nextGroup.classList.remove('hidden');
                     if (sameGroup) sameGroup.classList.add('hidden');
-                    // Preselect first next level class if available
-                    if (nextGroup && nextGroup.children.length > 0) {
+                    
+                    // Preselect default target if set, or first option
+                    const defaultTarget = document.getElementById('defaultTargetClassroom');
+                    if (defaultTarget && defaultTarget.value) {
+                        select.value = defaultTarget.value;
+                    } else if (nextGroup && nextGroup.children.length > 0 && !select.value) {
                         select.value = nextGroup.children[0].value;
                     }
                 }
             }
         } else if (selectedAction === 'repeat') {
-            container.classList.remove('opacity-40', 'pointer-events-none');
+            if (container) container.classList.remove('opacity-40', 'pointer-events-none');
             if (gradBadge) gradBadge.classList.add('hidden');
             
             if (select) {
@@ -322,16 +421,96 @@
                 if (sameGroup && sameGroup.children.length > 0) {
                     select.value = sameGroup.children[0].value;
                 } else {
-                    select.value = ""; // Default to unassigned repeat (stays in same class)
+                    select.value = ""; // Stays in current classroom
                 }
             }
         }
     }
 
+    // 1-Click: Promote All Students
+    function promoteAllStudents() {
+        const rows = document.querySelectorAll('.student-row');
+        const defaultTarget = document.getElementById('defaultTargetClassroom');
+        const targetVal = defaultTarget ? defaultTarget.value : '';
+
+        rows.forEach(row => {
+            const sid = row.getAttribute('data-id');
+            const radios = document.getElementsByName(`action_${sid}`);
+            radios.forEach(r => {
+                if (r.value === 'promote') r.checked = true;
+            });
+            onActionChange(sid);
+
+            const select = document.getElementById(`classroom_select_${sid}`);
+            if (select && targetVal && !select.classList.contains('hidden')) {
+                select.value = targetVal;
+            }
+        });
+
+        const master = document.getElementById('selectAllCheckbox');
+        if (master) master.checked = true;
+    }
+
+    // 1-Click: Repeat All Students
+    function repeatAllStudents() {
+        const rows = document.querySelectorAll('.student-row');
+        rows.forEach(row => {
+            const sid = row.getAttribute('data-id');
+            const radios = document.getElementsByName(`action_${sid}`);
+            radios.forEach(r => {
+                if (r.value === 'repeat') r.checked = true;
+            });
+            onActionChange(sid);
+        });
+
+        const master = document.getElementById('selectAllCheckbox');
+        if (master) master.checked = true;
+    }
+
+    // 1-Click: Reset All Students to None
+    function resetAllStudents() {
+        const rows = document.querySelectorAll('.student-row');
+        rows.forEach(row => {
+            const sid = row.getAttribute('data-id');
+            const radios = document.getElementsByName(`action_${sid}`);
+            radios.forEach(r => {
+                if (r.value === 'none') r.checked = true;
+            });
+            onActionChange(sid);
+        });
+
+        const master = document.getElementById('selectAllCheckbox');
+        if (master) master.checked = false;
+    }
+
+    // Sync changes to the default target classroom to all rows with 'promote'
+    function syncDefaultTargetClassroom() {
+        const defaultTarget = document.getElementById('defaultTargetClassroom');
+        if (!defaultTarget) return;
+        const targetVal = defaultTarget.value;
+
+        const rows = document.querySelectorAll('.student-row');
+        rows.forEach(row => {
+            const sid = row.getAttribute('data-id');
+            const radios = document.getElementsByName(`action_${sid}`);
+            let isPromote = false;
+            radios.forEach(r => {
+                if (r.checked && r.value === 'promote') isPromote = true;
+            });
+
+            if (isPromote) {
+                const select = document.getElementById(`classroom_select_${sid}`);
+                if (select && !select.classList.contains('hidden')) {
+                    select.value = targetVal;
+                }
+            }
+        });
+    }
+
     // Wizard Batch Execution Application
     function applyBulkAction() {
-        const action = document.getElementById('bulkAction').value;
-        const targetClassroomVal = document.getElementById('bulkClassroom').value;
+        const action = document.getElementById('bulkAction') ? document.getElementById('bulkAction').value : 'none';
+        const targetClassroomVal = document.getElementById('bulkClassroom') ? document.getElementById('bulkClassroom').value : '';
 
         if (action === 'none') {
             alert('Please select a bulk action first.');
@@ -346,7 +525,6 @@
 
         checkedBoxes.forEach(cb => {
             const sid = cb.value;
-            // Set the correct radio button
             const radios = document.getElementsByName(`action_${sid}`);
             radios.forEach(r => {
                 if (r.value === action) {
@@ -354,23 +532,14 @@
                 }
             });
 
-            // Trigger action layout update
             onActionChange(sid);
 
-            // Apply selected classroom if relevant
             const select = document.getElementById(`classroom_select_${sid}`);
             if (select && !select.classList.contains('hidden')) {
-                if (action === 'promote' && targetClassroomVal !== 'graduate_flag') {
-                    // Check if choice is a valid next level class option
-                    const opt = select.querySelector(`.next-level-group option[value="${targetClassroomVal}"]`);
-                    if (opt) {
-                        select.value = targetClassroomVal;
-                    }
-                } else if (action === 'repeat') {
-                    const opt = select.querySelector(`.same-level-group option[value="${targetClassroomVal}"]`);
-                    if (opt) {
-                        select.value = targetClassroomVal;
-                    }
+                if (action === 'promote' && targetClassroomVal !== 'graduate_flag' && targetClassroomVal) {
+                    select.value = targetClassroomVal;
+                } else if (action === 'repeat' && targetClassroomVal) {
+                    select.value = targetClassroomVal;
                 }
             }
         });

@@ -9,9 +9,20 @@ def academic_timeline(request):
     academic_years = AcademicYear.objects.all().order_by('-name')
     all_terms = ['Term 1', 'Term 2', 'Term 3']
 
-    # Retrieve selected view state from session
-    session_year_id = request.session.get('view_year_id')
-    session_term = request.session.get('view_term')
+    # Retrieve selected view state from session or persistent cookie
+    session_year_id = request.session.get('view_year_id') or request.COOKIES.get('ams_view_year_id')
+    session_term = request.session.get('view_term') or request.COOKIES.get('ams_view_term')
+
+    if session_year_id and not request.session.get('view_year_id'):
+        try:
+            request.session['view_year_id'] = int(session_year_id)
+            request.session.modified = True
+        except (ValueError, TypeError):
+            pass
+
+    if session_term and not request.session.get('view_term'):
+        request.session['view_term'] = str(session_term)
+        request.session.modified = True
 
     active_view_year = None
     if session_year_id:

@@ -53,6 +53,24 @@
                 </a>
             </div>
         </form>
+
+        <!-- Password Reset Tool -->
+        <div class="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80">
+            <div>
+                <h4 class="text-xs font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    Student Password Reset
+                </h4>
+                <p class="text-xs text-amber-800 font-medium mt-0.5">Forgot password? Reset it back to default: <code class="bg-white px-1.5 py-0.5 rounded text-amber-900 font-bold border border-amber-200">student123</code></p>
+            </div>
+            <form method="post" onsubmit="return confirm('Are you sure you want to reset password for {{ student.get_full_name|default:student.username|escapejs }} to default (student123)?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reset_password">
+                <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-amber-200 flex items-center gap-1.5 flex-shrink-0">
+                    Reset to student123
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

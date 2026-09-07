@@ -1,64 +1,506 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="animate-fadeIn max-w-2xl mx-auto">
-    <div class="glass-card p-8">
-        <div class="mb-8">
-            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Add Student</h1>
-            <p class="text-gray-500 font-bold text-sm">Classroom: <span class="text-indigo-600">{{ classroom.name
-                    }}</span></p>
+<div class="animate-fadeIn max-w-5xl mx-auto space-y-8 pb-16">
+    <!-- Header with Breadcrumb & Context -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl border border-white/20 dark:border-slate-800 shadow-xl">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <a href="{% url 'manage_class' classroom.id %}" class="text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                    Back to {{ classroom.name }}
+                </a>
+                <span class="text-gray-300 dark:text-slate-700">•</span>
+                <span class="text-xs font-bold text-gray-400">Classroom Enrollment Hub</span>
+            </div>
+            <h1 class="text-3xl font-black text-gray-950 dark:text-white tracking-tight">Student Enrollment Hub</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                Stage students instantly in your browser (0ms latency), review or edit, then push all to the database in one click.
+            </p>
         </div>
 
-        <form method="post">
-            {% csrf_token %}
-            <div class="space-y-6">
+        <div class="flex items-center gap-2 flex-wrap">
+            <div class="px-3.5 py-1.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs font-black text-indigo-900 dark:text-indigo-200">
+                    Staged: <strong id="headerStagedCount" class="text-indigo-600 dark:text-indigo-400 font-black">0</strong>
+                </span>
+            </div>
+            <div class="px-3.5 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5">
+                <span>🔑 Default Password:</span>
+                <code class="bg-amber-200/60 dark:bg-amber-900/60 px-1.5 py-0.5 rounded font-black text-[11px]">student123</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <div class="flex items-center gap-2 p-1.5 bg-gray-100/80 dark:bg-slate-800/80 rounded-2xl border border-gray-200/50 dark:border-slate-700/50 w-fit">
+        <button id="tabRapidBtn" onclick="switchMode('rapid')"
+            class="px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            ⚡ Rapid Entry (Keyboard Flow)
+        </button>
+        <button id="tabPasteBtn" onclick="switchMode('paste')"
+            class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            📋 Paste from Excel / Word
+        </button>
+        <button id="tabSingleBtn" onclick="switchMode('single')"
+            class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            Classic Single Form
+        </button>
+    </div>
+
+    <!-- Mode 1: Rapid Keyboard Flow Entry -->
+    <div id="modeRapidCard" class="glass-card p-6 md:p-8 bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-800 shadow-xl">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-lg font-black text-gray-900 dark:text-white">Rapid Entry Mode</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Type First Name and Last Name, then press <kbd class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 rounded border border-gray-300 dark:border-slate-700 text-[11px] font-bold">Enter</kbd> to stage. Inputs auto-focus for non-stop entry.</p>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                0ms Local Save
+            </span>
+        </div>
+
+        <form id="rapidEntryForm" onsubmit="handleRapidAdd(event)" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                    <label for="username" class="block text-sm font-bold text-gray-700 mb-2">Username *</label>
-                    <input type="text" id="username" name="username" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                    <label class="block text-xs font-black uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1.5">First Name *</label>
+                    <input type="text" id="rapidFirstName" placeholder="e.g. Eric" required autocomplete="off"
+                           class="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-bold text-sm transition-all">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="first_name" class="block text-sm font-bold text-gray-700 mb-2">First Name *</label>
-                        <input type="text" id="first_name" name="first_name" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
-                    </div>
-                    <div>
-                        <label for="last_name" class="block text-sm font-bold text-gray-700 mb-2">Last Name *</label>
-                        <input type="text" id="last_name" name="last_name" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
-                    </div>
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1.5">Last Name *</label>
+                    <input type="text" id="rapidLastName" placeholder="e.g. Mugisha" required autocomplete="off"
+                           class="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-bold text-sm transition-all">
                 </div>
 
                 <div>
-                    <label for="sex" class="block text-sm font-bold text-gray-700 mb-2">Sex *</label>
-                    <select id="sex" name="sex" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
-                        <option value="">Select...</option>
-                        <option value="Male">Male</option>
+                    <label class="block text-xs font-black uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1.5">Gender *</label>
+                    <select id="rapidSex" required
+                            class="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-bold text-sm transition-all cursor-pointer">
+                        <option value="Male" selected>Male</option>
                         <option value="Female">Female</option>
                     </select>
                 </div>
 
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                    <p class="text-sm text-amber-800 font-medium">
-                        <strong>Note:</strong> The default password for new students is <code
-                            class="bg-amber-100 px-2 py-1 rounded font-bold">student123</code>
-                    </p>
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1.5">
+                        Username <span class="text-gray-400 font-medium lowercase">(auto)</span>
+                    </label>
+                    <input type="text" id="rapidUsername" placeholder="Auto-generated" autocomplete="off"
+                           class="w-full px-4 py-3 rounded-2xl border border-dashed border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 font-mono text-xs transition-all">
                 </div>
             </div>
 
-            <div class="flex gap-3 mt-8">
+            <div class="flex items-center justify-between pt-2">
+                <span class="text-[11px] text-gray-400 font-medium">💡 Press <kbd class="font-bold bg-gray-100 dark:bg-slate-800 px-1 rounded">Enter</kbd> from any field to stage instantly.</span>
                 <button type="submit"
-                    class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                    Add Student
+                        class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    Stage Student (Enter)
                 </button>
-                <a href="{% url 'manage_class' classroom.id %}"
-                    class="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all">
-                    Cancel
-                </a>
             </div>
         </form>
     </div>
+
+    <!-- Mode 2: Bulk Paste Mode -->
+    <div id="modePasteCard" class="hidden glass-card p-6 md:p-8 bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-800 shadow-xl">
+        <div class="mb-4">
+            <h3 class="text-lg font-black text-gray-900 dark:text-white">Bulk Paste from Excel / Word</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Copy columns from Excel or text and paste below. Supports formats: <code class="bg-gray-100 dark:bg-slate-800 px-1 py-0.5 rounded font-bold">First Last, Gender</code> or tab-separated Excel rows.</p>
+        </div>
+
+        <textarea id="bulkPasteTextarea" rows="6" placeholder="Example:
+Eric Mugisha, Male
+Aline Uwase, Female
+Jean Claude Habimana, Male
+Kelia Isimbi, Female"
+                  class="w-full p-4 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-mono text-xs transition-all mb-4"></textarea>
+
+        <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-400 font-medium" id="pastePreviewText">Ready to parse pasted rows.</span>
+            <button type="button" onclick="handleBulkPaste()"
+                    class="px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-purple-100 flex items-center gap-2 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Parse & Stage All Rows
+            </button>
+        </div>
+    </div>
+
+    <!-- Mode 3: Classic Form Fallback -->
+    <div id="modeSingleCard" class="hidden glass-card p-6 md:p-8 bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-800 shadow-xl">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
+                    <input type="text" name="first_name" required class="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Last Name *</label>
+                    <input type="text" name="last_name" required class="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Username *</label>
+                    <input type="text" name="username" required class="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Sex *</label>
+                    <select name="sex" required class="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider">
+                Direct Add via Form
+            </button>
+        </form>
+    </div>
+
+    <!-- Live Staging Queue & Push Hub -->
+    <div class="glass-card p-6 md:p-8 bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800 shadow-2xl rounded-3xl">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-gray-100 dark:border-slate-800">
+            <div>
+                <div class="flex items-center gap-2.5">
+                    <h3 class="text-xl font-black text-gray-900 dark:text-white">Staged Students Queue</h3>
+                    <span id="queueBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                        0 Staged
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Stored safely in your browser's local memory. When ready, push all to Neon PostgreSQL database.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <button id="clearQueueBtn" onclick="clearStagingQueue()" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all cursor-pointer">
+                    Clear Queue
+                </button>
+                <button id="pushToDbBtn" onclick="pushStagedToDatabase()" disabled
+                        class="flex-1 sm:flex-initial px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-emerald-200 dark:shadow-none flex items-center justify-center gap-2 cursor-pointer">
+                    <span id="pushSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <svg id="pushIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span id="pushBtnText">🚀 Push All to Database (0)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Staged Table -->
+        <div class="overflow-x-auto mt-4">
+            <table class="w-full text-left text-sm font-medium">
+                <thead>
+                    <tr class="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-slate-800">
+                        <th class="py-3 px-3">#</th>
+                        <th class="py-3 px-3">Full Name</th>
+                        <th class="py-3 px-3">Sex</th>
+                        <th class="py-3 px-3">Username</th>
+                        <th class="py-3 px-3">Status</th>
+                        <th class="py-3 px-3 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="stagedTableBody" class="divide-y divide-gray-50 dark:divide-slate-800">
+                    <!-- Dynamic Rows Rendered by JS -->
+                </tbody>
+            </table>
+
+            <!-- Empty State -->
+            <div id="stagedEmptyState" class="py-12 text-center">
+                <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl shadow-inner">
+                    ⚡
+                </div>
+                <h4 class="text-sm font-black text-gray-900 dark:text-white">No students staged yet</h4>
+                <p class="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                    Type student names in Rapid Entry above and hit <kbd class="px-1 rounded bg-gray-100 dark:bg-slate-800 font-bold">Enter</kbd>, or paste an Excel list.
+                </p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+(function() {
+    const CLASSROOM_ID = {{ classroom.id }};
+    const STORAGE_KEY = 'ams_staged_students_' + CLASSROOM_ID;
+    const BULK_API_URL = "{% url 'bulk_add_students_api' classroom.id %}";
+    const CSRF_TOKEN = '{{ csrf_token }}';
+
+    // Local in-memory state initialized from localStorage
+    let stagedStudents = [];
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) stagedStudents = JSON.parse(stored);
+    } catch(e) {
+        stagedStudents = [];
+    }
+
+    function saveState() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(stagedStudents));
+        } catch(e) {}
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('stagedTableBody');
+        const emptyState = document.getElementById('stagedEmptyState');
+        const queueBadge = document.getElementById('queueBadge');
+        const headerCount = document.getElementById('headerStagedCount');
+        const pushBtn = document.getElementById('pushToDbBtn');
+        const pushBtnText = document.getElementById('pushBtnText');
+
+        const count = stagedStudents.length;
+        if (queueBadge) queueBadge.textContent = count + ' Staged';
+        if (headerCount) headerCount.textContent = count;
+        if (pushBtnText) pushBtnText.textContent = count > 0 ? `🚀 Push All to Database (${count})` : '🚀 Push All to Database (0)';
+        if (pushBtn) pushBtn.disabled = (count === 0);
+
+        if (count === 0) {
+            tbody.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+        tbody.innerHTML = stagedStudents.map((s, idx) => `
+            <tr class="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors group">
+                <td class="py-3 px-3 text-xs text-gray-400 font-mono">${idx + 1}</td>
+                <td class="py-3 px-3 text-xs font-black text-gray-900 dark:text-white">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}</td>
+                <td class="py-3 px-3">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${s.sex === 'Female' ? 'bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'}">
+                        ${s.sex}
+                    </span>
+                </td>
+                <td class="py-3 px-3 font-mono text-xs text-gray-600 dark:text-gray-400">${escapeHtml(s.username || (s.first_name + '.' + s.last_name).toLowerCase().replace(/[^a-z0-9._-]/g, ''))}</td>
+                <td class="py-3 px-3">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Staged Local
+                    </span>
+                </td>
+                <td class="py-3 px-3 text-right">
+                    <button type="button" onclick="removeStagedStudent(${idx})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all cursor-pointer" title="Remove student">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    window.removeStagedStudent = function(index) {
+        stagedStudents.splice(index, 1);
+        saveState();
+        if (window.showToast) window.showToast("Student removed from staging queue", "info");
+    };
+
+    window.clearStagingQueue = function() {
+        if (stagedStudents.length === 0) return;
+        if (confirm("Are you sure you want to clear all " + stagedStudents.length + " staged students?")) {
+            stagedStudents = [];
+            saveState();
+            if (window.showToast) window.showToast("Staging queue cleared", "info");
+        }
+    };
+
+    // Mode switching
+    window.switchMode = function(mode) {
+        const rapidCard = document.getElementById('modeRapidCard');
+        const pasteCard = document.getElementById('modePasteCard');
+        const singleCard = document.getElementById('modeSingleCard');
+        const tabRapid = document.getElementById('tabRapidBtn');
+        const tabPaste = document.getElementById('tabPasteBtn');
+        const tabSingle = document.getElementById('tabSingleBtn');
+
+        [rapidCard, pasteCard, singleCard].forEach(c => c.classList.add('hidden'));
+        [tabRapid, tabPaste, tabSingle].forEach(b => {
+            b.className = "px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600";
+        });
+
+        if (mode === 'rapid') {
+            rapidCard.classList.remove('hidden');
+            tabRapid.className = "px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm";
+            document.getElementById('rapidFirstName').focus();
+        } else if (mode === 'paste') {
+            pasteCard.classList.remove('hidden');
+            tabPaste.className = "px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm";
+            document.getElementById('bulkPasteTextarea').focus();
+        } else {
+            singleCard.classList.remove('hidden');
+            tabSingle.className = "px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm";
+        }
+    };
+
+    // Rapid Entry Form Submit
+    window.handleRapidAdd = function(e) {
+        e.preventDefault();
+        const fNameInput = document.getElementById('rapidFirstName');
+        const lNameInput = document.getElementById('rapidLastName');
+        const sexInput = document.getElementById('rapidSex');
+        const usernameInput = document.getElementById('rapidUsername');
+
+        const firstName = fNameInput.value.trim();
+        const lastName = lNameInput.value.trim();
+        const sex = sexInput.value;
+        const customUsername = usernameInput.value.trim();
+
+        if (!firstName || !lastName) return;
+
+        stagedStudents.push({
+            first_name: firstName,
+            last_name: lastName,
+            sex: sex,
+            username: customUsername || (firstName + '.' + lastName).toLowerCase().replace(/[^a-z0-9._-]/g, '')
+        });
+
+        saveState();
+
+        // Clear fields and autofocus back to First Name for lightning typing
+        fNameInput.value = '';
+        lNameInput.value = '';
+        usernameInput.value = '';
+        fNameInput.focus();
+
+        if (window.showToast) window.showToast(`Staged: ${firstName} ${lastName}`, "success");
+    };
+
+    // Bulk Paste Parser
+    window.handleBulkPaste = function() {
+        const textarea = document.getElementById('bulkPasteTextarea');
+        const text = textarea.value.trim();
+        if (!text) {
+            alert("Please paste text before clicking parse.");
+            return;
+        }
+
+        const lines = text.split(/\r?\n/);
+        let addedCount = 0;
+
+        lines.forEach(line => {
+            const cleanLine = line.trim();
+            if (!cleanLine) return;
+
+            let first = '', last = '', sex = 'Male';
+
+            // Check if tab-separated (from Excel)
+            if (cleanLine.includes('\t')) {
+                const parts = cleanLine.split('\t').map(p => p.trim()).filter(Boolean);
+                if (parts.length >= 2) {
+                    first = parts[0];
+                    last = parts[1];
+                    if (parts.length >= 3 && /female|girl|f/i.test(parts[2])) sex = 'Female';
+                }
+            } else if (cleanLine.includes(',')) {
+                // Comma separated e.g. "Eric Mugisha, Male"
+                const parts = cleanLine.split(',').map(p => p.trim());
+                const names = parts[0].split(/\s+/);
+                first = names[0] || '';
+                last = names.slice(1).join(' ') || '';
+                if (parts.length > 1 && /female|girl|f/i.test(parts[1])) sex = 'Female';
+            } else {
+                // Space separated e.g. "Eric Mugisha Male" or "Eric Mugisha"
+                const tokens = cleanLine.split(/\s+/);
+                const lastToken = tokens[tokens.length - 1];
+                if (/^(male|female|m|f)$/i.test(lastToken)) {
+                    sex = /female|f/i.test(lastToken) ? 'Female' : 'Male';
+                    tokens.pop();
+                }
+                first = tokens[0] || '';
+                last = tokens.slice(1).join(' ') || '';
+            }
+
+            if (first && last) {
+                stagedStudents.push({
+                    first_name: first,
+                    last_name: last,
+                    sex: sex,
+                    username: (first + '.' + last).toLowerCase().replace(/[^a-z0-9._-]/g, '')
+                });
+                addedCount++;
+            }
+        });
+
+        if (addedCount > 0) {
+            saveState();
+            textarea.value = '';
+            switchMode('rapid');
+            if (window.showToast) window.showToast(`Parsed & staged ${addedCount} students!`, "success");
+        } else {
+            alert("Could not detect student names in the pasted text. Please check format.");
+        }
+    };
+
+    // One-Click Push to Database
+    window.pushStagedToDatabase = async function() {
+        if (stagedStudents.length === 0) return;
+
+        const pushBtn = document.getElementById('pushToDbBtn');
+        const spinner = document.getElementById('pushSpinner');
+        const icon = document.getElementById('pushIcon');
+        const btnText = document.getElementById('pushBtnText');
+
+        if (!confirm(`Are you ready to push all ${stagedStudents.length} staged student(s) to the database now?`)) {
+            return;
+        }
+
+        // Set loading state
+        pushBtn.disabled = true;
+        spinner.classList.remove('hidden');
+        icon.classList.add('hidden');
+        btnText.textContent = `Pushing ${stagedStudents.length} Students...`;
+
+        try {
+            const res = await fetch(BULK_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN
+                },
+                body: JSON.stringify({ students: stagedStudents })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                const totalCreated = data.created_count;
+                // Clear local storage queue upon successful creation
+                stagedStudents = [];
+                localStorage.removeItem(STORAGE_KEY);
+                renderTable();
+
+                if (window.showToast) {
+                    window.showToast(`🎉 Successfully saved ${totalCreated} students to the database!`, "success");
+                }
+
+                // Redirect back to classroom after short delay
+                setTimeout(() => {
+                    window.location.href = "{% url 'manage_class' classroom.id %}";
+                }, 1200);
+            } else {
+                alert("Error saving batch: " + (data.error || "Unknown error"));
+                pushBtn.disabled = false;
+                spinner.classList.add('hidden');
+                icon.classList.remove('hidden');
+                btnText.textContent = `🚀 Push All to Database (${stagedStudents.length})`;
+            }
+        } catch(err) {
+            alert("Network error communicating with server: " + err.message);
+            pushBtn.disabled = false;
+            spinner.classList.add('hidden');
+            icon.classList.remove('hidden');
+            btnText.textContent = `🚀 Push All to Database (${stagedStudents.length})`;
+        }
+    };
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Initial render
+    renderTable();
+})();
+</script>
 {% endblock %}

@@ -8,6 +8,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('timeline/select/', views.timeline_select_view, name='timeline_select'),
     path('academic-year/create/', views.create_academic_year_view, name='create_academic_year'),
+    path('academic-year/<int:year_id>/activate/', views.activate_academic_year_view, name='activate_academic_year'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path('session/create/<str:template_type>/', views.create_session_plan, name='create_session_plan'),
@@ -28,6 +29,7 @@ urlpatterns = [
     path('class/<int:class_id>/promote/', views.promote_students_view, name='promote_students'),
     path('class/<int:class_id>/add_module/', views.add_module_view, name='add_module'),
     path('class/<int:class_id>/add_student/', views.add_student_view, name='add_student'),
+    path('class/<int:class_id>/bulk_add_students/', views.bulk_add_students_api, name='bulk_add_students_api'),
     path('student/report/<int:student_id>/', views.student_report_view, name='student_report'),
     path('student/report/pdf/<int:student_id>/', views.student_transcript_pdf_view, name='student_transcript_pdf'),
     path('marks/edit/<int:mark_id>/', views.edit_mark_view, name='edit_mark'),
@@ -89,8 +91,9 @@ urlpatterns = [
     # Admin AI testing
     path('admin/test-ai/', views.test_ai_connection_view, name='test_ai_connection'),
 
-    # Manage User Emails
+    # Manage User Emails & Password Reset
     path('manage-emails/', views.manage_user_emails, name='manage_user_emails'),
+    path('admin/users/<int:user_id>/reset-password/', views.admin_reset_user_password, name='admin_reset_user_password'),
 
     # Password Reset
     path('password-reset/', auth_views.PasswordResetView.as_view(
@@ -128,6 +131,7 @@ urlpatterns = [
     path('class/<int:class_id>/promote/', views.promote_students_view, name='promote_students'),
     path('class/<int:class_id>/add_module/', views.add_module_view, name='add_module'),
     path('class/<int:class_id>/add_student/', views.add_student_view, name='add_student'),
+    path('class/<int:class_id>/bulk_add_students/', views.bulk_add_students_api, name='bulk_add_students_api'),
     path('student/report/<int:student_id>/', views.student_report_view, name='student_report'),
     path('student/report/pdf/<int:student_id>/', views.student_transcript_pdf_view, name='student_transcript_pdf'),
     path('marks/edit/<int:mark_id>/', views.edit_mark_view, name='edit_mark'),
@@ -189,8 +193,9 @@ urlpatterns = [
     # Admin AI testing
     path('admin/test-ai/', views.test_ai_connection_view, name='test_ai_connection'),
 
-    # Manage User Emails
+    # Manage User Emails & Password Reset
     path('manage-emails/', views.manage_user_emails, name='manage_user_emails'),
+    path('admin/users/<int:user_id>/reset-password/', views.admin_reset_user_password, name='admin_reset_user_password'),
 
     # Password Reset
     path('password-reset/', auth_views.PasswordResetView.as_view(

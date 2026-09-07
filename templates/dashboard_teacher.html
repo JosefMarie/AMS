@@ -52,6 +52,116 @@
     </div>
     {% endif %}
 
+    <!-- Academic Year Promotions Status Banners -->
+    {% if pending_promotion_classrooms %}
+    <div class="mb-8 animate-fadeIn">
+        <div class="p-6 rounded-3xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white shadow-xl border border-indigo-500/30 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-amber-300 flex-shrink-0 text-xl shadow-inner">
+                        🎓
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <span class="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-400 text-gray-950">Action Required</span>
+                            <span class="text-xs text-indigo-200 font-bold">Academic Year: {{ active_view_year.name|default:"Active Year" }}</span>
+                        </div>
+                        <h3 class="text-lg font-black tracking-tight text-white">Student Promotions & Classroom Progression Pending</h3>
+                        <p class="text-xs text-indigo-100/80 mt-1 max-w-2xl leading-relaxed">
+                            To ensure a fresh start for the new academic year and avoid classroom conflicts, follow the cascading promotion flow: 
+                            <strong>1. Graduate Level 5 students first</strong> (frees Level 5 space), then <strong>2. Promote Level 4 to Level 5</strong>, then <strong>3. Promote Level 3 to Level 4</strong>, leaving Level 3 clean for new student admissions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Classrooms requiring action -->
+            <div class="mt-6 pt-5 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% for p_cls in pending_promotion_classrooms %}
+                <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-between hover:bg-white/15 transition-all">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-white">{{ p_cls.name }}</span>
+                            <span class="text-[9px] font-bold px-2 py-0.5 rounded-md {% if p_cls.is_l5 %}bg-amber-400 text-gray-950{% elif p_cls.is_l4 %}bg-indigo-400 text-gray-950{% else %}bg-emerald-400 text-gray-950{% endif %}">
+                                {{ p_cls.level }}
+                            </span>
+                        </div>
+                        <span class="text-[11px] text-indigo-200 font-medium">{{ p_cls.count }} active student{{ p_cls.count|pluralize }}</span>
+                    </div>
+                    <a href="{% url 'promote_students' p_cls.id %}" class="px-3.5 py-1.5 rounded-xl bg-white text-indigo-900 hover:bg-indigo-50 text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1">
+                        {% if p_cls.is_l5 %}Graduate L5{% else %}Promote{% endif %}
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% elif all_promotions_completed %}
+    <!-- ALL SET (GREEN) Promotions Finalized Banner -->
+    <div class="mb-8 animate-fadeIn">
+        <div class="p-6 rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-900 text-white shadow-xl border border-emerald-500/30 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 flex-shrink-0 text-2xl shadow-inner">
+                        <svg class="w-7 h-7 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <span class="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-400 text-gray-950 shadow-sm">All Set & Finalized</span>
+                            <span class="text-xs text-emerald-200 font-bold">Academic Year: {{ active_view_year.name|default:"Active Year" }}</span>
+                        </div>
+                        <h3 class="text-lg font-black tracking-tight text-white">Classroom Progression Completed Successfully</h3>
+                        <p class="text-xs text-emerald-100/80 mt-1 max-w-2xl leading-relaxed">
+                            All students have been promoted to their advanced levels or graduated. The new academic year is completely fresh, and classes are safeguarded against accidental double-promotions.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <span class="text-[11px] text-emerald-300/80 font-bold bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+                        🛡️ Promotions Locked for Current Term
+                    </span>
+                </div>
+            </div>
+
+            <!-- Classrooms overview -->
+            <div class="mt-6 pt-5 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% for c_cls in completed_promotion_classrooms %}
+                <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-between hover:bg-white/15 transition-all">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-white">{{ c_cls.name }}</span>
+                            <span class="text-[9px] font-bold px-2 py-0.5 rounded-md bg-emerald-400 text-gray-950">
+                                {{ c_cls.level }}
+                            </span>
+                        </div>
+                        <span class="text-[11px] text-emerald-200 font-medium">
+                            {% if c_cls.is_empty %}
+                            <strong class="text-emerald-300">0 enrolled</strong> — Ready for new intake ✨
+                            {% else %}
+                            {{ c_cls.count }} enrolled student{{ c_cls.count|pluralize }} (Finalized)
+                            {% endif %}
+                        </span>
+                    </div>
+                    <a href="{% url 'promote_students' c_cls.id %}" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white text-white hover:text-emerald-950 text-[11px] font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1" title="Click only if you need to correct a student mistake">
+                        Adjust / Correct
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Incoming Share Requests -->
     {% if incoming_requests %}
     <div class="mb-8 animate-fadeIn">

@@ -246,10 +246,12 @@ class AcademicYear(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
         if self.is_active:
             # Deactivate all other academic years
             AcademicYear.objects.exclude(pk=self.pk).update(is_active=False)
-        super().save(*args, **kwargs)
+            # Synchronize system settings
+            SystemSetting.objects.update(current_academic_year=self)
 
     class Meta:
         ordering = ['-name']
@@ -280,6 +282,12 @@ class SystemSetting(models.Model):
 
     def __str__(self):
         return "Global System Settings"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.current_academic_year:
+            AcademicYear.objects.filter(pk=self.current_academic_year.pk).update(is_active=True)
+            AcademicYear.objects.exclude(pk=self.current_academic_year.pk).update(is_active=False)
 
     @classmethod
     def get_settings(cls):

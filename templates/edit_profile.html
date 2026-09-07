@@ -43,6 +43,42 @@
 
                 <div class="md:col-span-2 space-y-6">
 
+                    <!-- Username / Login Handle -->
+                    <div class="p-5 rounded-2xl bg-indigo-50/50 border border-indigo-100/80 dark:bg-indigo-950/20 dark:border-indigo-900/30">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-black uppercase tracking-widest text-indigo-900 dark:text-indigo-200">
+                                Login Username
+                            </label>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white">
+                                Login Handle
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 font-medium mb-3">
+                            You use this username to sign in to your portal. You can personalize it anytime, as long as it isn't already taken by another student.
+                        </p>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-indigo-500 font-black text-sm pointer-events-none">
+                                @
+                            </span>
+                            <input type="text" name="username" id="username_input"
+                                value="{{ submitted_username|default:user.username }}"
+                                required
+                                minlength="3" maxlength="30"
+                                pattern="[a-zA-Z0-9._-]+"
+                                placeholder="firstname.lastname"
+                                class="w-full pl-9 pr-4 py-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 font-bold text-gray-900 bg-white transition-all">
+                        </div>
+                        {% if username_error %}
+                        <p class="text-xs text-red-600 font-bold mt-2 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            {{ username_error }}
+                        </p>
+                        {% endif %}
+                        <p class="text-[10px] text-gray-400 font-bold mt-2">
+                            Allowed: letters, numbers, dots (.), underscores (_), and hyphens (-). Min 3, max 30 chars.
+                        </p>
+                    </div>
+
                     <!-- Email Address -->
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-3">
@@ -98,6 +134,26 @@
                         {{ form.bio }}
                         <p class="text-[10px] text-gray-400 mt-2 font-medium">Tell future employers or trainers about
                             your journey and aspirations.</p>
+                    </div>
+
+                    <!-- Password Security Card -->
+                    <div class="p-6 rounded-2xl bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-black text-gray-900 uppercase tracking-tight">Account Password</h4>
+                                <p class="text-xs text-gray-500 font-medium">Your initial password was <code class="bg-white px-1.5 py-0.5 rounded text-indigo-600 font-bold border border-purple-200">student123</code>. You can set your own secret password anytime.</p>
+                            </div>
+                        </div>
+                        <a href="{% url 'change_password' %}"
+                            class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase tracking-widest transition-all shadow-md flex-shrink-0 flex items-center gap-1.5">
+                            Update Password
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </a>
                     </div>
 
                     <div class="pt-6 flex gap-4">

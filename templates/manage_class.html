@@ -25,13 +25,13 @@
                 </svg>
                 Add Module
             </a>
-            {% if is_owner %}
+            {% if is_owner or is_co_teacher %}
             <a href="{% url 'promote_students' classroom.id %}"
                 class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-100 flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                         d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z" />
-                </svg> Promote Students
+                </svg> Promote / Adjust Students
             </a>
             <a href="{% url 'add_student' classroom.id %}"
                 class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">
