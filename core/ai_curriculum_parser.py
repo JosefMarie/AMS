@@ -83,7 +83,7 @@ def parse_curriculum_pdf(curriculum, user=None):
     try:
         print("Creating Context Cache for syllabus PDF...")
         cache = client.caches.create(
-            model='gemini-2.5-flash',
+            model='gemini-3.6-flash',
             config=types.CreateCachedContentConfig(
                 display_name=f"curriculum_pdf_{curriculum.id}",
                 contents=[uploaded_file],
@@ -94,11 +94,11 @@ def parse_curriculum_pdf(curriculum, user=None):
     except Exception as cache_err:
         print(f"Context cache creation bypassed/failed ({cache_err}). Continuing without cache.")
 
-    print("Extracting data with Gemini 2.5 Flash...")
+    print("Extracting data with Gemini 3.6 Flash...")
     if cache:
         response = gemini_call_with_retry(
             client,
-            model='gemini-2.5-flash',
+            model='gemini-3.6-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 cached_content=cache.name
@@ -107,7 +107,7 @@ def parse_curriculum_pdf(curriculum, user=None):
     else:
         response = gemini_call_with_retry(
             client,
-            model='gemini-2.5-flash',
+            model='gemini-3.6-flash',
             contents=[
                 types.Part.from_uri(file_uri=uploaded_file.uri, mime_type="application/pdf"),
                 prompt

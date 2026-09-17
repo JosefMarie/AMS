@@ -89,7 +89,8 @@ urlpatterns = [
     path('student/ai-assistant/', views.ai_study_recommendation_view, name='ai_study_recommendation'),
 
     # Admin AI testing
-    path('admin/test-ai/', views.test_ai_connection_view, name='test_ai_connection'),
+    path('admin-settings/test-ai/', views.test_ai_connection_view, name='test_ai_connection'),
+    path('admin/test-ai/', views.test_ai_connection_view),
 
     # Manage User Emails & Password Reset
     path('manage-emails/', views.manage_user_emails, name='manage_user_emails'),
@@ -191,7 +192,8 @@ urlpatterns = [
     path('student/ai-assistant/', views.ai_study_recommendation_view, name='ai_study_recommendation'),
 
     # Admin AI testing
-    path('admin/test-ai/', views.test_ai_connection_view, name='test_ai_connection'),
+    path('admin-settings/test-ai/', views.test_ai_connection_view, name='test_ai_connection'),
+    path('admin/test-ai/', views.test_ai_connection_view),
 
     # Manage User Emails & Password Reset
     path('manage-emails/', views.manage_user_emails, name='manage_user_emails'),

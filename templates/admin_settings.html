@@ -22,6 +22,22 @@
             </div>
         </div>
 
+        {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+            <div class="p-4 rounded-2xl text-xs font-bold flex items-center gap-3
+                {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-100
+                {% elif message.tags == 'warning' %}bg-amber-50 text-amber-700 border border-amber-100
+                {% else %}bg-emerald-50 text-emerald-700 border border-emerald-100{% endif %}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <form method="POST" enctype="multipart/form-data" class="space-y-8 relative">
             {% csrf_token %}
 
@@ -146,18 +162,15 @@
                                         {% else %}
                                         <p class="text-[10px] font-bold text-amber-600 uppercase tracking-widest">No key set — AI features will use mock data.</p>
                                         {% endif %}
-                                    </div>
-                                    {% if settings.gemini_api_key %}
                                     <button type="button" id="testAiBtn"
                                         onclick="testAiConnection()"
-                                        class="flex items-center space-x-2 px-4 py-2 text-xs font-black text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-xl transition-all uppercase tracking-widest">
+                                        class="flex items-center space-x-2 px-4 py-2 text-xs font-black text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-xl transition-all uppercase tracking-widest shadow-sm">
                                         <svg id="testAiIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                                 d="M13 10V3L4 14h7v7l9-11h-7z" />
                                         </svg>
                                         <span id="testAiBtnText">Test Connection</span>
                                     </button>
-                                    {% endif %}
                                 </div>
                                 <!-- Test Result Banner -->
                                 <div id="testAiResult" class="hidden mt-3 px-4 py-3 rounded-2xl text-xs font-bold"></div>
@@ -389,6 +402,8 @@ function testAiConnection() {
     result.className = 'hidden mt-3 px-4 py-3 rounded-2xl text-xs font-bold';
 
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const keyInput = document.querySelector('[name=gemini_api_key]');
+    const typedKey = keyInput ? keyInput.value.trim() : '';
 
     fetch("{% url 'test_ai_connection' %}", {
         method: 'POST',
@@ -396,8 +411,17 @@ function testAiConnection() {
             'X-CSRFToken': csrfToken,
             'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ api_key: typedKey })
     })
-    .then(res => res.json())
+    .then(async (res) => {
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            throw new Error(`Server returned error status (${res.status})`);
+        }
+        return data;
+    })
     .then(data => {
         result.classList.remove('hidden');
         if (data.status === 'success') {
@@ -405,13 +429,13 @@ function testAiConnection() {
             result.innerHTML = '<svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>' + data.message + '</span>';
         } else {
             result.className = 'mt-3 px-4 py-3 rounded-2xl text-xs font-bold bg-red-50 text-red-700 border border-red-100 flex items-center space-x-2';
-            result.innerHTML = '<svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg><span>' + data.message + '</span>';
+            result.innerHTML = '<svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg><span>' + (data.message || 'Connection failed') + '</span>';
         }
     })
-    .catch(() => {
+    .catch((err) => {
         result.classList.remove('hidden');
         result.className = 'mt-3 px-4 py-3 rounded-2xl text-xs font-bold bg-red-50 text-red-700 border border-red-100';
-        result.textContent = 'Network error — could not reach the server.';
+        result.textContent = err.message || 'Network error — could not reach the server.';
     })
     .finally(() => {
         btn.disabled = false;

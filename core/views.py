@@ -656,6 +656,7 @@ def admin_settings(request):
                 action="Updated System Settings",
                 details="Configuration changed via Admin Settings UI"
             )
+            messages.success(request, "System configuration and Gemini API settings saved successfully!")
             return redirect('admin_settings')
     else:
         form = SystemSettingForm(instance=settings)
@@ -2538,6 +2539,7 @@ def ai_study_recommendation_view(request):
 @login_required
 def test_ai_connection_view(request):
     from django.http import JsonResponse
+    import json
     if request.user.role != CustomUser.Role.ADMIN:
         return JsonResponse({'status': 'error', 'message': 'Unauthorized.'}, status=403)
 
@@ -2547,24 +2549,34 @@ def test_ai_connection_view(request):
     from .ai_quiz_generator import get_api_key, gemini_call_with_retry
     from google import genai
 
-    api_key = get_api_key(user=request.user)
+    candidate_key = ''
+    try:
+        if request.body:
+            body = json.loads(request.body.decode('utf-8'))
+            candidate_key = (body.get('api_key') or '').strip()
+    except Exception:
+        pass
+    if not candidate_key:
+        candidate_key = (request.POST.get('api_key') or '').strip()
+
+    api_key = candidate_key or get_api_key(user=request.user)
     if not api_key:
         return JsonResponse({
             'status': 'error',
-            'message': 'No API key configured. Enter a key above and save first.'
+            'message': 'No API key provided. Please type or paste your Gemini API key above.'
         })
 
     try:
         client = genai.Client(api_key=api_key)
         response = gemini_call_with_retry(
             client,
-            model='gemini-2.5-flash',
+            model='gemini-3.6-flash',
             contents="Reply with exactly: OK"
         )
         reply = response.text.strip()
         return JsonResponse({
             'status': 'success',
-            'message': f'Connection successful. Gemini responded: "{reply}"'
+            'message': f'Connection successful! Gemini responded: "{reply}"'
         })
     except Exception as e:
         return JsonResponse({
@@ -3179,7 +3191,7 @@ def save_user_gemini_key(request):
                 client = genai.Client(api_key=key)
                 response = gemini_call_with_retry(
                     client,
-                    model='gemini-2.5-flash',
+                    model='gemini-3.6-flash',
                     contents="Reply with exactly: OK"
                 )
                 reply = response.text.strip()
@@ -3188,9 +3200,10 @@ def save_user_gemini_key(request):
         
         request.user.gemini_api_key = key
         request.user.save(update_fields=['gemini_api_key'])
+        msg = 'API key saved and verified successfully!' if (test_key and key) else ('API key saved successfully!' if key else 'Personal API key removed. Using school default key.')
         return JsonResponse({
             'success': True, 
-            'message': 'API key saved and verified successfully!' if (test_key and key) else 'API key saved successfully!'
+            'message': msg
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
@@ -3448,11 +3461,9 @@ def generate_scheme_of_work_ai(request):
             lo_info['indicative_contents'].append(ic_info)
         curriculum_info.append(lo_info)
         
-    api_key = get_api_key(user=request.user)
-    if not api_key:
-        return JsonResponse({'success': False, 'error': 'Gemini API key is missing. Please add it in System Settings or your Profile.'}, status=400)
-        
-    client = genai.Client(api_key=api_key)
+    from .ai_quiz_generator import get_candidate_api_keys, gemini_call_with_key_fallback
+    if not get_candidate_api_keys(user=request.user):
+        return JsonResponse({'success': False, 'error': 'Gemini API key is missing. Please configure GEMINI_API_KEY in .env or Portal Settings.'}, status=400)
     
     prompt = f"""
     You are an expert TVET Academic Planner.
@@ -3534,11 +3545,11 @@ def generate_scheme_of_work_ai(request):
     """
     
     try:
-        from .ai_quiz_generator import gemini_call_with_retry
-        response = gemini_call_with_retry(
-            client,
-            model='gemini-2.5-flash',
-            contents=prompt
+        from .ai_quiz_generator import gemini_call_with_key_fallback
+        response = gemini_call_with_key_fallback(
+            contents=prompt,
+            model='gemini-3.6-flash',
+            user=request.user
         )
         response_text = response.text.strip()
         

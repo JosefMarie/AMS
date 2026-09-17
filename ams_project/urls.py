@@ -9,8 +9,8 @@ urlpatterns = [
     path('admin/scheme-templates/', RedirectView.as_view(pattern_name='admin_scheme_templates', permanent=False)),
     path('admin/scheme-templates/<int:template_id>/delete/', RedirectView.as_view(pattern_name='delete_scheme_template', permanent=False)),
     
-    path('admin/', admin.site.urls),
     path('', include('core.urls')),
+    path('admin/', admin.site.urls),
 ]
 
 if settings.DEBUG:

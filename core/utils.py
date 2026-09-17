@@ -385,10 +385,8 @@ def analyze_student_weakness(marks_data, user=None):
     and suggest which module to study next based on their weak points.
     Supports Strategies B (exponential retry) and D (per-user keys).
     """
-    from .ai_quiz_generator import get_api_key, gemini_call_with_retry
-    GEMINI_API_KEY = get_api_key(user=user)
-    
-    if not GEMINI_API_KEY:
+    from .ai_quiz_generator import get_candidate_api_keys, gemini_call_with_key_fallback
+    if not get_candidate_api_keys(user=user):
         # Fallback Mock logic
         lowest_module = min(marks_data, key=lambda x: marks_data[x]['score_percent'])
         return {
@@ -398,9 +396,6 @@ def analyze_student_weakness(marks_data, user=None):
         }
         
     try:
-        from google import genai
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        
         prompt = f"""
         Analyze the following student assessment marks and identify their weakest area.
         Provide a short, encouraging analysis, and suggest specific study strategies.
@@ -415,10 +410,10 @@ def analyze_student_weakness(marks_data, user=None):
             "advice": "Actionable advice on how to improve..."
         }}
         """
-        response = gemini_call_with_retry(
-            client,
-            model='gemini-2.5-flash',
-            contents=prompt
+        response = gemini_call_with_key_fallback(
+            contents=prompt,
+            model='gemini-3.6-flash',
+            user=user
         )
         # Parse the JSON response
         result_text = response.text.replace('```json', '').replace('```', '').strip()
@@ -440,11 +435,8 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
     Provides a fallback to the standard static generator if API fails.
     Supports Strategies B (exponential retry) and D (per-user keys).
     """
-    from google import genai
-    from .ai_quiz_generator import get_api_key, gemini_call_with_retry
-    GEMINI_API_KEY = get_api_key(user=user)
-    
-    if not GEMINI_API_KEY:
+    from .ai_quiz_generator import get_candidate_api_keys, gemini_call_with_key_fallback
+    if not get_candidate_api_keys(user=user):
         print("No Gemini API key, falling back to static generation")
         return generate_session_plan_ai(syllabus_text, range_text, template_type, **kwargs)
         
@@ -453,7 +445,6 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
     technique = kwargs.get('facilitation_technique', 'Brainstorming')
     
     try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
         
         prompt = f"""
         Act as an expert TVET (Technical and Vocational Education and Training) Trainer.
@@ -527,10 +518,10 @@ def generate_advanced_session_plan_ai(syllabus_text, range_text, template_type='
         If it's a THEORY session, focus on Introduction, Group Discussion, Sharing, Summary, Assessment, and Evaluation.
         """
         
-        response = gemini_call_with_retry(
-            client,
-            model='gemini-2.5-flash',
-            contents=prompt
+        response = gemini_call_with_key_fallback(
+            contents=prompt,
+            model='gemini-3.6-flash',
+            user=user
         )
         import re
         result_text = response.text.strip()

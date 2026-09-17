@@ -24,28 +24,48 @@ def get_api_key(user=None):
       2. GEMINI_API_KEY environment variable
       3. Global SystemSetting.gemini_api_key from the database
     """
-    # 1. User's personal key (Strategy D)
+    candidates = get_candidate_api_keys(user=user)
+    return candidates[0][1] if candidates else ''
+
+
+def get_candidate_api_keys(user=None):
+    """
+    Return candidate Gemini API keys in priority order:
+      1. Requesting user's personal gemini_api_key (Strategy D)
+      2. GEMINI_API_KEY environment variable
+      3. Global SystemSetting.gemini_api_key from database
+    Returns a list of tuples: [('personal'|'env'|'system', key_string)]
+    """
+    candidates = []
+    seen = set()
+
+    # 1. User's personal key
     if user is not None:
         try:
-            personal_key = getattr(user, 'gemini_api_key', '') or ''
-            if personal_key.strip():
-                return personal_key.strip()
+            personal_key = (getattr(user, 'gemini_api_key', '') or '').strip()
+            if personal_key and personal_key not in seen:
+                candidates.append(('personal', personal_key))
+                seen.add(personal_key)
         except Exception:
             pass
 
     # 2. Environment variable
-    key = os.environ.get('GEMINI_API_KEY', '')
-    if key:
-        return key
+    env_key = (os.environ.get('GEMINI_API_KEY', '') or '').strip()
+    if env_key and env_key not in seen:
+        candidates.append(('env', env_key))
+        seen.add(env_key)
 
     # 3. Global database setting
     try:
         from .models import SystemSetting
-        key = SystemSetting.get_settings().gemini_api_key or ''
+        db_key = (SystemSetting.get_settings().gemini_api_key or '').strip()
+        if db_key and db_key not in seen:
+            candidates.append(('system', db_key))
+            seen.add(db_key)
     except Exception:
         pass
 
-    return key
+    return candidates
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -62,7 +82,7 @@ def gemini_call_with_retry(client, model, contents, max_retries=4, initial_delay
 
     Args:
         client:         An initialised genai.Client instance.
-        model:          Model name string e.g. 'gemini-2.5-flash'.
+        model:          Model name string e.g. 'gemini-3.6-flash'.
         contents:       The prompt / contents payload.
         max_retries:    Maximum number of attempts (default 4 → up to ~30 s wait).
         initial_delay:  Seconds to wait before first retry (doubles each attempt).
@@ -99,6 +119,57 @@ def gemini_call_with_retry(client, model, contents, max_retries=4, initial_delay
     raise last_error
 
 
+def gemini_call_with_key_fallback(contents, model='gemini-3.6-flash', user=None, max_retries=4, initial_delay=2, **kwargs):
+    """
+    Execute a Gemini generate_content call using the best available key,
+    automatically falling back to secondary keys (e.g. system/env key) if the primary
+    key fails due to authentication (401/400) or exhausted quota (429).
+    """
+    candidates = get_candidate_api_keys(user=user)
+    if not candidates:
+        raise ValueError("Gemini API key is missing. Please configure GEMINI_API_KEY in .env or System Settings.")
+
+    last_error = None
+    for idx, (key_type, key) in enumerate(candidates):
+        try:
+            client = genai.Client(api_key=key)
+            return gemini_call_with_retry(
+                client,
+                model=model,
+                contents=contents,
+                max_retries=max_retries,
+                initial_delay=initial_delay,
+                **kwargs
+            )
+        except Exception as e:
+            err_str = str(e).lower()
+            # Check if this error is an auth failure or quota depletion
+            is_recoverable_with_fallback = any(term in err_str for term in [
+                '401', 'unauthenticated', 'invalid authentication',
+                'access_token_type_unsupported', '400', 'invalid_argument',
+                'api key not valid', '429', 'resource_exhausted',
+                'prepayment credits are depleted'
+            ])
+
+            has_fallback = idx < len(candidates) - 1
+            if is_recoverable_with_fallback and has_fallback:
+                print(f"[Gemini] Candidate key ({key_type}) failed with: {e}. Falling back to next available key...")
+                # If personal key was unauthenticated/invalid, clear it from user
+                if key_type == 'personal' and user:
+                    if any(t in err_str for t in ['401', 'unauthenticated', 'invalid_argument', 'api key not valid', 'access_token_type_unsupported']):
+                        try:
+                            user.gemini_api_key = ''
+                            user.save(update_fields=['gemini_api_key'])
+                            print(f"[Gemini] Auto-cleared invalid personal API key for user {getattr(user, 'username', '')}.")
+                        except Exception:
+                            pass
+                last_error = e
+                continue
+            raise
+
+    raise last_error
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Quiz Generation
 # ─────────────────────────────────────────────────────────────────────────────
@@ -116,13 +187,11 @@ def generate_quiz_with_ai(syllabus_content, num_mcq=10, num_tf=5, num_matching=5
     Returns:
         dict: Quiz data with mcq, true_false, and matching questions.
     """
-    api_key = get_api_key(user=user)
-    if not api_key:
+    candidates = get_candidate_api_keys(user=user)
+    if not candidates:
         return generate_sample_quiz(num_mcq, num_tf, num_matching)
 
     try:
-        client = genai.Client(api_key=api_key)
-
         prompt = f"""Based on the following syllabus content, generate a quiz with:
 - {num_mcq} multiple choice questions (4 options each)
 - {num_tf} true/false questions
@@ -145,8 +214,7 @@ Return ONLY valid JSON in this exact format (no markdown, no extra text):
     ]
 }}"""
 
-        # Strategy B: use retry wrapper
-        response = gemini_call_with_retry(client, 'gemini-2.5-flash', prompt)
+        response = gemini_call_with_key_fallback(prompt, model='gemini-3.6-flash', user=user)
         quiz_data = json.loads(response.text.strip())
 
         if 'matching' in quiz_data and quiz_data['matching']:
