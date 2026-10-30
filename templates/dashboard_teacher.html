@@ -744,7 +744,7 @@
                         </div>
                     </div>
                     <p id="timetable-subtitle" class="text-[10px] text-gray-500 font-black tracking-widest uppercase flex items-center gap-1.5 mt-1 print-hide">
-                        Drag & Drop Weekly Task Organizer • Hold <kbd class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-sans border border-gray-200 dark:border-slate-700 text-[9px] shadow-sm font-bold uppercase select-none">Ctrl</kbd> to copy tasks
+                        Drag & Drop Weekly Task Organizer • Hold <kbd class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-sans border border-gray-200 dark:border-slate-700 text-[9px] shadow-sm font-bold uppercase select-none">Ctrl</kbd> or <kbd class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-sans border border-gray-200 dark:border-slate-700 text-[9px] shadow-sm font-bold uppercase select-none">Alt</kbd> to duplicate tasks
                     </p>
                 </div>
                 <div class="flex items-center gap-2 print-hide">
@@ -773,6 +773,28 @@
                 .timetable-cell.dragover {
                     background-color: rgba(99, 102, 241, 0.15) !important;
                     border: 2px dashed #6366f1 !important;
+                }
+                .timetable-cell.dragover-copy {
+                    background-color: rgba(16, 185, 129, 0.18) !important;
+                    border: 2px dashed #10b981 !important;
+                    position: relative;
+                }
+                .timetable-cell.dragover-copy::after {
+                    content: "+ Duplicate Here";
+                    position: absolute;
+                    bottom: 4px;
+                    right: 6px;
+                    background: #059669;
+                    color: #ffffff;
+                    font-size: 9px;
+                    font-weight: 800;
+                    padding: 2px 6px;
+                    border-radius: 6px;
+                    pointer-events: none;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    z-index: 10;
                 }
                 .task-card {
                     transition: transform 0.2s, box-shadow 0.2s;
@@ -929,7 +951,7 @@
             
             <div>
                 <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Task Title</label>
-                <input type="text" id="task-title-input" placeholder="e.g. Mathematics Period" class="w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold p-3">
+                <input type="text" id="task-title-input" oninput="updateTaskSyncBadge()" placeholder="e.g. Mathematics Period" class="w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold p-3">
             </div>
             
             <div>
@@ -938,21 +960,66 @@
             </div>
             
             <div>
-                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Card Accent Color</label>
-                <div class="flex gap-3" id="task-colors-container">
-                    <button data-color="#4f46e5" onclick="selectColor(this, '#4f46e5')" class="w-8 h-8 rounded-full bg-[#4f46e5] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
-                    <button data-color="#7c3aed" onclick="selectColor(this, '#7c3aed')" class="w-8 h-8 rounded-full bg-[#7c3aed] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
-                    <button data-color="#059669" onclick="selectColor(this, '#059669')" class="w-8 h-8 rounded-full bg-[#059669] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
-                    <button data-color="#dc2626" onclick="selectColor(this, '#dc2626')" class="w-8 h-8 rounded-full bg-[#dc2626] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
-                    <button data-color="#ea580c" onclick="selectColor(this, '#ea580c')" class="w-8 h-8 rounded-full bg-[#ea580c] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
-                    <button data-color="#2563eb" onclick="selectColor(this, '#2563eb')" class="w-8 h-8 rounded-full bg-[#2563eb] border-2 border-transparent transition-all relative select-color-btn focus:outline-none"></button>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Card Accent Color</label>
+                    <span id="task-color-hex-label" class="text-[10px] font-extrabold uppercase font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">#4F46E5</span>
+                </div>
+                <div class="flex flex-wrap gap-2.5 items-center p-2.5 rounded-2xl bg-gray-50/80 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800" id="task-colors-container">
+                    <button type="button" data-color="#4f46e5" onclick="selectColor(this, '#4f46e5')" title="Indigo" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #4f46e5;"></button>
+                    <button type="button" data-color="#6366f1" onclick="selectColor(this, '#6366f1')" title="Periwinkle" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #6366f1;"></button>
+                    <button type="button" data-color="#2563eb" onclick="selectColor(this, '#2563eb')" title="Royal Blue" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #2563eb;"></button>
+                    <button type="button" data-color="#0284c7" onclick="selectColor(this, '#0284c7')" title="Sky Blue" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #0284c7;"></button>
+                    <button type="button" data-color="#0891b2" onclick="selectColor(this, '#0891b2')" title="Cyan" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #0891b2;"></button>
+                    <button type="button" data-color="#0d9488" onclick="selectColor(this, '#0d9488')" title="Teal" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #0d9488;"></button>
+                    <button type="button" data-color="#059669" onclick="selectColor(this, '#059669')" title="Emerald" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #059669;"></button>
+                    <button type="button" data-color="#16a34a" onclick="selectColor(this, '#16a34a')" title="Forest Green" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #16a34a;"></button>
+                    <button type="button" data-color="#65a30d" onclick="selectColor(this, '#65a30d')" title="Lime" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #65a30d;"></button>
+                    <button type="button" data-color="#ca8a04" onclick="selectColor(this, '#ca8a04')" title="Gold" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #ca8a04;"></button>
+                    <button type="button" data-color="#d97706" onclick="selectColor(this, '#d97706')" title="Amber" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #d97706;"></button>
+                    <button type="button" data-color="#ea580c" onclick="selectColor(this, '#ea580c')" title="Orange" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #ea580c;"></button>
+                    <button type="button" data-color="#dc2626" onclick="selectColor(this, '#dc2626')" title="Crimson" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #dc2626;"></button>
+                    <button type="button" data-color="#e11d48" onclick="selectColor(this, '#e11d48')" title="Rose" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #e11d48;"></button>
+                    <button type="button" data-color="#db2777" onclick="selectColor(this, '#db2777')" title="Pink" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #db2777;"></button>
+                    <button type="button" data-color="#7c3aed" onclick="selectColor(this, '#7c3aed')" title="Violet" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #7c3aed;"></button>
+                    <button type="button" data-color="#9333ea" onclick="selectColor(this, '#9333ea')" title="Purple" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #9333ea;"></button>
+                    <button type="button" data-color="#334155" onclick="selectColor(this, '#334155')" title="Charcoal" class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm" style="background-color: #334155;"></button>
+                    
+                    <!-- Custom Color Picker with Spectrum Plus Icon -->
+                    <label id="task-custom-color-btn" title="Pick Any Custom Color" class="w-7 h-7 rounded-full border-2 border-dashed border-gray-300 dark:border-slate-600 hover:border-indigo-500 flex items-center justify-center cursor-pointer transition-all relative select-color-btn focus:outline-none hover:scale-110 shadow-sm group">
+                        <svg class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <input type="color" id="task-custom-color-picker" onchange="selectCustomColor(this.value)" class="sr-only">
+                    </label>
                 </div>
                 <input type="hidden" id="task-color-val" value="#4f46e5">
+            </div>
+
+            <!-- Sync Color Across Same Title Tasks Toggle -->
+            <div id="task-sync-color-container" class="flex items-center justify-between p-3 rounded-2xl bg-indigo-50/70 dark:bg-slate-800/60 border border-indigo-100 dark:border-slate-700/70 transition-all">
+                <div class="flex items-center gap-2.5">
+                    <input type="checkbox" id="task-sync-same-title" checked class="w-4 h-4 text-indigo-600 rounded border-gray-300 dark:border-slate-600 focus:ring-indigo-500 cursor-pointer">
+                    <div>
+                        <label for="task-sync-same-title" class="text-xs font-black text-gray-800 dark:text-gray-200 cursor-pointer block select-none">
+                            Sync color to all tasks with this title
+                        </label>
+                        <span id="task-sync-subtitle" class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold select-none block">
+                            Applies this color to every matching task across the week
+                        </span>
+                    </div>
+                </div>
+                <span id="task-matching-badge" class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 whitespace-nowrap">
+                    1 task
+                </span>
             </div>
         </div>
         
         <div class="mt-8 flex gap-3 justify-end items-center">
             <button id="task-delete-btn" onclick="deleteTaskFromModal()" class="px-5 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-650 hover:bg-red-100 text-xs font-extrabold uppercase mr-auto hidden">Delete</button>
+            <button id="task-duplicate-btn" onclick="duplicateTaskFromModal()" class="px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-extrabold uppercase mr-auto hidden flex items-center gap-1.5 transition-all">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                Duplicate
+            </button>
             <button id="task-add-another-btn" onclick="prepareAddAnotherTask()" class="px-5 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100/50 text-xs font-extrabold uppercase mr-auto hidden">Add Another</button>
             <button onclick="closeTaskModal()" class="px-5 py-2.5 rounded-xl border border-gray-250 bg-white text-gray-750 font-bold hover:bg-gray-50 text-xs uppercase dark:bg-slate-800 dark:border-slate-700 dark:text-gray-200">Cancel</button>
             <button onclick="saveTaskFromModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold hover:bg-indigo-700 text-xs uppercase shadow-lg shadow-indigo-200 dark:shadow-none" id="task-save-btn">Save Task</button>
@@ -991,8 +1058,11 @@
             </div>
             
             <div>
-                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Card Accent Color</label>
-                <div class="flex gap-3" id="exam-colors-container">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Card Accent Color</label>
+                    <span id="exam-color-hex-label" class="text-[10px] font-extrabold uppercase font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">#4F46E5</span>
+                </div>
+                <div class="flex flex-wrap gap-2.5 items-center p-2.5 rounded-2xl bg-gray-50/80 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800" id="exam-colors-container">
                     <!-- Dynamic colors populated on open -->
                 </div>
                 <input type="hidden" id="exam-color-val" value="#4f46e5">
@@ -1015,6 +1085,34 @@
     };
     
     let draggedTaskId = null;
+    let isModifierPressed = false;
+    let isDragCopying = false;
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Control' || e.key === 'Meta' || e.key === 'Alt' || e.ctrlKey || e.metaKey || e.altKey) {
+            isModifierPressed = true;
+            if (draggedTaskId) {
+                isDragCopying = true;
+                document.querySelectorAll('.timetable-cell.dragover').forEach(cell => {
+                    cell.classList.remove('dragover');
+                    cell.classList.add('dragover-copy');
+                });
+            }
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+            isModifierPressed = false;
+            if (draggedTaskId) {
+                isDragCopying = false;
+                document.querySelectorAll('.timetable-cell.dragover-copy').forEach(cell => {
+                    cell.classList.remove('dragover-copy');
+                    cell.classList.add('dragover');
+                });
+            }
+        }
+    });
 
     function timeToMinutes(timeStr) {
         if (!timeStr) return 0;
@@ -1385,16 +1483,22 @@
              style="background: ${task.color || '#4f46e5'}; border-color: rgba(255,255,255,0.15); ${extraStyle}"
              draggable="true"
              ondragstart="handleDragStart(event, ${task.id})"
+             ondragend="handleDragEnd(event)"
              onclick="handleTaskClick(event, ${task.id})">
              <div>
-                 <p class="font-extrabold text-sm text-white line-clamp-2 pr-4">${task.title}</p>
+                 <p class="font-extrabold text-sm text-white line-clamp-2 pr-14">${task.title}</p>
                  ${descHtml}
              </div>
              <div class="flex items-center justify-between mt-2 pt-1 border-t border-white/10 text-[9px] text-white/70 font-semibold">
                  <span>${task.start_time} - ${task.end_time}</span>
-                 <button onclick="handleDeleteTaskBtn(event, ${task.id})" class="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 hover:bg-black/30 rounded-lg p-1 text-white absolute top-2 right-2 print-hide">
-                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                 </button>
+                 <div class="absolute top-2 right-2 flex items-center gap-1 print-hide">
+                     <button onclick="handleDuplicateTaskBtn(event, ${task.id})" title="Duplicate Task" class="opacity-0 group-hover:opacity-100 transition-opacity bg-black/15 hover:bg-black/35 rounded-lg p-1 text-white">
+                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                     </button>
+                     <button onclick="handleDeleteTaskBtn(event, ${task.id})" title="Delete Task" class="opacity-0 group-hover:opacity-100 transition-opacity bg-black/15 hover:bg-black/35 rounded-lg p-1 text-white">
+                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                     </button>
+                 </div>
              </div>
         </div>
         `;
@@ -1483,6 +1587,7 @@
     // Drag and Drop
     function handleDragStart(event, taskId) {
         draggedTaskId = taskId;
+        isDragCopying = Boolean(event.ctrlKey || event.metaKey || event.altKey || isModifierPressed);
         event.dataTransfer.setData('text/plain', taskId.toString());
         event.dataTransfer.effectAllowed = 'copyMove';
     }
@@ -1490,25 +1595,40 @@
     function handleDragOver(event) {
         event.preventDefault();
         let cell = event.currentTarget;
-        if (!cell.classList.contains('dragover')) {
-            cell.classList.add('dragover');
-        }
-        if (event.ctrlKey || event.metaKey) {
+        let isCopy = Boolean(event.ctrlKey || event.metaKey || event.altKey || isModifierPressed || isDragCopying);
+        
+        if (isCopy) {
             event.dataTransfer.dropEffect = 'copy';
+            cell.classList.add('dragover-copy');
+            cell.classList.remove('dragover');
         } else {
             event.dataTransfer.dropEffect = 'move';
+            cell.classList.add('dragover');
+            cell.classList.remove('dragover-copy');
         }
     }
 
     function handleDragLeave(event) {
         let cell = event.currentTarget;
-        cell.classList.remove('dragover');
+        if (event.relatedTarget && cell.contains(event.relatedTarget)) {
+            return;
+        }
+        cell.classList.remove('dragover', 'dragover-copy');
+    }
+
+    function handleDragEnd(event) {
+        draggedTaskId = null;
+        isDragCopying = false;
+        document.querySelectorAll('.timetable-cell').forEach(c => {
+            c.classList.remove('dragover', 'dragover-copy');
+        });
     }
 
     function handleDrop(event) {
         event.preventDefault();
         let cell = event.currentTarget;
-        cell.classList.remove('dragover');
+        let wasCopy = cell.classList.contains('dragover-copy');
+        cell.classList.remove('dragover', 'dragover-copy');
         
         let taskId = event.dataTransfer.getData('text/plain') || draggedTaskId;
         if (!taskId) return;
@@ -1520,7 +1640,18 @@
         let task = timetableData.tasks.find(t => t.id == taskId);
         if (!task) return;
         
-        let isCopy = event.ctrlKey || event.metaKey;
+        let isCopy = Boolean(
+            event.ctrlKey || 
+            event.metaKey || 
+            event.altKey || 
+            isModifierPressed || 
+            isDragCopying || 
+            (event.dataTransfer && event.dataTransfer.dropEffect === 'copy') ||
+            wasCopy
+        );
+        
+        draggedTaskId = null;
+        isDragCopying = false;
         
         if (isCopy) {
             let tempId = Date.now();
@@ -1553,16 +1684,16 @@
                 if (res.success) {
                     copiedTask.id = res.id;
                     renderTimetableGrid();
-                    window.showToast("Task copied successfully", "success");
+                    window.showToast("Task duplicated successfully", "success");
                 } else {
                     timetableData.tasks = timetableData.tasks.filter(t => t.id !== tempId);
                     renderTimetableGrid();
-                    window.showToast("Failed to copy task: " + res.error, "error");
+                    window.showToast("Failed to duplicate task: " + res.error, "error");
                 }
             }).catch(err => {
                 timetableData.tasks = timetableData.tasks.filter(t => t.id !== tempId);
                 renderTimetableGrid();
-                window.showToast("Network error copying task", "error");
+                window.showToast("Network error duplicating task", "error");
             });
         } else {
             let oldDay = task.day_of_week;
@@ -1631,9 +1762,26 @@
     function selectColor(btn, hex) {
         document.querySelectorAll('.select-color-btn').forEach(b => {
             b.classList.remove('ring-4', 'ring-indigo-500/50', 'scale-110');
+            let check = b.querySelector('.color-check-icon');
+            if (check) check.remove();
         });
-        btn.classList.add('ring-4', 'ring-indigo-500/50', 'scale-110');
+        if (btn) {
+            btn.classList.add('ring-4', 'ring-indigo-500/50', 'scale-110');
+            let checkHtml = `<svg class="color-check-icon w-3.5 h-3.5 text-white absolute inset-0 m-auto drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>`;
+            btn.insertAdjacentHTML('beforeend', checkHtml);
+        }
         document.getElementById('task-color-val').value = hex;
+        let hexLabel = document.getElementById('task-color-hex-label');
+        if (hexLabel) hexLabel.innerText = hex.toUpperCase();
+    }
+
+    function selectCustomColor(hex) {
+        let customBtn = document.getElementById('task-custom-color-btn');
+        if (customBtn) {
+            customBtn.style.backgroundColor = hex;
+            customBtn.style.borderColor = 'transparent';
+        }
+        selectColor(customBtn, hex);
     }
 
     function handleCellClick(event, day, start, end) {
@@ -1649,14 +1797,58 @@
         
         document.getElementById('taskModalTitle').innerText = 'Add Timetable Task';
         document.getElementById('task-delete-btn').classList.add('hidden');
+        document.getElementById('task-duplicate-btn').classList.add('hidden');
         document.getElementById('task-add-another-btn').classList.add('hidden');
         
-        let defaultBtn = document.querySelector('.select-color-btn');
-        if (defaultBtn) {
-            selectColor(defaultBtn, '#4f46e5');
+        let customBtn = document.getElementById('task-custom-color-btn');
+        if (customBtn) {
+            customBtn.style.backgroundColor = '';
+            customBtn.style.borderColor = '';
         }
         
+        let defaultBtn = document.querySelector('.select-color-btn[data-color="#4f46e5"]');
+        if (defaultBtn) {
+            selectColor(defaultBtn, '#4f46e5');
+        } else {
+            let firstBtn = document.querySelector('.select-color-btn');
+            if (firstBtn) selectColor(firstBtn, '#4f46e5');
+        }
+        
+        updateTaskSyncBadge();
         openTaskModal();
+    }
+
+    function updateTaskSyncBadge() {
+        let titleInput = document.getElementById('task-title-input');
+        let title = (titleInput ? titleInput.value : '').trim().toLowerCase();
+        let badge = document.getElementById('task-matching-badge');
+        let subtitle = document.getElementById('task-sync-subtitle');
+        if (!badge || !subtitle) return;
+        
+        if (!title) {
+            badge.innerText = '0 tasks';
+            badge.className = 'text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400 whitespace-nowrap';
+            subtitle.innerText = 'Enter a task title to sync colors';
+            return;
+        }
+        
+        let matching = (timetableData.tasks || []).filter(t => (t.title || '').trim().toLowerCase() === title);
+        let currentId = document.getElementById('task-id').value;
+        let count = matching.length;
+        if (!currentId && !matching.some(t => t.id == currentId)) {
+            count += 1;
+        }
+        if (count === 0) count = 1;
+        
+        if (count > 1) {
+            badge.innerText = `${count} tasks`;
+            badge.className = 'text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 whitespace-nowrap';
+            subtitle.innerText = `Will sync color across all ${count} tasks named "${titleInput.value.trim()}"`;
+        } else {
+            badge.innerText = `1 task`;
+            badge.className = 'text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 whitespace-nowrap';
+            subtitle.innerText = 'Applies this color to every matching task across the week';
+        }
     }
 
     function handleTaskClick(event, taskId) {
@@ -1675,17 +1867,31 @@
         
         document.getElementById('taskModalTitle').innerText = 'Edit Timetable Task';
         document.getElementById('task-delete-btn').classList.remove('hidden');
+        document.getElementById('task-duplicate-btn').classList.remove('hidden');
         document.getElementById('task-add-another-btn').classList.remove('hidden');
         
         let colorHex = task.color || '#4f46e5';
-        let colorBtn = Array.from(document.querySelectorAll('.select-color-btn')).find(b => b.getAttribute('data-color') === colorHex);
+        let colorBtn = Array.from(document.querySelectorAll('.select-color-btn[data-color]')).find(b => b.getAttribute('data-color').toLowerCase() === colorHex.toLowerCase());
+        let customBtn = document.getElementById('task-custom-color-btn');
+        let customPicker = document.getElementById('task-custom-color-picker');
+        
         if (colorBtn) {
+            if (customBtn) {
+                customBtn.style.backgroundColor = '';
+                customBtn.style.borderColor = '';
+            }
             selectColor(colorBtn, colorHex);
+        } else if (customBtn && customPicker) {
+            customPicker.value = colorHex;
+            customBtn.style.backgroundColor = colorHex;
+            customBtn.style.borderColor = 'transparent';
+            selectColor(customBtn, colorHex);
         } else {
             let defaultBtn = document.querySelector('.select-color-btn');
             if (defaultBtn) selectColor(defaultBtn, '#4f46e5');
         }
         
+        updateTaskSyncBadge();
         openTaskModal();
     }
 
@@ -1696,12 +1902,20 @@
         
         document.getElementById('taskModalTitle').innerText = 'Add Secondary Task';
         document.getElementById('task-delete-btn').classList.add('hidden');
+        document.getElementById('task-duplicate-btn').classList.add('hidden');
         document.getElementById('task-add-another-btn').classList.add('hidden');
         
-        let defaultBtn = document.querySelector('.select-color-btn');
+        let customBtn = document.getElementById('task-custom-color-btn');
+        if (customBtn) {
+            customBtn.style.backgroundColor = '';
+            customBtn.style.borderColor = '';
+        }
+        
+        let defaultBtn = document.querySelector('.select-color-btn[data-color="#4f46e5"]');
         if (defaultBtn) {
             selectColor(defaultBtn, '#4f46e5');
         }
+        updateTaskSyncBadge();
     }
 
     function saveTaskFromModal() {
@@ -1712,6 +1926,7 @@
         let day = parseInt(document.getElementById('task-day').value);
         let start = document.getElementById('task-start').value;
         let end = document.getElementById('task-end').value;
+        let syncSameTitle = document.getElementById('task-sync-same-title') ? document.getElementById('task-sync-same-title').checked : true;
         
         if (!title) {
             alert("Please enter a task title.");
@@ -1724,10 +1939,24 @@
             color: color,
             day_of_week: day,
             start_time: start,
-            end_time: end
+            end_time: end,
+            sync_same_title: syncSameTitle
         };
         if (id) {
             payload.id = parseInt(id);
+        }
+        
+        // Optimistic UI update across all tasks in memory with the same title
+        let normTitle = title.toLowerCase();
+        let syncedCount = 0;
+        if (syncSameTitle) {
+            (timetableData.tasks || []).forEach(t => {
+                if ((t.title || '').trim().toLowerCase() === normTitle) {
+                    t.color = color;
+                    syncedCount++;
+                }
+            });
+            renderTimetableGrid();
         }
         
         fetch('/api/timetable/save-task/', {
@@ -1737,7 +1966,12 @@
         }).then(r => r.json()).then(res => {
             if (res.success) {
                 closeTaskModal();
-                window.showToast("Task saved successfully", "success");
+                let total = res.synced_count || syncedCount;
+                if (syncSameTitle && total > 1) {
+                    window.showToast(`Color synced to all ${total} tasks titled "${title}"`, "success");
+                } else {
+                    window.showToast("Task saved successfully", "success");
+                }
                 initTimetable();
             } else {
                 alert("Error saving task: " + res.error);
@@ -1764,6 +1998,72 @@
                 }
             });
         }
+    }
+
+    function duplicateTaskFromModal() {
+        let title = document.getElementById('task-title-input').value.trim() || 'Task';
+        let description = document.getElementById('task-desc-input').value.trim();
+        let color = document.getElementById('task-color-val').value;
+        let day = parseInt(document.getElementById('task-day').value);
+        let start = document.getElementById('task-start').value;
+        let end = document.getElementById('task-end').value;
+        
+        let payload = {
+            title: title + ' (Copy)',
+            description: description,
+            color: color,
+            day_of_week: day,
+            start_time: start,
+            end_time: end
+        };
+        
+        fetch('/api/timetable/save-task/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify(payload)
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                closeTaskModal();
+                window.showToast("Task duplicated successfully", "success");
+                initTimetable();
+            } else {
+                alert("Error duplicating task: " + res.error);
+            }
+        }).catch(err => {
+            alert("Network error duplicating task");
+        });
+    }
+
+    function handleDuplicateTaskBtn(event, id) {
+        event.stopPropagation();
+        let task = timetableData.tasks.find(t => t.id == id);
+        if (!task) return;
+        
+        let payload = {
+            title: task.title + ' (Copy)',
+            description: task.description || '',
+            day_of_week: task.day_of_week,
+            start_time: task.start_time,
+            end_time: task.end_time,
+            color: task.color
+        };
+        
+        fetch('/api/timetable/save-task/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify(payload)
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                payload.id = res.id;
+                timetableData.tasks.push(payload);
+                renderTimetableGrid();
+                window.showToast("Task duplicated successfully", "success");
+            } else {
+                alert("Error duplicating task: " + res.error);
+            }
+        }).catch(err => {
+            alert("Network error duplicating task");
+        });
     }
 
     function handleDeleteTaskBtn(event, id) {
@@ -1883,18 +2183,30 @@
 
     const ASSESSMENT_COLORS = [
         { hex: '#059669', name: 'Emerald' },
+        { hex: '#10b981', name: 'Green' },
         { hex: '#0d9488', name: 'Teal' },
+        { hex: '#0891b2', name: 'Cyan' },
         { hex: '#0284c7', name: 'Sky Blue' },
+        { hex: '#2563eb', name: 'Royal Blue' },
         { hex: '#4f46e5', name: 'Indigo' },
-        { hex: '#d97706', name: 'Amber' }
+        { hex: '#6366f1', name: 'Periwinkle' },
+        { hex: '#d97706', name: 'Amber' },
+        { hex: '#ea580c', name: 'Orange' },
+        { hex: '#334155', name: 'Charcoal' }
     ];
 
     const EXAM_COLORS = [
         { hex: '#dc2626', name: 'Crimson' },
-        { hex: '#1d4ed8', name: 'Dark Blue' },
-        { hex: '#7c3aed', name: 'Violet' },
+        { hex: '#e11d48', name: 'Rose' },
+        { hex: '#db2777', name: 'Pink' },
         { hex: '#c026d3', name: 'Fuchsia' },
-        { hex: '#e11d48', name: 'Rose' }
+        { hex: '#7c3aed', name: 'Violet' },
+        { hex: '#9333ea', name: 'Purple' },
+        { hex: '#1d4ed8', name: 'Dark Blue' },
+        { hex: '#0284c7', name: 'Sky Blue' },
+        { hex: '#ea580c', name: 'Orange' },
+        { hex: '#d97706', name: 'Amber' },
+        { hex: '#334155', name: 'Charcoal' }
     ];
 
     function populateExamColorPicker(state) {
@@ -1902,23 +2214,51 @@
         let container = document.getElementById('exam-colors-container');
         if (!container) return;
         
-        container.innerHTML = colors.map(c => `
+        let buttonsHtml = colors.map(c => `
             <button data-color="${c.hex}" 
                     type="button"
                     onclick="selectExamColor(this, '${c.hex}')" 
                     title="${c.name}"
-                    class="w-8 h-8 rounded-full border-2 border-transparent transition-all relative select-exam-color-btn focus:outline-none" 
+                    class="w-7 h-7 rounded-full border-2 border-transparent transition-all relative select-exam-color-btn focus:outline-none hover:scale-110 shadow-sm" 
                     style="background-color: ${c.hex};">
             </button>
         `).join('');
+
+        let customBtnHtml = `
+            <label id="exam-custom-color-btn" title="Pick Any Custom Color" class="w-7 h-7 rounded-full border-2 border-dashed border-gray-300 dark:border-slate-600 hover:border-indigo-500 flex items-center justify-center cursor-pointer transition-all relative select-exam-color-btn focus:outline-none hover:scale-110 shadow-sm group">
+                <svg class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                </svg>
+                <input type="color" id="exam-custom-color-picker" onchange="selectCustomExamColor(this.value)" class="sr-only">
+            </label>
+        `;
+
+        container.innerHTML = buttonsHtml + customBtnHtml;
     }
 
     function selectExamColor(btn, hex) {
         document.querySelectorAll('.select-exam-color-btn').forEach(b => {
             b.classList.remove('ring-4', 'ring-indigo-500/50', 'scale-110');
+            let check = b.querySelector('.color-check-icon');
+            if (check) check.remove();
         });
-        btn.classList.add('ring-4', 'ring-indigo-500/50', 'scale-110');
+        if (btn) {
+            btn.classList.add('ring-4', 'ring-indigo-500/50', 'scale-110');
+            let checkHtml = `<svg class="color-check-icon w-3.5 h-3.5 text-white absolute inset-0 m-auto drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>`;
+            btn.insertAdjacentHTML('beforeend', checkHtml);
+        }
         document.getElementById('exam-color-val').value = hex;
+        let hexLabel = document.getElementById('exam-color-hex-label');
+        if (hexLabel) hexLabel.innerText = hex.toUpperCase();
+    }
+
+    function selectCustomExamColor(hex) {
+        let customBtn = document.getElementById('exam-custom-color-btn');
+        if (customBtn) {
+            customBtn.style.backgroundColor = hex;
+            customBtn.style.borderColor = 'transparent';
+        }
+        selectExamColor(customBtn, hex);
     }
 
     function handleExamCellClick(event, date, session) {
@@ -1940,6 +2280,12 @@
         document.getElementById('exam-delete-btn').classList.add('hidden');
         
         populateExamColorPicker(state);
+        
+        let customBtn = document.getElementById('exam-custom-color-btn');
+        if (customBtn) {
+            customBtn.style.backgroundColor = '';
+            customBtn.style.borderColor = '';
+        }
         
         let colors = (state === 'ASSESSMENT') ? ASSESSMENT_COLORS : EXAM_COLORS;
         let defaultBtn = document.querySelector(`.select-exam-color-btn[data-color="${colors[0].hex}"]`);
@@ -1977,8 +2323,20 @@
         
         let colorHex = exam.color || ((state === 'ASSESSMENT') ? ASSESSMENT_COLORS[0].hex : EXAM_COLORS[0].hex);
         let colorBtn = document.querySelector(`.select-exam-color-btn[data-color="${colorHex}"]`);
+        let customBtn = document.getElementById('exam-custom-color-btn');
+        let customPicker = document.getElementById('exam-custom-color-picker');
+        
         if (colorBtn) {
+            if (customBtn) {
+                customBtn.style.backgroundColor = '';
+                customBtn.style.borderColor = '';
+            }
             selectExamColor(colorBtn, colorHex);
+        } else if (customBtn && customPicker) {
+            customPicker.value = colorHex;
+            customBtn.style.backgroundColor = colorHex;
+            customBtn.style.borderColor = 'transparent';
+            selectExamColor(customBtn, colorHex);
         } else {
             let defaultBtn = document.querySelector(`.select-exam-color-btn`);
             if (defaultBtn) selectExamColor(defaultBtn, colorHex);

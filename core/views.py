@@ -3805,12 +3805,13 @@ def save_timetable_task_api(request):
     try:
         data = json.loads(request.body)
         task_id = data.get("id")
-        title = data.get("title", "New Task")
+        title = data.get("title", "New Task").strip()
         description = data.get("description", "")
         day_of_week = int(data.get("day_of_week", 0))
         start_time = data.get("start_time")
         end_time = data.get("end_time")
         color = data.get("color", "#4f46e5")
+        sync_same_title = data.get("sync_same_title", False)
         
         if task_id:
             task = TimetableTask.objects.get(id=task_id, teacher=request.user)
@@ -3832,7 +3833,14 @@ def save_timetable_task_api(request):
                 color=color
             )
             
-        return JsonResponse({"success": True, "id": task.id})
+        synced_count = 1
+        if sync_same_title and title:
+            synced_count = TimetableTask.objects.filter(
+                teacher=request.user,
+                title__iexact=title
+            ).update(color=color)
+            
+        return JsonResponse({"success": True, "id": task.id, "synced_count": synced_count})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
